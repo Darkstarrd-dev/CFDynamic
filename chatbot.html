@@ -66,8 +66,7 @@
         function loadQueryCount() {
             const storedCount = localStorage.getItem(STORAGE_KEY);
             if (storedCount === null) {
-                // 首次访问，设置为 5
-                remainingQueries = 666;
+                remainingQueries = 5;
                 localStorage.setItem(STORAGE_KEY, remainingQueries);
             } else {
                 remainingQueries = parseInt(storedCount, 10);
@@ -120,13 +119,9 @@
             promptInput.disabled = true;
             sendButton.disabled = true;
 
-            // a. 显示用户消息
             addMessage('user', prompt);
-
-            // b. 显示加载中
             addMessage('ai', '...', true);
 
-            // c. 消耗一次查询
             remainingQueries--;
             localStorage.setItem(STORAGE_KEY, remainingQueries);
 
@@ -138,17 +133,31 @@
                     body: JSON.stringify({ prompt: prompt })
                 });
 
+                // 检查 HTTP 响应是否 OK (非 4xx 或 5xx)
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.error || 'API 请求失败');
+                    throw new Error(errorData.error || `HTTP 错误 ${response.status}`);
                 }
 
                 const data = await response.json();
 
+                // 检查后端返回的 JSON 中是否包含我们自己的错误
+                // (这是后端 catch 块或 v2 检查器抛出的)
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // *** 关键修复：检查空回复 ***
+                // 如果 reply 存在但是是空字符串 (或 '<s>')
+                const aiReply = data.reply;
+                if (!aiReply || aiReply.trim() === '' || aiReply.trim() === '<s>') {
+                    throw new Error("AI 返回了空回复，请重试或更换模型。");
+                }
+
                 // d. 替换“加载中”气泡
                 const loadingBubble = chatWindow.querySelector('[data-loading-id="loading-bubble"]');
                 if (loadingBubble) {
-                    loadingBubble.querySelector('div').textContent = data.reply;
+                    loadingBubble.querySelector('div').textContent = aiReply;
                     loadingBubble.removeAttribute('data-loading-id');
                 }
 
@@ -156,8 +165,9 @@
                 console.error('Error:', error);
                 const loadingBubble = chatWindow.querySelector('[data-loading-id="loading-bubble"]');
                 if (loadingBubble) {
+                    // 现在错误消息会正确显示在气泡中了
                     loadingBubble.querySelector('div').textContent = `错误: ${error.message}`;
-                    loadingBubble.querySelector('div').className += ' bg-red-700';
+                    loadingBubble.querySelector('div').className += ' bg-red-700'; // 标红
                     loadingBubble.removeAttribute('data-loading-id');
                 }
             } finally {

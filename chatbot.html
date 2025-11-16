@@ -67,7 +67,7 @@
             const storedCount = localStorage.getItem(STORAGE_KEY);
             if (storedCount === null) {
                 // 首次访问，设置为 5
-                remainingQueries = 5;
+                remainingQueries = 666;
                 localStorage.setItem(STORAGE_KEY, remainingQueries);
             } else {
                 remainingQueries = parseInt(storedCount, 10);

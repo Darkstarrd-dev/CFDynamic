@@ -37,7 +37,7 @@ export async function onRequest(context) {
             // *** 关键修复：更换模型 ***
             // Mistral 的免费模型似乎会返回 '<s>' 或空回复
             // 我们换成 Google 的 Gemma 免费模型，它通常更稳定
-            model: "google/gemma-7b-it:free",
+            model: "google/gemma-3-12b-it:free",
             messages: [
                 { role: "user", content: userPrompt }
             ]

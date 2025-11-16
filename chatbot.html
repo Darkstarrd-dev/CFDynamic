@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 聊天</title>
+    <!-- 加载 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 简单的滚动条美化 */
+        #chat-window::-webkit-scrollbar { width: 4px; }
+        #chat-window::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 flex items-center justify-center min-h-screen font-sans">
+
+    <div class="w-full max-w-2xl mx-auto p-4 md:p-6">
+        <div class="bg-gray-800 rounded-2xl shadow-2xl flex flex-col" style="height: 80vh;">
+
+            <!-- 头部 -->
+            <div class="flex justify-between items-center p-4 border-b border-gray-700">
+                <h1 class="text-xl font-bold text-white">OpenRouter AI 助手</h1>
+                <div id="query-counter" class="text-sm bg-blue-600 text-white font-semibold px-3 py-1 rounded-full">
+                    剩余 5 次
+                </div>
+            </div>
+
+            <!-- 聊天窗口 -->
+            <div id="chat-window" class="flex-1 p-4 overflow-y-auto space-y-4">
+                <!-- 示例欢迎消息 -->
+                <div class="flex justify-start">
+                    <div class="bg-gray-700 text-white p-3 rounded-lg max-w-xs md:max-w-md">
+                        你好！你有什么问题吗？
+                    </div>
+                </div>
+                <!-- 聊天内容会动态添加到这里 -->
+            </div>
+
+            <!-- 输入区域 -->
+            <div class="p-4 border-t border-gray-700">
+                <div class="flex space-x-3">
+                    <input type="text" id="prompt-input"
+                           class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="输入你的消息..."
+                           autocomplete="off">
+                    <button id="send-button"
+                            class="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold shadow-lg hover:bg-blue-500 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:bg-gray-500 disabled:cursor-not-allowed">
+                        发送
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 获取 DOM 元素
+        const chatWindow = document.getElementById('chat-window');
+        const promptInput = document.getElementById('prompt-input');
+        const sendButton = document.getElementById('send-button');
+        const queryCounterEl = document.getElementById('query-counter');
+
+        const STORAGE_KEY = 'chatQueryCount';
+        let remainingQueries = 5;
+
+        // 1. 加载剩余查询次数
+        function loadQueryCount() {
+            const storedCount = localStorage.getItem(STORAGE_KEY);
+            if (storedCount === null) {
+                // 首次访问，设置为 5
+                remainingQueries = 5;
+                localStorage.setItem(STORAGE_KEY, remainingQueries);
+            } else {
+                remainingQueries = parseInt(storedCount, 10);
+            }
+            updateUI();
+        }
+
+        // 2. 更新 UI 显示
+        function updateUI() {
+            queryCounterEl.textContent = `剩余 ${remainingQueries} 次`;
+            if (remainingQueries <= 0) {
+                promptInput.disabled = true;
+                sendButton.disabled = true;
+                promptInput.placeholder = "你已用完 5 次免费提问。";
+            }
+        }
+
+        // 3. 将消息添加到聊天窗口
+        function addMessage(sender, text, isLoading = false) {
+            const messageDiv = document.createElement('div');
+            const messageClass = (sender === 'user') ? 'flex justify-end' : 'flex justify-start';
+            messageDiv.className = `flex ${messageClass}`;
+
+            const messageBubble = document.createElement('div');
+            messageBubble.className = (sender === 'user')
+                ? 'bg-blue-600 text-white p-3 rounded-lg max-w-xs md:max-w-md'
+                : 'bg-gray-700 text-white p-3 rounded-lg max-w-xs md:max-w-md';
+
+            if (isLoading) {
+                messageBubble.innerHTML = '<div class="animate-pulse">...</div>'; // 加载动画
+                messageDiv.dataset.loadingId = 'loading-bubble'; // 用于稍后替换
+            } else {
+                messageBubble.textContent = text;
+            }
+
+            messageDiv.appendChild(messageBubble);
+            chatWindow.appendChild(messageDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight; // 自动滚动到底部
+        }
+
+        // 4. 处理发送消息
+        async function handleSend() {
+            const prompt = promptInput.value.trim();
+
+            if (!prompt || remainingQueries <= 0) {
+                return;
+            }
+
+            // 禁用 UI
+            promptInput.disabled = true;
+            sendButton.disabled = true;
+
+            // a. 显示用户消息
+            addMessage('user', prompt);
+
+            // b. 显示加载中
+            addMessage('ai', '...', true);
+
+            // c. 消耗一次查询
+            remainingQueries--;
+            localStorage.setItem(STORAGE_KEY, remainingQueries);
+
+            try {
+                // 关键：调用我们的安全后端
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: prompt })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'API 请求失败');
+                }
+
+                const data = await response.json();
+
+                // d. 替换“加载中”气泡
+                const loadingBubble = chatWindow.querySelector('[data-loading-id="loading-bubble"]');
+                if (loadingBubble) {
+                    loadingBubble.querySelector('div').textContent = data.reply;
+                    loadingBubble.removeAttribute('data-loading-id');
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                const loadingBubble = chatWindow.querySelector('[data-loading-id="loading-bubble"]');
+                if (loadingBubble) {
+                    loadingBubble.querySelector('div').textContent = `错误: ${error.message}`;
+                    loadingBubble.querySelector('div').className += ' bg-red-700';
+                    loadingBubble.removeAttribute('data-loading-id');
+                }
+            } finally {
+                // 重新启用 UI (如果还有次数)
+                updateUI(); // 检查剩余次数并更新 UI
+                if (remainingQueries > 0) {
+                    promptInput.disabled = false;
+                }
+                sendButton.disabled = (remainingQueries <= 0);
+                promptInput.value = ''; // 清空输入框
+                promptInput.focus();
+            }
+        }
+
+        // 5. 绑定事件
+        sendButton.addEventListener('click', handleSend);
+        promptInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // 防止换行
+                handleSend();
+            }
+        });
+
+        // 6. 页面加载时初始化
+        loadQueryCount();
+    </script>
+</body>
+</html>

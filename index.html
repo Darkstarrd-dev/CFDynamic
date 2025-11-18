@@ -1,61 +1,85 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloudflare 动态时间</title>
-    <style>
-        /* 你可以把样式放到 style.css 中 */
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: grid; place-items: center; min-height: 80vh; background: #f4f7f6; }
-        .container { background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: center; }
-        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; }
-        button:hover { background: #0056b3; }
-        #result { margin-top: 20px; font-size: 18px; color: #333; }
-    </style>
+  <meta charset="UTF-8">
+  <title>Async Fetch Example</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+    #sendBtn {
+      padding: 12px 24px;
+      font-size: 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+    #responseBox {
+      padding: 15px;
+      width: 300px;
+      max-width: 80%;
+      border: 1px solid #ddd;
+      background-color: #f9f9f9;
+      border-radius: 4px;
+      line-height: 1.5;
+    }
+  </style>
 </head>
 <body>
+  <div class="container">
+    <button id="sendBtn">发送</button>
+    <div id="responseBox"></div>
+  </div>
 
-    <div class="container">
-        <h1>Cloudflare Functions 演示</h1>
-        <p>点击下面的按钮，从服务器获取当前时间。</p>
-        <button id="getTimeBtn">获取服务器时间</button>
-        <div id="result">
-            <!-- 结果将显示在这里 -->
-        </div>
-    </div>
+  <script>
+    document.getElementById('sendBtn').addEventListener('click', fetchData);
 
-    <script>
-        // 获取按钮和结果区域的元素
-        const btn = document.getElementById('getTimeBtn');
-        const resultDiv = document.getElementById('result');
+    async function fetchData() {
+      const responseBox = document.getElementById('responseBox');
+      responseBox.textContent = '等待服务器回应...';
 
-        // 按钮点击事件
-        btn.onclick = async function() {
-            try {
-                resultDiv.textContent = '正在获取...';
+      // Create AbortController for timeout
+      const controller = new AbortController();
+      const { signal } = controller;
 
-                // 关键：调用我们的后端 API！
-                // URL '/api/time' 会被 Cloudflare 自动路由到 functions/api/time.js
-                const response = await fetch('/api/time');
+      // Set 3-second timeout
+      const timer = setTimeout(() => {
+        controller.abort();
+      }, 3000);
 
-                if (!response.ok) {
-                    throw new Error('API 请求失败');
-                }
+      try {
+        const response = await fetch('/api/test');
 
-                // 解析 API 返回的 JSON 数据
-                const data = await response.json();
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
-                // 将数据显示在页面上
-                resultDiv.innerHTML = `
-                    <p>来自服务器的消息: "<strong>${data.message}</strong>"</p>
-                    <p>服务器时间: <strong>${new Date(data.timestamp).toLocaleString('zh-CN')}</strong></p>
-                `;
-
-            } catch (error) {
-                console.error('获取时间失败:', error);
-                resultDiv.textContent = '获取失败，请查看控制台。';
-            }
-        };
-    </script>
+        const data = await response.text();
+        responseBox.textContent = data;
+      } catch (error) {
+        // Check for timeout
+        if (error.name === 'AbortError') {
+          responseBox.textContent = '连接失败。';
+        } else {
+          responseBox.textContent = `错误: ${error.message}`;
+        }
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+  </script>
 </body>
 </html>

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WinWeb 全栈开发终极指南</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --primary: #2563eb;
+            --worker-color: #f97316;
+            --d1-color: #10b981;
+            --danger: #ef4444;
+            --code-bg: #1e293b;
+            --text-code: #e2e8f0;
+            --text-main: #334155;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6; background: var(--bg-color); color: var(--text-main); margin: 0; padding: 20px; }
+        .container { max-width: 1100px; margin: 0 auto; }
+
+        h1 { text-align: center; color: #0f172a; margin-bottom: 10px; }
+        h2 {
+            border-left: 5px solid var(--primary);
+            padding-left: 15px;
+            margin-top: 50px;
+            color: #1e293b;
+            background: #e2e8f0;
+            padding: 10px 15px;
+            border-radius: 0 8px 8px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 1. 架构图容器 */
+        .diagram-container {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            text-align: center;
+            overflow-x: auto;
+        }
+        svg { max-width: 100%; height: auto; }
+        .path-flow { stroke-dasharray: 10; animation: flow 1s linear infinite; }
+        @keyframes flow { to { stroke-dashoffset: -20; } }
+
+        /* 2. 概念卡片 */
+        .concept-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+        .concept-card { background: var(--card-bg); padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-top: 4px solid #ccc; }
+        .concept-card.worker { border-top-color: var(--worker-color); }
+        .concept-card.d1 { border-top-color: var(--d1-color); }
+        .concept-title { font-weight: bold; font-size: 1.1em; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+
+        /* 3. 额度与警示 */
+        .quota-section { background: #fff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 20px; }
+        .quota-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 10px; }
+        .quota-box { background: #f1f5f9; padding: 15px; border-radius: 8px; border-left: 4px solid #64748b; }
+        .quota-box.warn { border-left-color: var(--danger); background: #fef2f2; }
+        .limit-val { font-size: 1.4rem; font-weight: bold; color: #0f172a; display: block; margin: 5px 0; }
+        .limit-scope { font-size: 0.85rem; color: #dc2626; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* 4. 目录与终端模拟 */
+        .terminal { background: #1e293b; color: #e2e8f0; padding: 20px; border-radius: 8px; font-family: 'Consolas', monospace; margin-top: 15px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); }
+        .prompt { color: #10b981; }
+        .cmd { color: #e2e8f0; }
+        .comment { color: #64748b; font-style: italic; }
+        .output { color: #94a3b8; display: block; margin-bottom: 10px; }
+
+        /* 5. 代码块通用 */
+        pre { background: var(--code-bg); color: var(--text-code); padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 0.9rem; margin-top: 0; }
+        .step-card { background: var(--card-bg); border-radius: 12px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 5px solid var(--primary); }
+        .step-title { font-size: 1.25rem; font-weight: bold; color: #1e293b; margin-bottom: 15px; }
+
+        /* Note Box */
+        .note { background: #eff6ff; border: 1px solid #dbeafe; padding: 15px; border-radius: 6px; color: #1e40af; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>WinWeb 全栈开发实战手册 (完整版)</h1>
+    <p style="text-align: center; color: #64748b;">Worker 架构原理 | 免费额度详解 | 目录与创建 | 前端交互</p>
+
+    <!-- ========================== -->
+    <!-- 第一部分：原理与概念 (保留) -->
+    <!-- ========================== -->
+    <h2>1. 系统架构与核心概念</h2>
+
+    <div class="diagram-container">
+        <h3 style="margin-top:0; color:#64748b;">全局数据流向图</h3>
+        <svg width="800" height="320" viewBox="0 0 800 320" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#94a3b8" />
+                </marker>
+            </defs>
+            <!-- 1. 前端 -->
+            <g transform="translate(50, 80)">
+                <rect x="0" y="0" width="180" height="140" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+                <text x="90" y="30" text-anchor="middle" font-weight="bold" fill="#1e3a8a">你的 Windows 网页</text>
+                <text x="90" y="50" text-anchor="middle" font-size="12" fill="#64748b">CF Pages (前端)</text>
+                <rect x="40" y="80" width="20" height="20" rx="2" fill="#3b82f6"/>
+                <text x="90" y="95" font-size="11" fill="#3b82f6">双击图标</text>
+                <text x="90" y="115" font-size="11" fill="#64748b">触发 fetch()</text>
+            </g>
+            <!-- Flow 1 -->
+            <path d="M230 150 L340 150" stroke="#cbd5e1" stroke-width="3"/>
+            <path d="M230 150 L340 150" stroke="#3b82f6" stroke-width="3" class="path-flow"/>
+            <text x="285" y="140" text-anchor="middle" font-size="11" fill="#64748b">发送 JSON 数据</text>
+            <!-- 2. Worker -->
+            <g transform="translate(350, 60)">
+                <rect x="0" y="0" width="160" height="180" rx="8" fill="#fff7ed" stroke="#f97316" stroke-width="2"/>
+                <text x="80" y="30" text-anchor="middle" font-weight="bold" fill="#9a3412">Cloudflare Worker</text>
+                <text x="80" y="50" text-anchor="middle" font-size="12" fill="#c2410c">后端逻辑中心</text>
+                <text x="80" y="100" text-anchor="middle" font-size="11" fill="#c2410c">接收请求 & SQL处理</text>
+            </g>
+            <!-- Flow 2 -->
+            <path d="M510 150 L620 150" stroke="#cbd5e1" stroke-width="3"/>
+            <path d="M510 150 L620 150" stroke="#10b981" stroke-width="3" class="path-flow"/>
+            <!-- 3. D1 DB -->
+            <g transform="translate(630, 80)">
+                <path d="M0,20 C0,0 120,0 120,20 L120,120 C120,140 0,140 0,120 Z" fill="#f0fdf4" stroke="#10b981" stroke-width="2"/>
+                <ellipse cx="60" cy="20" rx="60" ry="20" fill="none" stroke="#10b981" stroke-width="2"/>
+                <text x="60" y="70" text-anchor="middle" font-weight="bold" fill="#064e3b">CF D1 数据库</text>
+                <text x="60" y="90" text-anchor="middle" font-size="11" fill="#047857">存储点击数据</text>
+            </g>
+        </svg>
+    </div>
+
+    <div class="concept-grid">
+        <div class="concept-card worker">
+            <div class="concept-title"><span style="color:#f97316;">🟠</span> 什么是 Worker?</div>
+            <p><strong>它是“不知疲倦的云端服务员”。</strong></p>
+            <p>Worker 是运行在 Cloudflare 全球网络上的代码。它不需要服务器开机，只有当你的图标被点击时，它才会“醒来”执行一瞬间（比如 10 毫秒），把数据存入数据库，然后继续休眠。</p>
+        </div>
+        <div class="concept-card d1">
+            <div class="concept-title"><span style="color:#10b981;">🟢</span> 什么是 D1?</div>
+            <p><strong>它是“云端的 Excel 表格”。</strong></p>
+            <p>D1 是 Cloudflare 提供的 SQLite 数据库。它的特点是和 Worker 配合极其紧密，读取速度快，而且非常便宜。</p>
+        </div>
+    </div>
+
+    <!-- ========================== -->
+    <!-- 第二部分：额度与账户 (新增详解) -->
+    <!-- ========================== -->
+    <h2>2. 免费额度与账户计算 (重点)</h2>
+    <div class="quota-section">
+        <p>你需要特别注意：Cloudflare 的免费额度通常是<strong>基于账户 (Per Account)</strong> 计算的，而不是基于单个 Worker 或数据库。</p>
+
+        <div class="quota-grid">
+            <!-- Worker 额度 -->
+            <div class="quota-box warn">
+                <div class="concept-title" style="color:#b91c1c;">⚡ Workers 额度</div>
+                <span class="limit-val">100,000 次请求 / 天</span>
+                <span class="limit-scope">所有 Worker 合计</span>
+                <p style="font-size:0.9rem; margin-top:10px;">
+                    <strong>解释：</strong> 如果你创建了 2 个 Worker (Worker A 和 Worker B)。<br>
+                    A 今天跑了 6 万次，B 今天跑了 5 万次。<br>
+                    总计 11 万次 -> <strong>你会超额</strong>（通常会报错停止服务，直到第二天重置）。
+                </p>
+            </div>
+
+            <!-- D1 额度 -->
+            <div class="quota-box warn">
+                <div class="concept-title" style="color:#047857;">💾 D1 数据库额度</div>
+                <span class="limit-val">500 万次读取 / 月</span>
+                <span class="limit-scope">所有数据库合计</span>
+                <p style="font-size:0.9rem; margin-top:10px;">
+                    <strong>解释：</strong> 你可以创建多个数据库（例如 10 个）。<br>
+                    但所有数据库被 Worker 读取的总行数，一个月加起来不能超过 500 万行。<br>
+                    写入（Write）限制是每天 10 万次。
+                </p>
+            </div>
+        </div>
+        <div class="note">
+            <strong>实际体验：</strong> 对于个人博客或 Windows 模拟网页，达到 10 万次/天意味着你有数千名活跃用户在疯狂点击。日常使用几乎不需要担心超额。
+        </div>
+    </div>
+
+    <!-- ========================== -->
+    <!-- 第三部分：目录结构与创建 (解答操作疑问) -->
+    <!-- ========================== -->
+    <h2>3. 目录结构与 Worker 创建实操</h2>
+
+    <div class="step-card">
+        <div class="step-title">如何在本地创建 Worker？</div>
+        <p><strong>Q: 我在哪个目录下运行创建命令？</strong></p>
+        <p>A: 在你的<strong>总项目根目录</strong>下运行。该命令会自动为你创建一个新的子文件夹。</p>
+
+        <div class="terminal">
+            <span class="comment"># 1. 假设你现在位于总目录 (WinWeb-Project)</span><br>
+            <span class="prompt">user@pc:~/WinWeb-Project$</span> ls<br>
+            <span class="output">frontend/  README.md</span><br>
+            <br>
+            <span class="comment"># 2. 运行创建命令 (backend 是你想要给 Worker 文件夹起的名字)</span><br>
+            <span class="prompt">user@pc:~/WinWeb-Project$</span> <span class="cmd">npm create cloudflare@latest backend</span><br>
+            <br>
+            <span class="output">
+            > In which directory do you want to create your application?<br>
+            > Using: /WinWeb-Project/backend <span class="comment">(它会自动检测并创建这个文件夹)</span><br>
+            > What type of application do you want to create?<br>
+            > "Hello World" Worker <span class="comment">(选择这个)</span>
+            </span><br>
+            <br>
+            <span class="comment"># 3. 创建完成后，你会发现多了一个文件夹</span><br>
+            <span class="prompt">user@pc:~/WinWeb-Project$</span> ls<br>
+            <span class="output">frontend/  backend/  README.md</span>
+        </div>
+
+        <div class="note">
+            <strong>Q: 如果我想做第二个 Worker 怎么办？</strong><br>
+            很简单，再次在根目录运行命令，换个名字即可：<br>
+            <code>npm create cloudflare@latest another-worker</code><br>
+            这样你的目录下就会有：<code>frontend/</code>, <code>backend/</code>, <code>another-worker/</code>。它们是平级的。
+        </div>
+    </div>
+
+    <!-- ========================== -->
+    <!-- 第四部分：前端埋点 (保留) -->
+    <!-- ========================== -->
+    <h2>4. 前端埋点 (Track Visit)</h2>
+    <div class="step-card">
+        <div class="step-title">让你的 Windows 图标会“说话”</div>
+        <p>将此代码保存为 <code>js/analytics.js</code> 并在所有页面引用。</p>
+        <pre><code>async function trackVisit(appId) {
+    // 这里的 URL 是你发布 Worker 后获得的 (npx wrangler deploy 后会显示)
+    const workerUrl = 'https://my-stats.你的名.workers.dev/visit';
+
+    try {
+        await fetch(workerUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            // 发送简单的 JSON: { appId: 'calculator' }
+            body: JSON.stringify({ appId: appId })
+        });
+        console.log(`[统计成功] ${appId} +1`);
+    } catch (err) {
+        console.error('[统计失败] 可能是网络拦截或 Worker 额度耗尽', err);
+    }
+}
+
+// 自动执行：如果是隐藏页面（如 game.html），自动汇报
+if (window.location.pathname.includes('.html')) {
+    const pageName = window.location.pathname.split('/').pop();
+    trackVisit(pageName);
+}</code></pre>
+        <p><strong>HTML 调用示例：</strong></p>
+        <pre><code>&lt;!-- 图标点击 (双击) --&gt;
+&lt;div class="icon" ondblclick="trackVisit('calculator'); window.open('calc.html')"&gt;...&lt;/div&gt;
+
+&lt;!-- 菜单点击 (单击) --&gt;
+&lt;div class="menu-item" onclick="trackVisit('calculator');"&gt;打开计算器&lt;/div&gt;</code></pre>
+    </div>
+
+    <!-- ========================== -->
+    <!-- 第五部分：数据展示 (保留) -->
+    <!-- ========================== -->
+    <h2>5. 数据读取与可视化渲染</h2>
+    <div class="step-card" style="border-left-color: #10b981;">
+        <div class="step-title">制作“关于本机”的统计面板</div>
+        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 300px;">
+                <strong>Worker 端 (后端读取):</strong>
+                <pre><code>// 在 Worker 代码中处理 GET /stats
+if (url.pathname === '/stats') {
+  const result = await env.DB.prepare(
+    "SELECT * FROM analytics ORDER BY hits DESC"
+  ).all();
+  return Response.json(result.results);
+}</code></pre>
+            </div>
+            <div style="flex: 1; min-width: 300px;">
+                <strong>网页端 (前端渲染):</strong>
+                <pre><code>async function showStats() {
+  const res = await fetch('.../stats');
+  const data = await res.json();
+  // data = [{app_id:'calc', hits:50}, ...]
+
+  const list = document.getElementById('list');
+  list.innerHTML = data.map(item =>
+    `&lt;li&gt;${item.app_id}: ${item.hits}&lt;/li&gt;`
+  ).join('');
+}</code></pre>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

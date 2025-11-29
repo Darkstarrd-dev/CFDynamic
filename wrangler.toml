@@ -1,0 +1,12 @@
+[[kv_namespaces]]
+binding = "desktop_kv"
+id = "19ec1c28bc1a48c785391da6a05c4982"
+
+[[d1_databases]]
+binding = "desktop_db" # 代码里用来调用它的名字
+database_name = "desktop-db"
+database_id = "8bbd434f-a9e5-40d0-b904-d22b1521ee82"
+
+[[r2_buckets]]
+bucket_name = "desktop-assets"
+binding = "desktop_assets"

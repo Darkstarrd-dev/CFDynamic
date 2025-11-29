@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的全栈计数器</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f2f5;
+            flex-direction: column;
+        }
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        h1 { font-size: 4rem; margin: 0; color: #0070f3; }
+        p { color: #666; }
+        .info { font-size: 0.8rem; margin-top: 1rem; color: #999; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <p>网页总访问量</p>
+        <h1 id="count-display">...</h1>
+        <div class="info" id="info-display">正在连接后端...</div>
+        <div class="info" id="info-display1"></div>
+    </div>
+
+    <script>
+        // 📢 请把下面这个 URL 换成你刚才 wrangler deploy 得到的那个网址！
+        const API_URL = "https://desktop-backend.hpymdk83.workers.dev/";
+
+        async function recordVisit() {
+            try {
+                // 1. 向后端发起请求
+                const response = await fetch(API_URL);
+
+                // 2. 解析后端返回的 JSON 数据
+                const data = await response.json();
+
+                // 3. 更新页面显示
+                document.getElementById('count-display').innerText = data.total_visits;
+                document.getElementById('info-display').innerText =
+                    `你的位置: ${data.your_info.country}`;
+                document.getElementById('info-display1').innerText =
+                    `你的终端: ${data.your_info.userAgent}`;
+
+            } catch (error) {
+                console.error("出错了:", error);
+                document.getElementById('info-display').innerText = "连接服务器失败";
+            }
+        }
+
+        // 页面加载完立刻执行
+        recordVisit();
+    </script>
+</body>
+</html>

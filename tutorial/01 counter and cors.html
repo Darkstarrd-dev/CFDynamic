@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全栈计数器代码详解 - 交互式教程</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <style>
+        * { scroll-behavior: smooth; }
+        .code-line { transition: all 0.3s; cursor: pointer; }
+        .code-line:hover { background: rgba(59, 130, 246, 0.2); }
+        .code-line.active { background: rgba(59, 130, 246, 0.3); border-left: 3px solid #3b82f6; }
+        .tooltip { opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .tooltip.show { opacity: 1; pointer-events: auto; }
+        .flow-step { opacity: 0.3; transition: all 0.5s; }
+        .flow-step.active { opacity: 1; transform: scale(1.05); }
+        .concept-card { transition: all 0.3s; }
+        .concept-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        pre[class*="language-"] { margin: 0; border-radius: 0.5rem; }
+        .gradient-text { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .arrow-animate { animation: arrowMove 1.5s ease-in-out infinite; }
+        @keyframes arrowMove { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(10px); } }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <!-- 导航栏 -->
+    <nav class="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-sm shadow-sm z-50">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <span class="font-bold text-xl gradient-text">📚 全栈教程</span>
+            <div class="hidden md:flex gap-6 text-sm">
+                <a href="#overview" class="hover:text-blue-600 transition">架构概览</a>
+                <a href="#frontend" class="hover:text-blue-600 transition">前端代码</a>
+                <a href="#backend" class="hover:text-blue-600 transition">后端代码</a>
+                <a href="#flow" class="hover:text-blue-600 transition">数据流动</a>
+                <a href="#concepts" class="hover:text-blue-600 transition">核心概念</a>
+                <a href="#quiz" class="hover:text-blue-600 transition">测验</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 text-white pt-16">
+        <div class="text-center px-4">
+            <h1 class="text-5xl md:text-7xl font-bold mb-6">🔧 全栈计数器</h1>
+            <p class="text-xl md:text-2xl mb-4 opacity-90">从零理解现代 Web 全栈开发</p>
+            <p class="text-lg opacity-75 max-w-2xl mx-auto mb-8">
+                这个教程将带你逐行剖析一个完整的前后端应用，涵盖 CORS、边缘计算、SQL 防注入等核心知识点
+            </p>
+            <div class="flex flex-wrap justify-center gap-4 mb-12">
+                <span class="px-4 py-2 bg-white/20 rounded-full text-sm">HTML/CSS/JS</span>
+                <span class="px-4 py-2 bg-white/20 rounded-full text-sm">Cloudflare Workers</span>
+                <span class="px-4 py-2 bg-white/20 rounded-full text-sm">D1 Database</span>
+                <span class="px-4 py-2 bg-white/20 rounded-full text-sm">RESTful API</span>
+            </div>
+            <a href="#overview" class="inline-flex items-center gap-2 bg-white text-purple-600 px-8 py-4 rounded-full font-bold hover:scale-105 transition">
+                开始学习 <span class="arrow-animate">→</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- 架构概览 -->
+    <section id="overview" class="py-20 px-4">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-4">🏗️ 系统架构概览</h2>
+            <p class="text-center text-gray-600 mb-12 max-w-2xl mx-auto">
+                理解整个系统是如何工作的，每个部分扮演什么角色
+            </p>
+
+            <!-- 架构图 -->
+            <div class="bg-white rounded-2xl shadow-xl p-8 mb-12">
+                <div class="flex flex-col md:flex-row items-center justify-between gap-8">
+                    <!-- 用户 -->
+                    <div class="text-center flex-1">
+                        <div class="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">
+                            👤
+                        </div>
+                        <h3 class="font-bold text-lg">用户</h3>
+                        <p class="text-sm text-gray-500">打开网页浏览</p>
+                    </div>
+
+                    <div class="text-3xl text-gray-300 arrow-animate">→</div>
+
+                    <!-- 前端 -->
+                    <div class="text-center flex-1">
+                        <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">
+                            🖥️
+                        </div>
+                        <h3 class="font-bold text-lg">前端 (HTML)</h3>
+                        <p class="text-sm text-gray-500">显示界面 + 发送请求</p>
+                    </div>
+
+                    <div class="text-3xl text-gray-300 arrow-animate">→</div>
+
+                    <!-- 后端 -->
+                    <div class="text-center flex-1">
+                        <div class="w-24 h-24 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">
+                            ⚡
+                        </div>
+                        <h3 class="font-bold text-lg">后端 (Worker)</h3>
+                        <p class="text-sm text-gray-500">处理请求 + 业务逻辑</p>
+                    </div>
+
+                    <div class="text-3xl text-gray-300 arrow-animate">→</div>
+
+                    <!-- 数据库 -->
+                    <div class="text-center flex-1">
+                        <div class="w-24 h-24 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">
+                            🗄️
+                        </div>
+                        <h3 class="font-bold text-lg">数据库 (D1)</h3>
+                        <p class="text-sm text-gray-500">存储访问记录</p>
+                    </div>
+                </div>
+
+                <div class="mt-8 p-4 bg-gray-50 rounded-lg">
+                    <p class="text-center text-sm text-gray-600">
+                        <span class="font-bold">工作流程：</span>
+                        用户访问网页 → 前端 JavaScript 发起 fetch 请求 → Worker 接收请求并写入数据库 → 查询总数 → 返回 JSON → 前端更新显示
+                    </p>
+                </div>
+            </div>
+
+            <!-- 技术栈卡片 -->
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="bg-white rounded-xl p-6 shadow-lg concept-card">
+                    <div class="text-3xl mb-4">📄</div>
+                    <h3 class="font-bold text-lg mb-2">前端技术</h3>
+                    <ul class="text-sm text-gray-600 space-y-2">
+                        <li>• <strong>HTML5</strong>: 页面结构</li>
+                        <li>• <strong>CSS3</strong>: 样式设计</li>
+                        <li>• <strong>JavaScript</strong>: 动态交互</li>
+                        <li>• <strong>Fetch API</strong>: 网络请求</li>
+                    </ul>
+                </div>
+                <div class="bg-white rounded-xl p-6 shadow-lg concept-card">
+                    <div class="text-3xl mb-4">⚡</div>
+                    <h3 class="font-bold text-lg mb-2">后端技术</h3>
+                    <ul class="text-sm text-gray-600 space-y-2">
+                        <li>• <strong>Cloudflare Workers</strong>: 边缘计算</li>
+                        <li>• <strong>ES Modules</strong>: 模块语法</li>
+                        <li>• <strong>Async/Await</strong>: 异步处理</li>
+                        <li>• <strong>RESTful API</strong>: 接口设计</li>
+                    </ul>
+                </div>
+                <div class="bg-white rounded-xl p-6 shadow-lg concept-card">
+                    <div class="text-3xl mb-4">🗄️</div>
+                    <h3 class="font-bold text-lg mb-2">数据库技术</h3>
+                    <ul class="text-sm text-gray-600 space-y-2">
+                        <li>• <strong>D1</strong>: Cloudflare 的 SQLite</li>
+                        <li>• <strong>SQL</strong>: 数据查询语言</li>
+                        <li>• <strong>参数化查询</strong>: 防 SQL 注入</li>
+                        <li>• <strong>CRUD</strong>: 增删改查</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 前端代码详解 -->
+    <section id="frontend" class="py-20 px-4 bg-white">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-4">📄 前端代码逐行详解</h2>
+            <p class="text-center text-gray-600 mb-12">点击任意代码行查看详细解释</p>
+
+            <div class="grid lg:grid-cols-2 gap-8">
+                <!-- 代码区域 -->
+                <div class="bg-gray-900 rounded-2xl overflow-hidden shadow-2xl">
+                    <div class="flex items-center gap-2 px-4 py-3 bg-gray-800">
+                        <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        <span class="ml-2 text-gray-400 text-sm">index.html</span>
+                    </div>
+                    <div class="p-4 overflow-x-auto text-sm" id="frontend-code">
+                        <!-- 代码将通过 JS 动态生成 -->
+                    </div>
+                </div>
+
+                <!-- 解释区域 -->
+                <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-6 shadow-lg">
+                    <div id="frontend-explanation" class="min-h-[400px]">
+                        <div class="text-center py-12">
+                            <div class="text-6xl mb-4">👆</div>
+                            <p class="text-gray-500">点击左侧的代码行查看详细解释</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 后端代码详解 -->
+    <section id="backend" class="py-20 px-4 bg-gray-100">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-4">⚡ 后端代码逐行详解</h2>
+            <p class="text-center text-gray-600 mb-12">点击任意代码行查看详细解释</p>
+
+            <div class="grid lg:grid-cols-2 gap-8">
+                <!-- 代码区域 -->
+                <div class="bg-gray-900 rounded-2xl overflow-hidden shadow-2xl">
+                    <div class="flex items-center gap-2 px-4 py-3 bg-gray-800">
+                        <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        <span class="ml-2 text-gray-400 text-sm">src/index.js (Cloudflare Worker)</span>
+                    </div>
+                    <div class="p-4 overflow-x-auto text-sm" id="backend-code">
+                        <!-- 代码将通过 JS 动态生成 -->
+                    </div>
+                </div>
+
+                <!-- 解释区域 -->
+                <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 shadow-lg">
+                    <div id="backend-explanation" class="min-h-[400px]">
+                        <div class="text-center py-12">
+                            <div class="text-6xl mb-4">👆</div>
+                            <p class="text-gray-500">点击左侧的代码行查看详细解释</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 数据流动可视化 -->
+    <section id="flow" class="py-20 px-4 bg-white">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-4">🔄 数据流动可视化</h2>
+            <p class="text-center text-gray-600 mb-12">点击下方按钮，观察数据如何在前后端之间流动</p>
+
+            <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 text-white">
+                <!-- 流程控制 -->
+                <div class="flex justify-center gap-4 mb-8">
+                    <button onclick="startFlow()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold transition">
+                        ▶️ 开始演示
+                    </button>
+                    <button onclick="resetFlow()" class="px-6 py-3 bg-gray-600 hover:bg-gray-700 rounded-lg font-bold transition">
+                        🔄 重置
+                    </button>
+                </div>
+
+                <!-- 流程图 -->
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-center mb-8">
+                    <div id="flow-1" class="flow-step bg-blue-600/30 border-2 border-blue-500 rounded-xl p-4 text-center">
+                        <div class="text-3xl mb-2">👤</div>
+                        <div class="font-bold">用户访问</div>
+                        <div class="text-xs opacity-75">打开网页</div>
+                    </div>
+                    <div class="text-center text-2xl hidden md:block">→</div>
+                    <div id="flow-2" class="flow-step bg-green-600/30 border-2 border-green-500 rounded-xl p-4 text-center">
+                        <div class="text-3xl mb-2">📤</div>
+                        <div class="font-bold">fetch 请求</div>
+                        <div class="text-xs opacity-75">发送到 Worker</div>
+                    </div>
+                    <div class="text-center text-2xl hidden md:block">→</div>
+                    <div id="flow-3" class="flow-step bg-purple-600/30 border-2 border-purple-500 rounded-xl p-4 text-center">
+                        <div class="text-3xl mb-2">⚡</div>
+                        <div class="font-bold">Worker 处理</div>
+                        <div class="text-xs opacity-75">CORS + 收集信息</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-center mb-8">
+                    <div id="flow-4" class="flow-step bg-orange-600/30 border-2 border-orange-500 rounded-xl p-4 text-center">
+                        <div class="text-3xl mb-2">💾</div>
+                        <div class="font-bold">写入数据库</div>
+                        <div class="text-xs opacity-75">INSERT 语句</div>
+                    </div>
+                    <div class="text-center text-2xl hidden md:block">→</div>
+                    <div id="flow-5" class="flow-step bg-yellow-600/30 border-2 border-yellow-500 rounded-xl p-4 text-center">
+                        <div class="text-3xl mb-2">🔍</div>
+                        <div class="font-bold">查询总数</div>
+                        <div class="text-xs opacity-75">SELECT COUNT</div>
+                    </div>
+                    <div class="text-center text-2xl hidden md:block">→</div>
+                    <div id="flow-6" class="flow-step bg-pink-600/30 border-2 border-pink-500 rounded-xl p-4 text-center">
+                        <div class="text-3xl mb-2">📥</div>
+                        <div class="font-bold">返回 JSON</div>
+                        <div class="text-xs opacity-75">带 CORS 头</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+                    <div class="md:col-start-3">
+                        <div id="flow-7" class="flow-step bg-cyan-600/30 border-2 border-cyan-500 rounded-xl p-4 text-center">
+                            <div class="text-3xl mb-2">✨</div>
+                            <div class="font-bold">更新页面</div>
+                            <div class="text-xs opacity-75">显示计数</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 当前步骤说明 -->
+                <div id="flow-description" class="mt-8 p-4 bg-white/10 rounded-lg text-center">
+                    <p>点击"开始演示"观察数据流动过程</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 核心概念深入 -->
+    <section id="concepts" class="py-20 px-4 bg-gray-100">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-4">💡 核心概念深入</h2>
+            <p class="text-center text-gray-600 mb-12">点击卡片展开详细内容</p>
+
+            <div class="space-y-6">
+                <!-- CORS -->
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                    <button onclick="toggleConcept('cors')" class="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition">
+                        <div class="flex items-center gap-4">
+                            <span class="text-4xl">🛡️</span>
+                            <div class="text-left">
+                                <h3 class="font-bold text-xl">CORS (跨域资源共享)</h3>
+                                <p class="text-gray-500">浏览器安全机制与解决方案</p>
+                            </div>
+                        </div>
+                        <span id="cors-arrow" class="text-2xl transition-transform">▼</span>
+                    </button>
+                    <div id="cors-content" class="hidden px-6 pb-6">
+                        <div class="bg-gray-50 rounded-xl p-6 space-y-4">
+                            <div>
+                                <h4 class="font-bold text-lg mb-2">🤔 什么是 CORS？</h4>
+                                <p class="text-gray-600">CORS (Cross-Origin Resource Sharing) 是浏览器的一种安全策略。当你的网页（源A）试图请求另一个不同域名的服务器（源B）时，浏览器会阻止这个请求，除非服务器明确表示"我允许你访问"。</p>
+                            </div>
+
+                            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                                <h5 class="font-bold text-red-700">❌ 没有 CORS 头时的错误</h5>
+                                <code class="text-sm text-red-600 block mt-2">
+                                    Access to fetch at 'https://api.example.com' from origin 'http://localhost' has been blocked by CORS policy
+                                </code>
+                            </div>
+
+                            <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded">
+                                <h5 class="font-bold text-green-700">✅ 解决方案</h5>
+                                <pre class="text-sm mt-2 bg-gray-800 text-white p-3 rounded overflow-x-auto"><code>const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",      // 允许所有来源
+  "Access-Control-Allow-Methods": "GET,POST", // 允许的方法
+  "Access-Control-Allow-Headers": "Content-Type" // 允许的请求头
+};</code></pre>
+                            </div>
+
+                            <div>
+                                <h4 class="font-bold text-lg mb-2">🔍 预检请求 (Preflight)</h4>
+                                <p class="text-gray-600 mb-2">浏览器在发送某些请求前，会先发一个 OPTIONS 请求"打探一下"：</p>
+                                <div class="flex items-center gap-4 text-sm">
+                                    <div class="bg-blue-100 p-3 rounded flex-1 text-center">
+                                        <div class="font-bold">浏览器</div>
+                                        <div class="text-xs">OPTIONS /api</div>
+                                        <div class="text-xs">"我能访问你吗？"</div>
+                                    </div>
+                                    <span>→</span>
+                                    <div class="bg-purple-100 p-3 rounded flex-1 text-center">
+                                        <div class="font-bold">服务器</div>
+                                        <div class="text-xs">200 OK + CORS头</div>
+                                        <div class="text-xs">"可以，来吧"</div>
+                                    </div>
+                                    <span>→</span>
+                                    <div class="bg-green-100 p-3 rounded flex-1 text-center">
+                                        <div class="font-bold">浏览器</div>
+                                        <div class="text-xs">GET /api</div>
+                                        <div class="text-xs">"正式请求"</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SQL 注入 -->
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                    <button onclick="toggleConcept('sql')" class="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition">
+                        <div class="flex items-center gap-4">
+                            <span class="text-4xl">💉</span>
+                            <div class="text-left">
+                                <h3 class="font-bold text-xl">SQL 注入防护</h3>
+                                <p class="text-gray-500">参数化查询的重要性</p>
+                            </div>
+                        </div>
+                        <span id="sql-arrow" class="text-2xl transition-transform">▼</span>
+                    </button>
+                    <div id="sql-content" class="hidden px-6 pb-6">
+                        <div class="bg-gray-50 rounded-xl p-6 space-y-4">
+                            <div>
+                                <h4 class="font-bold text-lg mb-2">🤔 什么是 SQL 注入？</h4>
+                                <p class="text-gray-600">SQL 注入是一种攻击方式，黑客通过在输入框中填入特殊的 SQL 代码，试图操控数据库执行非预期的命令。</p>
+                            </div>
+
+                            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                                <h5 class="font-bold text-red-700">❌ 危险的字符串拼接</h5>
+                                <pre class="text-sm mt-2 bg-gray-800 text-white p-3 rounded overflow-x-auto"><code>// 🚫 千万不要这样写！
+const sql = "INSERT INTO logs VALUES ('" + userInput + "')";
+// 如果 userInput = "'); DROP TABLE logs; --"
+// 最终 SQL 变成：INSERT INTO logs VALUES (''); DROP TABLE logs; --')
+// 你的表就被删除了！</code></pre>
+                            </div>
+
+                            <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded">
+                                <h5 class="font-bold text-green-700">✅ 安全的参数化查询</h5>
+                                <pre class="text-sm mt-2 bg-gray-800 text-white p-3 rounded overflow-x-auto"><code>// ✅ 正确做法：使用 ? 占位符
+await env.DB.prepare(
+  "INSERT INTO Visit_Logs (access_time, country, user_agent) VALUES (?, ?, ?)"
+).bind(time, country, userAgent).run();
+
+// 数据库会自动把参数当作"纯文本"处理
+// 任何恶意代码都只会被当作普通字符串存储</code></pre>
+                            </div>
+
+                            <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
+                                <h5 class="font-bold text-yellow-700">💡 记忆口诀</h5>
+                                <p class="text-yellow-800 font-bold">"永远不要相信用户输入，永远使用参数化查询"</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Async/Await -->
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                    <button onclick="toggleConcept('async')" class="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition">
+                        <div class="flex items-center gap-4">
+                            <span class="text-4xl">⏳</span>
+                            <div class="text-left">
+                                <h3 class="font-bold text-xl">Async/Await 异步编程</h3>
+                                <p class="text-gray-500">理解 JavaScript 的异步机制</p>
+                            </div>
+                        </div>
+                        <span id="async-arrow" class="text-2xl transition-transform">▼</span>
+                    </button>
+                    <div id="async-content" class="hidden px-6 pb-6">
+                        <div class="bg-gray-50 rounded-xl p-6 space-y-4">
+                            <div>
+                                <h4 class="font-bold text-lg mb-2">🤔 为什么需要异步？</h4>
+                                <p class="text-gray-600">网络请求、数据库操作都是"耗时操作"。如果 JavaScript 傻等这些操作完成，页面就会卡住。异步让程序"先去做别的事，等结果回来再处理"。</p>
+                            </div>
+
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div class="bg-blue-50 p-4 rounded">
+                                    <h5 class="font-bold text-blue-700 mb-2">async 函数</h5>
+                                    <pre class="text-sm bg-gray-800 text-white p-3 rounded"><code>async function fetchData() {
+  // 标记这个函数是异步的
+  // 它会返回一个 Promise
+}</code></pre>
+                                </div>
+                                <div class="bg-purple-50 p-4 rounded">
+                                    <h5 class="font-bold text-purple-700 mb-2">await 关键字</h5>
+                                    <pre class="text-sm bg-gray-800 text-white p-3 rounded"><code>const result = await fetch(url);
+// "等等，等这个请求完成"
+// 拿到结果后再继续执行</code></pre>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h4 class="font-bold text-lg mb-2">🔄 执行流程图解</h4>
+                                <div class="bg-white p-4 rounded border space-y-2 text-sm">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs">1</span>
+                                        <code>const response = await fetch(API_URL);</code>
+                                        <span class="text-gray-400">← 发送请求，暂停等待</span>
+                                    </div>
+                                    <div class="ml-8 text-gray-500 text-xs">⏳ 网络传输中... (其他代码可以执行)</div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs">2</span>
+                                        <code>const data = await response.json();</code>
+                                        <span class="text-gray-400">← 解析 JSON，暂停等待</span>
+                                    </div>
+                                    <div class="ml-8 text-gray-500 text-xs">⏳ 解析中...</div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-xs">3</span>
+                                        <code>document.getElementById(...).innerText = data.total;</code>
+                                        <span class="text-gray-400">← 更新页面</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- request.cf -->
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                    <button onclick="toggleConcept('cf')" class="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition">
+                        <div class="flex items-center gap-4">
+                            <span class="text-4xl">🌍</span>
+                            <div class="text-left">
+                                <h3 class="font-bold text-xl">request.cf 边缘计算元数据</h3>
+                                <p class="text-gray-500">Cloudflare 提供的地理位置信息</p>
+                            </div>
+                        </div>
+                        <span id="cf-arrow" class="text-2xl transition-transform">▼</span>
+                    </button>
+                    <div id="cf-content" class="hidden px-6 pb-6">
+                        <div class="bg-gray-50 rounded-xl p-6 space-y-4">
+                            <div>
+                                <h4 class="font-bold text-lg mb-2">🤔 什么是 request.cf？</h4>
+                                <p class="text-gray-600">当请求经过 Cloudflare 的全球网络时，Cloudflare 会自动分析请求来源，并把这些信息附加到 <code>request.cf</code> 对象中。这是边缘计算的福利！</p>
+                            </div>
+
+                            <div class="bg-orange-50 border-l-4 border-orange-500 p-4 rounded">
+                                <h5 class="font-bold text-orange-700 mb-2">📦 request.cf 包含的信息</h5>
+                                <pre class="text-sm bg-gray-800 text-white p-3 rounded overflow-x-auto"><code>{
+  country: "CN",           // 国家代码
+  city: "Shanghai",        // 城市
+  continent: "AS",         // 大洲
+  latitude: "31.2222",     // 纬度
+  longitude: "121.4581",   // 经度
+  region: "Shanghai",      // 地区
+  timezone: "Asia/Shanghai", // 时区
+  postalCode: "200000",    // 邮编
+  // 还有更多...
+}</code></pre>
+                            </div>
+
+                            <div>
+                                <h4 class="font-bold text-lg mb-2">🔒 可选链操作符 (?.) </h4>
+                                <pre class="text-sm bg-gray-800 text-white p-3 rounded overflow-x-auto"><code>const country = request.cf?.country || "Unknown";
+
+// 这行代码等价于：
+let country;
+if (request.cf && request.cf.country) {
+  country = request.cf.country;
+} else {
+  country = "Unknown";
+}</code></pre>
+                                <p class="text-sm text-gray-600 mt-2">使用 <code>?.</code> 可以安全地访问可能不存在的属性，避免程序崩溃。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Try-Catch -->
+                <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                    <button onclick="toggleConcept('try')" class="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition">
+                        <div class="flex items-center gap-4">
+                            <span class="text-4xl">🛠️</span>
+                            <div class="text-left">
+                                <h3 class="font-bold text-xl">Try-Catch 错误处理</h3>
+                                <p class="text-gray-500">优雅地处理程序异常</p>
+                            </div>
+                        </div>
+                        <span id="try-arrow" class="text-2xl transition-transform">▼</span>
+                    </button>
+                    <div id="try-content" class="hidden px-6 pb-6">
+                        <div class="bg-gray-50 rounded-xl p-6 space-y-4">
+                            <div>
+                                <h4 class="font-bold text-lg mb-2">🤔 为什么需要错误处理？</h4>
+                                <p class="text-gray-600">网络可能断开、数据库可能满了、服务器可能崩溃... 如果不处理这些错误，用户看到的就是白屏或者难以理解的报错。</p>
+                            </div>
+
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div class="bg-red-50 p-4 rounded">
+                                    <h5 class="font-bold text-red-700 mb-2">❌ 不处理错误</h5>
+                                    <pre class="text-sm bg-gray-800 text-white p-3 rounded"><code>const data = await fetch(url);
+// 如果网络失败，程序直接崩溃
+// 用户看到白屏</code></pre>
+                                </div>
+                                <div class="bg-green-50 p-4 rounded">
+                                    <h5 class="font-bold text-green-700 mb-2">✅ 优雅处理</h5>
+                                    <pre class="text-sm bg-gray-800 text-white p-3 rounded"><code>try {
+  const data = await fetch(url);
+} catch (error) {
+  showMessage("网络失败");
+}</code></pre>
+                                </div>
+                            </div>
+
+                            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                                <h5 class="font-bold text-blue-700 mb-2">💡 最佳实践</h5>
+                                <ul class="text-sm text-blue-800 space-y-1">
+                                    <li>• 后端错误时也要返回 CORS 头，否则前端看到的是"网络错误"而非真实错误</li>
+                                    <li>• 给用户友好的提示，而非技术性报错</li>
+                                    <li>• 使用 console.error() 记录详细错误供开发者排查</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 互动测验 -->
+    <section id="quiz" class="py-20 px-4 bg-gradient-to-br from-purple-600 to-pink-600 text-white">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-4">🎯 知识测验</h2>
+            <p class="text-center opacity-90 mb-12">检验一下你的理解程度！</p>
+
+            <div id="quiz-container" class="bg-white/10 backdrop-blur-sm rounded-2xl p-8">
+                <div id="quiz-question" class="text-xl font-bold mb-6"></div>
+                <div id="quiz-options" class="space-y-3"></div>
+                <div id="quiz-feedback" class="mt-6 hidden p-4 rounded-lg"></div>
+                <div class="mt-6 flex justify-between items-center">
+                    <div id="quiz-progress" class="text-sm opacity-75"></div>
+                    <button id="quiz-next" onclick="nextQuestion()" class="hidden px-6 py-2 bg-white text-purple-600 rounded-lg font-bold hover:scale-105 transition">
+                        下一题 →
+                    </button>
+                </div>
+            </div>
+
+            <div id="quiz-result" class="hidden text-center py-12">
+                <div class="text-6xl mb-4">🎉</div>
+                <h3 class="text-3xl font-bold mb-4">测验完成！</h3>
+                <p id="quiz-score" class="text-xl mb-6"></p>
+                <button onclick="restartQuiz()" class="px-8 py-3 bg-white text-purple-600 rounded-lg font-bold hover:scale-105 transition">
+                    重新测验
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="bg-gray-900 text-white py-12 px-4">
+        <div class="max-w-6xl mx-auto text-center">
+            <p class="text-gray-400 mb-4">📚 全栈计数器教程 - 交互式学习</p>
+            <p class="text-sm text-gray-500">掌握了这些知识，你就可以构建更复杂的全栈应用了！</p>
+            <div class="mt-6 flex justify-center gap-4 text-sm">
+                <span class="px-3 py-1 bg-gray-800 rounded">HTML</span>
+                <span class="px-3 py-1 bg-gray-800 rounded">CSS</span>
+                <span class="px-3 py-1 bg-gray-800 rounded">JavaScript</span>
+                <span class="px-3 py-1 bg-gray-800 rounded">Cloudflare Workers</span>
+                <span class="px-3 py-1 bg-gray-800 rounded">D1 Database</span>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // ==================== 前端代码数据 ====================
+        const frontendLines = [
+            { code: '<!DOCTYPE html>', type: 'html', explanation: { title: 'HTML5 文档声明', content: '这是 HTML5 的标准声明，告诉浏览器这是一个 HTML5 文档。必须放在文档最开头。', icon: '📄' }},
+            { code: '<html lang="zh-CN">', type: 'html', explanation: { title: 'HTML 根元素', content: '<strong>lang="zh-CN"</strong> 告诉搜索引擎和屏幕阅读器这是简体中文页面，有助于 SEO 和无障碍访问。', icon: '🌐' }},
+            { code: '<head>', type: 'html', explanation: { title: 'head 标签', content: '头部区域，包含页面的元信息（如编码、标题、样式），这些内容不会直接显示在页面上。', icon: '🧠' }},
+            { code: '    <meta charset="UTF-8">', type: 'html', explanation: { title: '字符编码声明', content: 'UTF-8 是一种通用编码，支持中文、日文、表情符号等几乎所有字符。没有它，中文可能显示为乱码。', icon: '🔤' }},
+            { code: '    <meta name="viewport" content="width=device-width, initial-scale=1.0">', type: 'html', explanation: { title: '视口设置', content: '让页面在手机上也能正常显示。<br><strong>width=device-width</strong>: 宽度等于设备宽度<br><strong>initial-scale=1.0</strong>: 初始缩放比例为 1', icon: '📱' }},
+            { code: '    <title>我的全栈计数器</title>', type: 'html', explanation: { title: '页面标题', content: '显示在浏览器标签页上的文字，也是搜索引擎抓取的重要信息。', icon: '🏷️' }},
+            { code: '    <style>', type: 'css', explanation: { title: 'style 内部样式表', content: '在 HTML 文件内直接编写 CSS 样式。适合小型项目或独立页面。', icon: '🎨' }},
+            { code: '        body { display: flex; justify-content: center; ... }', type: 'css', explanation: { title: 'Flexbox 居中布局', content: '<strong>display: flex</strong>: 启用弹性盒布局<br><strong>justify-content: center</strong>: 水平居中<br><strong>align-items: center</strong>: 垂直居中<br><strong>height: 100vh</strong>: 高度为视窗的 100%', icon: '📐' }},
+            { code: '        .card { background: white; padding: 2rem; ... }', type: 'css', explanation: { title: '卡片样式', content: '<strong>border-radius: 1rem</strong>: 圆角边框<br><strong>box-shadow</strong>: 阴影效果，让卡片"浮起来"<br><strong>text-align: center</strong>: 文字居中', icon: '🃏' }},
+            { code: '    </style>', type: 'css', explanation: { title: '样式标签结束', content: 'CSS 代码结束。', icon: '✅' }},
+            { code: '</head>', type: 'html', explanation: { title: 'head 结束', content: '头部信息定义完毕，接下来是页面可见内容。', icon: '✅' }},
+            { code: '<body>', type: 'html', explanation: { title: 'body 开始', content: '页面的主体内容区域，用户能看到的所有内容都在这里。', icon: '👁️' }},
+            { code: '    <div class="card">', type: 'html', explanation: { title: '卡片容器', content: 'class="card" 应用了上面定义的 .card 样式，创建一个白色圆角卡片。', icon: '📦' }},
+            { code: '        <p>网页总访问量</p>', type: 'html', explanation: { title: '段落文字', content: '静态文字，告诉用户这个数字代表什么。', icon: '📝' }},
+            { code: '        <h1 id="count-display">...</h1>', type: 'html', explanation: { title: '计数显示区', content: '<strong>id="count-display"</strong> 给这个元素一个唯一标识符，JavaScript 可以通过这个 ID 找到它并更新内容。初始显示 "..." 表示正在加载。', icon: '🔢' }},
+            { code: '        <div class="info" id="info-display">正在连接后端...</div>', type: 'html', explanation: { title: '信息显示区', content: '用于显示用户位置信息。id="info-display" 让 JS 可以动态更新它。', icon: '📍' }},
+            { code: '        <div class="info" id="info-display1"></div>', type: 'html', explanation: { title: '用户代理显示区', content: '用于显示用户的浏览器/设备信息。', icon: '💻' }},
+            { code: '    </div>', type: 'html', explanation: { title: 'div 结束', content: '卡片容器关闭。', icon: '✅' }},
+            { code: '', type: 'empty', explanation: { title: '空行', content: '增加代码可读性。', icon: '📏' }},
+            { code: '    <script>', type: 'js', explanation: { title: 'JavaScript 开始', content: '页面的动态交互逻辑从这里开始。', icon: '⚡' }},
+            { code: '        const API_URL = "https://db.myname.workers.dev/";', type: 'js', explanation: { title: 'API 地址常量', content: '<strong>const</strong>: 声明常量（不可修改）<br>这个 URL 指向你部署的 Cloudflare Worker 后端。<br>⚠️ 需要替换成你自己的 Worker 地址！', icon: '🔗' }},
+            { code: '', type: 'empty', explanation: { title: '空行', content: '', icon: '' }},
+            { code: '        async function recordVisit() {', type: 'js', explanation: { title: '异步函数定义', content: '<strong>async</strong>: 标记这是一个异步函数<br><strong>function recordVisit()</strong>: 函数名叫 recordVisit（记录访问）<br>异步函数内可以使用 await 等待耗时操作。', icon: '🔄' }},
+            { code: '            try {', type: 'js', explanation: { title: 'try 块开始', content: '尝试执行下面的代码。如果出错，会跳转到 catch 块，而不是让程序崩溃。这叫"错误处理"。', icon: '🛡️' }},
+            { code: '                const response = await fetch(API_URL);', type: 'js', explanation: { title: '发送 HTTP 请求', content: '<strong>fetch(API_URL)</strong>: 向后端发送 GET 请求<br><strong>await</strong>: 等待请求完成<br><strong>const response</strong>: 把响应对象保存到变量<br>response 包含状态码、响应头等信息。', icon: '📤' }},
+            { code: '', type: 'empty', explanation: { title: '空行', content: '', icon: '' }},
+            { code: '                const data = await response.json();', type: 'js', explanation: { title: '解析 JSON', content: '<strong>response.json()</strong>: 把响应体解析为 JavaScript 对象<br><strong>await</strong>: 解析也是异步操作，需要等待<br>解析后 data 就是后端返回的对象，如 { total_visits: 123, your_info: {...} }', icon: '📥' }},
+            { code: '', type: 'empty', explanation: { title: '空行', content: '', icon: '' }},
+            { code: '                document.getElementById(\'count-display\').innerText = data.total_visits;', type: 'js', explanation: { title: '更新访问量显示', content: '<strong>document.getElementById()</strong>: 通过 ID 找到页面元素<br><strong>.innerText</strong>: 设置元素的文本内容<br><strong>data.total_visits</strong>: 后端返回的总访问量', icon: '🔢' }},
+            { code: '                document.getElementById(\'info-display\').innerText = `你的位置: ${data.your_info.country}`;', type: 'js', explanation: { title: '更新位置信息', content: '<strong>模板字符串 `...`</strong>: 用反引号包裹，可以用 ${} 插入变量<br><strong>data.your_info.country</strong>: 后端返回的国家代码', icon: '📍' }},
+            { code: '                document.getElementById(\'info-display1\').innerText = `你的终端: ${data.your_info.userAgent}`;', type: 'js', explanation: { title: '更新设备信息', content: '显示用户的浏览器和操作系统信息（User-Agent）。', icon: '💻' }},
+            { code: '', type: 'empty', explanation: { title: '空行', content: '', icon: '' }},
+            { code: '            } catch (error) {', type: 'js', explanation: { title: 'catch 错误捕获', content: '如果 try 块中任何代码出错（如网络断开），程序会跳到这里。<br><strong>error</strong> 变量包含错误详情。', icon: '🚨' }},
+            { code: '                console.error("出错了:", error);', type: 'js', explanation: { title: '打印错误日志', content: '<strong>console.error()</strong>: 在浏览器开发者工具的控制台打印红色错误信息，方便调试。', icon: '🔍' }},
+            { code: '                document.getElementById(\'info-display\').innerText = "连接服务器失败";', type: 'js', explanation: { title: '显示友好错误提示', content: '给用户一个人类可读的提示，而不是让他们看到白屏或技术性报错。', icon: '⚠️' }},
+            { code: '            }', type: 'js', explanation: { title: 'try-catch 结束', content: '错误处理块结束。', icon: '✅' }},
+            { code: '        }', type: 'js', explanation: { title: '函数结束', content: 'recordVisit 函数定义完毕。', icon: '✅' }},
+            { code: '', type: 'empty', explanation: { title: '空行', content: '', icon: '' }},
+            { code: '        recordVisit();', type: 'js', explanation: { title: '立即调用函数', content: '页面加载完成后，立即执行 recordVisit() 函数，发起请求获取数据。这行是实际触发网络请求的代码！', icon: '🚀' }},
+            { code: '    </script>', type: 'js', explanation: { title: 'JavaScript 结束', content: '脚本标签关闭。', icon: '✅' }},
+            { code: '</body>', type: 'html', explanation: { title: 'body 结束', content: '页面主体内容结束。', icon: '✅' }},
+            { code: '</html>', type: 'html', explanation: { title: 'HTML 结束', content: '整个 HTML 文档结束。', icon: '🏁' }},
+        ];
+
+        // ==================== 后端代码数据 ====================
+        const backendLines = [
+            { code: 'export default {', type: 'js', explanation: { title: 'ES Module 导出', content: '<strong>export default</strong>: ES6 模块语法，导出一个默认对象<br>Cloudflare Workers 使用这种格式来定义处理逻辑。这个对象就是你的"应用程序"。', icon: '📦' }},
+            { code: '  async fetch(request, env, ctx) {', type: 'js', explanation: { title: 'fetch 处理函数', content: '这是 Worker 的核心函数，每次有人访问都会执行。<br><strong>request</strong>: 请求对象（包含 URL、请求头、IP 等）<br><strong>env</strong>: 环境变量（包含绑定的数据库 env.DB）<br><strong>ctx</strong>: 上下文对象（用于后台任务）', icon: '⚡' }},
+            { code: '', type: 'empty', explanation: { title: '空行', content: '', icon: '' }},
+            { code: '    // --- 1. CORS 配置 ---', type: 'comment', explanation: { title: '注释：CORS 部分', content: '代码注释，说明下面的代码是处理跨域资源共享（CORS）的。', icon: '📝' }},
+            { code: '    const corsHeaders = {', type: 'js', explanation: { title: 'CORS 响应头对象', content: '定义一组 HTTP 响应头，告诉浏览器"我允许跨域访问"。这是一个 JavaScript 对象。', icon: '🛡️' }},
+            { code: '      "Access-Control-Allow-Origin": "*",', type: 'js', explanation: { title: '允许的来源', content: '<strong>* (星号)</strong>: 表示允许任何域名访问<br>生产环境可改为具体域名如 "https://mysite.com" 更安全', icon: '🌐' }},
+            { code: '      "Access-Control-Allow-Methods": "GET,HEAD,POST,OPTIONS",', type: 'js', explanation: { title: '允许的 HTTP 方法', content: '告诉浏览器可以使用哪些 HTTP 方法：<br><strong>GET</strong>: 获取数据<br><strong>POST</strong>: 提交数据<br><strong>OPTIONS</strong>: 预检请求<br><strong>HEAD</strong>: 类似 GET 但不返回内容', icon: '📋' }},
+            { code: '      "Access-Control-Allow-Headers": "Content-Type",', type: 'js', explanation: { title: '允许的请求头', content: '允许前端发送 Content-Type 请求头（指定数据格式如 application/json）。', icon: '📨' }},
+            { code: '    };', type: 'js', explanation: { title: '对象结束', content: 'corsHeaders 对象定义完毕。', icon: '✅' }},
+            { code: '', type: 'empty', explanation: { title: '空行', content: '', icon: '' }},
+            { code: '    if (request.method === "OPTIONS") {', type: 'js', explanation: { title: '处理预检请求', content: '<strong>OPTIONS</strong> 是浏览器的"预检请求"<br>在发送实际请求前，浏览器先问服务器"我能访问你吗？"<br>这里直接返回"可以"（带 CORS 头的空响应）。', icon: '❓' }},
+            { code: '      return new Response(null, { headers: corsHeaders });', type: 'js', explanation: { title: '返回预检响应', content: '<strong>new Response(null, ...)</strong>: 创建一个空响应<br><strong>headers: corsHeaders</strong>: 附带 CORS 允许头<br>浏览器收到后知道可以继续发送正式请求。', icon: '✅' }},
+            { code: '    }', type: 'js', explanation: { title: 'if 结束', content: '预检请求处理完毕，后面是正式请求的处理逻辑。', icon: '✅' }},
+            { code: '', type: 'empty', explanation: { title: '空行', content: '', icon: '' }},
+            { code: '    // --- 2. 收集信息 ---', type: 'comment', explanation: { title: '注释：收集信息', content: '接下来从请求中提取访问者的信息。', icon: '📝' }},
+            { code: '    const country = request.cf?.country || "Unknown";', type: 'js', explanation: { title: '获取国家代码', content: '<strong>request.cf</strong>: Cloudflare 自动添加的地理信息对象<br><strong>?.</strong>: 可选链操作符，如果 cf 不存在不会报错<br><strong>|| "Unknown"</strong>: 如果获取不到，默认为 "Unknown"', icon: '🌍' }},
+            { code: '    const userAgent = request.headers.get("User-Agent") || "Unknown";', type: 'js', explanation: { title: '获取用户代理', content: '<strong>request.headers</strong>: 请求头对象<br><strong>.get("User-Agent")</strong>: 获取浏览器信息<br>User-Agent 包含浏览器类型、版本、操作系统等信息。', icon: '💻' }},
+            { code: '    const time = new Date().toISOString();', type: 'js', explanation: { title: '获取当前时间', content: '<strong>new Date()</strong>: 创建当前时间对象<br><strong>.toISOString()</strong>: 转换为标准格式如 "2024-01-15T08:30:00.000Z"<br>ISO 格式全球通用，方便存储和比较。', icon: '🕐' }},
+            { code: '', type: 'empty', explanation: { title: '空行', content: '', icon: '' }},
+            { code: '    // --- 3. 写入数据库 ---', type: 'comment', explanation: { title: '注释：写入数据库', content: '接下来把访问记录写入 D1 数据库。', icon: '📝' }},
+            { code: '    try {', type: 'js', explanation: { title: 'try 块开始', content: '尝试执行数据库操作。如果数据库出错，会被 catch 捕获。', icon: '🛡️' }},
+            { code: '      await env.DB.prepare(', type: 'js', explanation: { title: '准备 SQL 语句', content: '<strong>env.DB</strong>: 在 wrangler.toml 中绑定的 D1 数据库<br><strong>.prepare()</strong>: 准备一条 SQL 语句（但还没执行）<br><strong>await</strong>: 这是异步操作，需要等待', icon: '📋' }},
+            { code: '        "INSERT INTO Visit_Logs (access_time, country, user_agent) VALUES (?, ?, ?)"', type: 'sql', explanation: { title: 'SQL INSERT 语句', content: '<strong>INSERT INTO Visit_Logs</strong>: 向 Visit_Logs 表插入数据<br><strong>(access_time, country, user_agent)</strong>: 指定要填充的列<br><strong>VALUES (?, ?, ?)</strong>: 三个问号是占位符，防止 SQL 注入！', icon: '💾' }},
+            { code: '      ).bind(time, country, userAgent).run();', type: 'js', explanation: { title: '绑定参数并执行', content: '<strong>.bind(time, country, userAgent)</strong>: 把变量按顺序填入 ? 占位符<br><strong>.run()</strong>: 执行这条 SQL（写入数据库）<br>这种方式叫"参数化查询"，100% 防 SQL 注入。', icon: '▶️' }},
+            { code: '', type: 'empty', explanation: { title: '空行', content: '', icon: '' }},
+            { code: '      // --- 4. 查询总数 ---', type: 'comment', explanation: { title: '注释：查询统计', content: '写入完成后，查询一共有多少条记录。', icon: '📝' }},
+            { code: '      const result = await env.DB.prepare(', type: 'js', explanation: { title: '准备查询语句', content: '准备另一条 SQL 语句来查询统计数据。', icon: '📋' }},
+            { code: '        "SELECT COUNT(*) as total FROM Visit_Logs"', type: 'sql', explanation: { title: 'SQL COUNT 查询', content: '<strong>SELECT COUNT(*)</strong>: 统计表中所有行的数量<br><strong>as total</strong>: 给结果起别名叫 "total"，方便取值<br><strong>FROM Visit_Logs</strong>: 从 Visit_Logs 表查询', icon: '🔢' }},
+            { code: '      ).first();', type: 'js', explanation: { title: '获取第一行结果', content: '<strong>.first()</strong>: 只返回结果的第一行<br>因为 COUNT(*) 只会返回一行（就是那个数字），所以用 first() 而不是 all()。', icon: '1️⃣' }},
+            { code: '', type: 'empty', explanation: { title: '空行', content: '', icon: '' }},
+            { code: '      const count = result.total;', type: 'js', explanation: { title: '提取计数值', content: '<strong>result</strong>: 是一个对象 { total: 123 }<br><strong>.total</strong>: 取出 total 属性的值<br>这个值就是数据库中的总访问量。', icon: '🔢' }},
+            { code: '', type: 'empty', explanation: { title: '空行', content: '', icon: '' }},
+            { code: '      // --- 5. 返回结果 ---', type: 'comment', explanation: { title: '注释：返回响应', content: '把结果打包成 JSON 返回给前端。', icon: '📝' }},
+            { code: '      return Response.json(', type: 'js', explanation: { title: '创建 JSON 响应', content: '<strong>Response.json()</strong>: Cloudflare 提供的快捷方法<br>自动将对象转为 JSON 字符串，并设置正确的 Content-Type 头。', icon: '📤' }},
+            { code: '        {', type: 'js', explanation: { title: '响应数据对象', content: '要返回给前端的数据对象。', icon: '📦' }},
+            { code: '          message: "访问记录成功",', type: 'js', explanation: { title: '状态消息', content: '告诉前端操作成功了。虽然这个例子没用到，但是是 API 设计的好习惯。', icon: '✅' }},
+            { code: '          total_visits: count,', type: 'js', explanation: { title: '总访问量', content: '前端需要显示的核心数据——总访问次数。', icon: '🔢' }},
+            { code: '          your_info: { country, userAgent }', type: 'js', explanation: { title: '访客信息', content: '<strong>ES6 简写语法</strong>: { country } 等同于 { country: country }<br>把用户的国家和浏览器信息也返回，让前端显示。', icon: '📋' }},
+            { code: '        },', type: 'js', explanation: { title: '数据对象结束', content: '返回数据定义完毕。', icon: '✅' }},
+            { code: '        { headers: corsHeaders }', type: 'js', explanation: { title: '附加 CORS 头', content: '<strong>关键步骤！</strong>必须把 CORS 头附加到响应上，否则浏览器会拒绝读取数据。很多人忘记这步导致调试半天。', icon: '🔑' }},
+            { code: '      );', type: 'js', explanation: { title: 'Response.json 结束', content: 'JSON 响应创建完成并返回。', icon: '✅' }},
+            { code: '', type: 'empty', explanation: { title: '空行', content: '', icon: '' }},
+            { code: '    } catch (e) {', type: 'js', explanation: { title: 'catch 错误捕获', content: '如果上面的数据库操作失败（如表不存在、语法错误），程序会跳到这里。<br><strong>e</strong> 变量包含错误信息。', icon: '🚨' }},
+            { code: '      return new Response(e.message, { status: 500, headers: corsHeaders });', type: 'js', explanation: { title: '返回错误响应', content: '<strong>e.message</strong>: 错误的描述文字<br><strong>status: 500</strong>: HTTP 状态码，表示服务器内部错误<br><strong>headers: corsHeaders</strong>: 即使出错也要带 CORS 头！否则前端只会看到"网络错误"而非真实错误原因。', icon: '⚠️' }},
+            { code: '    }', type: 'js', explanation: { title: 'try-catch 结束', content: '错误处理块结束。', icon: '✅' }},
+            { code: '  },', type: 'js', explanation: { title: 'fetch 函数结束', content: 'fetch 处理函数定义完毕。', icon: '✅' }},
+            { code: '};', type: 'js', explanation: { title: '模块导出结束', content: '整个 Worker 模块定义完成。当有请求来时，Cloudflare 会调用这个模块的 fetch 函数。', icon: '🏁' }},
+        ];
+
+        // ==================== 渲染代码 ====================
+        function renderCode(containerId, lines, explanationId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = lines.map((line, index) => {
+                const typeColors = {
+                    'html': 'text-orange-400',
+                    'css': 'text-pink-400',
+                    'js': 'text-yellow-400',
+                    'sql': 'text-green-400',
+                    'comment': 'text-gray-500',
+                    'empty': 'text-gray-600'
+                };
+                const colorClass = typeColors[line.type] || 'text-gray-300';
+                const displayCode = line.code || ' ';
+                return `<div class="code-line px-2 py-0.5 font-mono ${colorClass}" data-index="${index}" onclick="showExplanation('${containerId}', ${index}, '${explanationId}')">
+                    <span class="text-gray-600 select-none mr-4">${String(index + 1).padStart(2, '0')}</span>${escapeHtml(displayCode)}
+                </div>`;
+            }).join('');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showExplanation(containerId, index, explanationId) {
+            const lines = containerId === 'frontend-code' ? frontendLines : backendLines;
+            const line = lines[index];
+
+            // 移除之前的高亮
+            document.querySelectorAll(`#${containerId} .code-line`).forEach(el => el.classList.remove('active'));
+            // 添加新高亮
+            document.querySelector(`#${containerId} .code-line[data-index="${index}"]`).classList.add('active');
+
+            const expContainer = document.getElementById(explanationId);
+            if (line.explanation && line.explanation.title) {
+                expContainer.innerHTML = `
+                    <div class="mb-4">
+                        <span class="text-4xl">${line.explanation.icon}</span>
+                    </div>
+                    <h3 class="text-xl font-bold mb-4 text-gray-800">${line.explanation.title}</h3>
+                    <div class="bg-white rounded-lg p-4 mb-4 shadow-sm">
+                        <code class="text-sm text-purple-600 font-mono">${escapeHtml(line.code)}</code>
+                    </div>
+                    <p class="text-gray-600 leading-relaxed">${line.explanation.content}</p>
+                    <div class="mt-4 pt-4 border-t border-gray-200">
+                        <span class="text-xs px-2 py-1 rounded bg-gray-200 text-gray-600">第 ${index + 1} 行</span>
+                        <span class="text-xs px-2 py-1 rounded ml-2 ${
+                            line.type === 'html' ? 'bg-orange-100 text-orange-700' :
+                            line.type === 'css' ? 'bg-pink-100 text-pink-700' :
+                            line.type === 'js' ? 'bg-yellow-100 text-yellow-700' :
+                            line.type === 'sql' ? 'bg-green-100 text-green-700' :
+                            'bg-gray-100 text-gray-700'
+                        }">${line.type.toUpperCase()}</span>
+                    </div>
+                `;
+            }
+        }
+
+        // ==================== 数据流动动画 ====================
+        let flowStep = 0;
+        let flowInterval = null;
+
+        const flowDescriptions = [
+            "🧑 用户在浏览器中打开你的网页...",
+            "📤 页面加载完成，JavaScript 调用 fetch() 向 Worker 发送请求...",
+            "⚡ Worker 接收请求，检查 CORS，收集用户的国家和浏览器信息...",
+            "💾 Worker 执行 INSERT 语句，将访问记录写入 D1 数据库...",
+            "🔍 Worker 执行 SELECT COUNT(*) 查询，统计总访问量...",
+            "📥 Worker 将结果打包成 JSON，附上 CORS 头返回给前端...",
+            "✨ 前端收到数据，更新页面显示访问量和用户信息！"
+        ];
+
+        function startFlow() {
+            resetFlow();
+            flowStep = 0;
+            flowInterval = setInterval(() => {
+                if (flowStep >= 7) {
+                    clearInterval(flowInterval);
+                    return;
+                }
+                document.getElementById(`flow-${flowStep + 1}`).classList.add('active');
+                document.getElementById('flow-description').innerHTML = flowDescriptions[flowStep];
+                flowStep++;
+            }, 1500);
+        }
+
+        function resetFlow() {
+            if (flowInterval) clearInterval(flowInterval);
+            flowStep = 0;
+            for (let i = 1; i <= 7; i++) {
+                document.getElementById(`flow-${i}`).classList.remove('active');
+            }
+            document.getElementById('flow-description').innerHTML = '点击"开始演示"观察数据流动过程';
+        }
+
+        // ==================== 概念展开/收起 ====================
+        function toggleConcept(id) {
+            const content = document.getElementById(`${id}-content`);
+            const arrow = document.getElementById(`${id}-arrow`);
+
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                arrow.style.transform = 'rotate(180deg)';
+            } else {
+                content.classList.add('hidden');
+                arrow.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        // ==================== 测验系统 ====================
+        const quizQuestions = [
+            {
+                question: "CORS 的全称是什么？它解决什么问题？",
+                options: [
+                    "Cross-Origin Resource Sharing，解决跨域访问问题",
+                    "Content Origin Resource System，解决内容分发问题",
+                    "Central Operation Request Service，解决请求管理问题",
+                    "Cross Object Reference Standard，解决对象引用问题"
+                ],
+                correct: 0,
+                explanation: "CORS (Cross-Origin Resource Sharing) 跨域资源共享，允许浏览器向不同源的服务器发送请求。"
+            },
+            {
+                question: "为什么使用 VALUES (?, ?, ?) 而不是直接拼接字符串？",
+                options: [
+                    "为了让代码看起来更简洁",
+                    "为了防止 SQL 注入攻击",
+                    "为了提高数据库查询速度",
+                    "这只是一种代码风格偏好"
+                ],
+                correct: 1,
+                explanation: "使用参数化查询 (?) 可以防止 SQL 注入攻击。数据库会自动将参数当作纯文本处理。"
+            },
+            {
+                question: "async/await 的作用是什么？",
+                options: [
+                    "让代码运行得更快",
+                    "处理异步操作，让代码更易读",
+                    "加密传输的数据",
+                    "减少代码的行数"
+                ],
+                correct: 1,
+                explanation: "async/await 让异步代码看起来像同步代码，更容易理解和维护。"
+            },
+            {
+                question: "request.cf 是什么？由谁提供？",
+                options: [
+                    "用户手动填写的表单数据",
+                    "前端 JavaScript 创建的对象",
+                    "Cloudflare 自动添加的地理位置信息",
+                    "数据库返回的查询结果"
+                ],
+                correct: 2,
+                explanation: "request.cf 是 Cloudflare 边缘网络自动附加的对象，包含用户的地理位置、时区等信息。"
+            },
+            {
+                question: "为什么 catch 块中也要附带 corsHeaders？",
+                options: [
+                    "这只是代码风格，不是必需的",
+                    "让错误信息看起来更美观",
+                    "否则前端会看到 CORS 错误而非真实错误",
+                    "为了加快错误响应速度"
+                ],
+                correct: 2,
+                explanation: "如果错误响应不带 CORS 头，浏览器会拦截响应，前端只会看到"网络错误"而无法获取真正的错误信息。"
+            },
+            {
+                question: "document.getElementById('count-display').innerText = data.total_visits 这行代码做了什么？",
+                options: [
+                    "向服务器发送访问量数据",
+                    "从服务器获取 count-display 的值",
+                    "将后端返回的访问量显示在页面上",
+                    "在数据库中创建一个新记录"
+                ],
+                correct: 2,
+                explanation: "这行代码找到 ID 为 count-display 的 HTML 元素，并将其文本内容设置为后端返回的访问量。"
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+
+        function renderQuestion() {
+            const q = quizQuestions[currentQuestion];
+            document.getElementById('quiz-question').textContent = `${currentQuestion + 1}. ${q.question}`;
+            document.getElementById('quiz-options').innerHTML = q.options.map((opt, i) => `
+                <button onclick="checkAnswer(${i})" class="quiz-option w-full text-left p-4 bg-white/20 hover:bg-white/30 rounded-lg transition">
+                    <span class="font-bold mr-2">${String.fromCharCode(65 + i)}.</span> ${opt}
+                </button>
+            `).join('');
+            document.getElementById('quiz-progress').textContent = `${currentQuestion + 1} / ${quizQuestions.length}`;
+            document.getElementById('quiz-feedback').classList.add('hidden');
+            document.getElementById('quiz-next').classList.add('hidden');
+        }
+
+        function checkAnswer(selected) {
+            const q = quizQuestions[currentQuestion];
+            const feedback = document.getElementById('quiz-feedback');
+            const options = document.querySelectorAll('.quiz-option');
+
+            options.forEach((opt, i) => {
+                opt.disabled = true;
+                if (i === q.correct) {
+                    opt.classList.add('bg-green-500/50');
+                } else if (i === selected && selected !== q.correct) {
+                    opt.classList.add('bg-red-500/50');
+                }
+            });
+
+            if (selected === q.correct) {
+                score++;
+                feedback.innerHTML = `<div class="text-green-200">✅ 正确！${q.explanation}</div>`;
+                feedback.className = 'mt-6 p-4 rounded-lg bg-green-500/30';
+            } else {
+                feedback.innerHTML = `<div class="text-red-200">❌ 错误。${q.explanation}</div>`;
+                feedback.className = 'mt-6 p-4 rounded-lg bg-red-500/30';
+            }
+            feedback.classList.remove('hidden');
+
+            if (currentQuestion < quizQuestions.length - 1) {
+                document.getElementById('quiz-next').classList.remove('hidden');
+            } else {
+                setTimeout(showResult, 1500);
+            }
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            renderQuestion();
+        }
+
+        function showResult() {
+            document.getElementById('quiz-container').classList.add('hidden');
+            document.getElementById('quiz-result').classList.remove('hidden');
+            const percentage = Math.round((score / quizQuestions.length) * 100);
+            let message = '';
+            if (percentage === 100) message = '🎉 完美！你已经完全掌握了！';
+            else if (percentage >= 80) message = '👏 很棒！基本概念都理解了！';
+            else if (percentage >= 60) message = '👍 不错，再复习一下就更好了！';
+            else message = '📚 建议再回顾一下教程内容哦！';
+            document.getElementById('quiz-score').innerHTML = `你答对了 ${score} / ${quizQuestions.length} 题 (${percentage}%)<br><span class="text-lg">${message}</span>`;
+        }
+
+        function restartQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            document.getElementById('quiz-container').classList.remove('hidden');
+            document.getElementById('quiz-result').classList.add('hidden');
+            renderQuestion();
+        }
+
+        // ==================== 初始化 ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            renderCode('frontend-code', frontendLines, 'frontend-explanation');
+            renderCode('backend-code', backendLines, 'backend-explanation');
+            renderQuestion();
+        });
+    </script>
+</body>
+</html>

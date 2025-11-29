@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WinWeb 数据库(D1) 创建详解</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --primary: #10b981; /* D1 Green */
+            --secondary: #3b82f6;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --terminal-bg: #1e293b;
+            --text-main: #334155;
+            --code-text: #e2e8f0;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6; background: var(--bg-color); color: var(--text-main); margin: 0; padding: 20px; }
+        .container { max-width: 950px; margin: 0 auto; }
+
+        h1 { text-align: center; color: #0f172a; margin-bottom: 10px; }
+        h2 {
+            border-left: 5px solid var(--primary);
+            padding-left: 15px;
+            margin-top: 50px;
+            color: #1e293b;
+            background: #e2e8f0;
+            padding: 12px 15px;
+            border-radius: 0 8px 8px 0;
+        }
+
+        /* 终端模拟器 */
+        .terminal-window {
+            background: var(--terminal-bg);
+            color: var(--code-text);
+            border-radius: 8px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            margin: 20px 0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+        }
+        .terminal-header { background: #334155; padding: 8px 15px; display: flex; gap: 6px; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .dot.red { background: #ef4444; }
+        .dot.yellow { background: #f59e0b; }
+        .dot.green { background: #10b981; }
+        .terminal-body { padding: 20px; white-space: pre-wrap; }
+
+        .cmd { color: #fff; font-weight: bold; }
+        .prompt { color: #10b981; }
+        .output { color: #cbd5e1; }
+        .highlight { color: #facc15; font-weight: bold; }
+        .id-highlight { color: #a78bfa; font-weight: bold; border-bottom: 1px dashed #a78bfa; }
+
+        /* 概念卡片 */
+        .concept-card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-top: 4px solid var(--primary);
+        }
+
+        /* Q&A */
+        .qa-box { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 15px; border-radius: 6px; margin-top: 15px; }
+        .qa-title { color: #166534; font-weight: bold; margin-bottom: 5px; }
+
+        pre { background: #1e293b; color: var(--code-text); padding: 15px; border-radius: 8px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>WinWeb D1 数据库创建详解</h1>
+    <p style="text-align: center; color: #64748b;">命令行交互 · 唯一ID解读 · 绑定配置 · 访问原理</p>
+
+    <!-- 1. 执行命令与反馈 -->
+    <h2>1. 命令行实战：创建数据库</h2>
+    <p>请在你的项目根目录下（和 <code>backend</code> 文件夹同级的位置）运行以下命令。这里我们把数据库命名为 <code>winweb-db</code>。</p>
+
+    <div class="terminal-window">
+        <div class="terminal-header"><div class="dot red"></div><div class="dot yellow"></div><div class="dot green"></div></div>
+        <div class="terminal-body">
+<span class="prompt">user@project:~$</span> <span class="cmd">npx wrangler d1 create winweb-db</span>
+
+<span class="output">✅ Successfully created DB 'winweb-db' in region APAC</span>
+
+<span class="output">Created your new D1 database!</span>
+<span class="output">[[d1_databases]]</span>
+<span class="output">binding = "DB"</span>
+<span class="output">database_name = "winweb-db"</span>
+<span class="output">database_id = "<span class="id-highlight">e2e4a1b2-xxxx-xxxx-xxxx-xxxxxxxxxxxx</span>"</span>
+
+<span class="output">To configure your Worker, add the above config to your wrangler.toml</span>
+        </div>
+    </div>
+
+    <div class="concept-card">
+        <h3>🔎 深度解码：发生了什么？</h3>
+        <ul>
+            <li><strong>云端注册：</strong> 命令发送瞬间，Cloudflare 在它的服务器上为你开辟了一个专属的 SQLite 数据库空间。</li>
+            <li><strong>winweb-db：</strong> 这只是你给人看的“昵称”，方便你记。</li>
+            <li><strong>database_id (最重要)：</strong> 看到那个长长的 UUID 了吗？<br>这是数据库的<strong>唯一真实身份</strong>。无论你以后给它改什么名，这个 ID 永远不变。Worker 必须靠这个 ID 才能找到它。</li>
+        </ul>
+    </div>
+
+    <!-- 2. 关键配置 -->
+    <h2>2. 桥梁搭建：配置 wrangler.jsonc</h2>
+    <p>创建完数据库后，它现在孤零零地飘在云端。你必须修改 Worker 的配置文件，把它“挂载”到 Worker 上。</p>
+
+    <p>打开 <code>backend/wrangler.jsonc</code>，把终端里吐给你的那几行复制进去（注意 JSONC 格式）：</p>
+
+    <pre><code class="language-json">{
+  "name": "winweb-stats",
+  "main": "src/index.js",
+  "compatibility_date": "2025-02-19",
+
+  <span class="highlight">// ▼ 把这一段加进去 ▼</span>
+  "d1_databases": [
+    {
+      "binding": "DB",  <span class="comment">// 代码里用 env.DB 调用它</span>
+      "database_name": "winweb-db",
+      "database_id": "<span class="id-highlight">e2e4a1b2-xxxx-xxxx-xxxx-xxxxxxxxxxxx</span>" <span class="comment">// 刚才生成的那个长ID</span>
+    }
+  ]
+}</code></pre>
+
+    <!-- 3. 核心疑问解答 -->
+    <h2>3. 核心概念扫盲：地址与访问</h2>
+
+    <div class="qa-box">
+        <div class="qa-title">Q: 这个数据库有访问地址吗？（比如 https://db.cloudf...）</div>
+        <p><strong>A: 绝对没有！这也是它安全的根本原因。</strong></p>
+        <p>D1 数据库不像 Worker 那样有公网 URL。它是一个<strong>内部资源</strong>。
+        <br><strong>访问路径是这样的：</strong>
+        <br>用户的浏览器 ➔ (公网 HTTPS) ➔ <strong>你的 Worker</strong> ➔ (内部专用通道) ➔ <strong>D1 数据库</strong></p>
+        <p>外界只有拥有权限的 Worker 才能摸到数据库，黑客无法直接从外部攻击数据库端口。</p>
+    </div>
+
+    <div class="qa-box" style="border-color:#cbd5e1; background:#f8fafc;">
+        <div class="qa-title" style="color:#334155;">Q: 数据库创建好了，里面是空的吗？</div>
+        <p><strong>A: 是的，它是完全空的。</strong></p>
+        <p>就像你买了一个新本子，里面一张纸都没写。你现在还不能存数据。
+        <br><strong>下一步动作：</strong> 你需要执行 SQL 语句来创建“表格”（Table）。</p>
+    </div>
+
+    <!-- 4. 初始化表格 (下一步预告) -->
+    <h2>4. 趁热打铁：初始化表格</h2>
+    <p>既然建立了库，我们顺手把表也建了吧。请在项目根目录创建一个文件 <code>schema.sql</code>：</p>
+
+    <pre><code class="language-sql">-- schema.sql
+CREATE TABLE IF NOT EXISTS analytics (
+    app_id TEXT PRIMARY KEY,
+    hits INTEGER DEFAULT 0
+);</code></pre>
+
+    <p>然后运行这个命令把表写入数据库：</p>
+    <div class="terminal-window">
+        <div class="terminal-body">
+<span class="prompt">user@project:~$</span> <span class="cmd">npx wrangler d1 execute winweb-db --remote --file=./schema.sql</span>
+
+<span class="output">🌀 Executing on winweb-db (e2e4a1b2-...)</span>
+<span class="output">✅ 1 queries executed</span>
+        </div>
+    </div>
+    <p style="font-size: 0.9rem; color: #64748b;">注：加上 <code>--remote</code> 是告诉它操作云端的真实数据库。如果不加或加 <code>--local</code>，它只会操作你电脑本地的测试库。</p>
+
+</div>
+
+</body>
+</html>

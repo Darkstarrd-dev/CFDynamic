@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D1 数据库：本地 vs 云端</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --local-color: #3b82f6;  /* Blue for Local */
+            --remote-color: #f97316; /* Orange for Remote */
+            --text-main: #334155;
+            --code-bg: #1e293b;
+            --code-text: #e2e8f0;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6; background: var(--bg-color); color: var(--text-main); margin: 0; padding: 20px; }
+        .container { max-width: 950px; margin: 0 auto; }
+
+        h1 { text-align: center; color: #0f172a; margin-bottom: 10px; }
+        h2 { border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-top: 40px; color: #1e293b; }
+
+        /* 对比布局 */
+        .comparison-box {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .universe-card {
+            flex: 1;
+            min-width: 300px;
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            border-top: 6px solid #ccc;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .universe-card.local { border-top-color: var(--local-color); }
+        .universe-card.remote { border-top-color: var(--remote-color); }
+
+        .u-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+        .tag { font-size: 0.75rem; padding: 2px 8px; border-radius: 10px; color: white; text-transform: uppercase; }
+
+        /* 终端模拟 */
+        .cmd-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            padding: 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            margin: 10px 0;
+        }
+        .flag { color: #facc15; font-weight: bold; }
+
+        /* 文件结构模拟 */
+        .file-tree {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            margin-top: 10px;
+        }
+        .folder { color: #60a5fa; font-weight: bold; }
+        .file { color: #e2e8f0; }
+        .hidden-file { color: #94a3b8; font-style: italic; }
+
+        .note { background: #eff6ff; border-left: 4px solid var(--local-color); padding: 15px; margin-top: 20px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>D1 的平行宇宙：本地 vs 云端</h1>
+    <p style="text-align: center; color: #64748b;">无需手动建立本地库，Wrangler 帮你搞定一切</p>
+
+    <!-- 1. 核心概念 -->
+    <div class="comparison-box">
+        <!-- 本地宇宙 -->
+        <div class="universe-card local">
+            <div class="u-title">
+                <span style="color:var(--local-color);">💻 本地宇宙 (Local)</span>
+                <span class="tag" style="background:var(--local-color);">测试环境</span>
+            </div>
+            <p><strong>它是谁：</strong> 一个模拟器。它运行在你自己的电脑硬盘上。</p>
+            <p><strong>怎么来的：</strong> <span style="background:#dbeafe; padding:0 4px; border-radius:4px;">完全自动生成</span>。当你第一次不带 <code>--remote</code> 运行命令时，Wrangler 发现没有本地库，就会默默地创建一个 SQLite 文件。</p>
+            <p><strong>数据互通吗：</strong> <strong>不互通！</strong> 这里的数据（比如测试用的 'test-user'）永远不会上传到云端。</p>
+        </div>
+
+        <!-- 云端宇宙 -->
+        <div class="universe-card remote">
+            <div class="u-title">
+                <span style="color:var(--remote-color);">☁️ 云端宇宙 (Remote)</span>
+                <span class="tag" style="background:var(--remote-color);">生产环境</span>
+            </div>
+            <p><strong>它是谁：</strong> 真实的 D1 数据库。运行在 Cloudflare 的全球服务器上。</p>
+            <p><strong>怎么来的：</strong> 你通过 <code>d1 create</code> 命令显式创建的，并有了那个长长的 ID。</p>
+            <p><strong>数据互通吗：</strong> <strong>不互通！</strong> 真实用户的访问数据（比如 1000 次点击）只会存在这里，不会自动跑到你电脑上。</p>
+        </div>
+    </div>
+
+    <!-- 2. 实际操作对比 -->
+    <h2>2. 怎么控制操作哪一个？</h2>
+    <p>完全取决于你在命令行里是否加了 <code>--remote</code> 这个参数。</p>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div>
+            <h3>👉 操作本地 (默认)</h3>
+            <p style="font-size:0.9rem; color:#64748b;">比如：我想在本地开发，看看表建对了没。</p>
+            <div class="cmd-block">
+                npx wrangler d1 execute winweb-db --file=./schema.sql
+            </div>
+            <p style="font-size:0.85rem;">(没有加 flag，Wrangler 默认对本地文件下手)</p>
+        </div>
+        <div>
+            <h3>👉 操作云端 (动真格)</h3>
+            <p style="font-size:0.9rem; color:#64748b;">比如：代码写好了，我要让真实数据库生效。</p>
+            <div class="cmd-block">
+                npx wrangler d1 execute winweb-db <span class="flag">--remote</span> --file=./schema.sql
+            </div>
+            <p style="font-size:0.85rem;">(加了 flag，指令直达 Cloudflare 服务器)</p>
+        </div>
+    </div>
+
+    <!-- 3. 本地数据库藏在哪里？ -->
+    <h2>3. 揭秘：本地数据库藏在哪？</h2>
+    <p>你可能会好奇：“既然它自动建立了，那文件在哪？” 它藏在你的项目目录下的隐藏文件夹里。</p>
+
+    <div class="file-tree">
+backend/
+├── src/
+├── wrangler.jsonc
+└── <span class="folder">.wrangler/</span>           <span class="hidden-file">&lt;-- 这个文件夹通常是隐藏的，且被 git 忽略</span>
+    └── <span class="folder">state/</span>
+        └── <span class="folder">v3/</span>
+            └── <span class="folder">d1/</span>
+                └── <span class="file">miniflare-D1DatabaseObject/</span>
+                    └── <span class="file">xxxxxxxx.sqlite</span>  <span class="hidden-file">&lt;-- 这就是你的本地数据库本体！</span>
+    </div>
+
+    <div class="note">
+        <strong>最佳实践建议：</strong>
+        <ol>
+            <li><strong>先本地，后云端：</strong> 永远先不加 <code>--remote</code> 运行 SQL，确保没报错。</li>
+            <li><strong>两边都要跑：</strong> 既然数据不互通，你的 <code>schema.sql</code> (建表语句) 需要<strong>运行两次</strong>。
+                <ul>
+                    <li>一次 <code>npx wrangler d1 execute ...</code> (给本地用)</li>
+                    <li>一次 <code>npx wrangler d1 execute ... --remote</code> (给云端用)</li>
+                </ul>
+                否则你会发现本地跑得好好的，一发布上线就报错说“找不到表”。
+            </li>
+        </ol>
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare KV 交互式教程</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        code, pre { font-family: 'Fira Code', monospace; }
+
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+        }
+
+        .syntax-keyword { color: #0066cc; }
+        .syntax-string { color: #22863a; }
+        .syntax-function { color: #6f42c1; }
+        .syntax-comment { color: #6a737d; }
+        .syntax-variable { color: #e36209; }
+        .syntax-number { color: #005cc5; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+
+        @keyframes write-sync {
+            0% { opacity: 0.3; }
+            50% { opacity: 1; }
+            100% { opacity: 0.3; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .float-animation { animation: float 3s ease-in-out infinite; }
+        .fade-in { animation: fadeIn 0.5s ease forwards; }
+
+        .slide {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .slide.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .quiz-option {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .quiz-option:hover {
+            transform: translateX(4px);
+            border-color: #2563eb;
+            background: #eff6ff;
+        }
+        .quiz-option.correct {
+            background: #dcfce7 !important;
+            border-color: #22c55e !important;
+        }
+        .quiz-option.wrong {
+            background: #fee2e2 !important;
+            border-color: #ef4444 !important;
+        }
+
+        .progress-bar {
+            transition: width 0.5s ease;
+        }
+
+        .blackboard {
+            background: #1a472a;
+            border: 4px solid #8b5a2b;
+            border-radius: 4px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.3);
+        }
+
+        .sync-dot {
+            animation: write-sync 2s ease-in-out infinite;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .card-green {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border: 1px solid #a7f3d0;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+        .btn-primary:active {
+            background: #1e40af;
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+        .btn-secondary:active {
+            background: #d1d5db;
+            transform: scale(0.98);
+        }
+
+        .tab-active {
+            background: #2563eb;
+            color: white;
+        }
+
+        .tab-inactive {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        .tab-inactive:hover {
+            background: #e5e7eb;
+        }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 640px) {
+            .blackboard {
+                border-width: 3px;
+            }
+
+            .code-block pre {
+                font-size: 12px;
+            }
+
+            .quiz-option:hover {
+                transform: none;
+            }
+
+            .quiz-option:active {
+                background: #eff6ff;
+                border-color: #2563eb;
+            }
+        }
+
+        /* Touch-friendly tap targets */
+        @media (pointer: coarse) {
+            .quiz-option, .code-tab, .btn-primary, .btn-secondary {
+                min-height: 44px;
+            }
+        }
+
+        /* Prevent horizontal scroll on mobile */
+        html, body {
+            overflow-x: hidden;
+        }
+
+        /* Code block horizontal scroll */
+        .code-block {
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Mobile touch navigation zones */
+        .touch-nav-zone {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            width: 12%;
+            z-index: 30;
+            display: none;
+            cursor: pointer;
+        }
+
+        .touch-nav-zone.left {
+            left: 0;
+            background: linear-gradient(to right, rgba(0,0,0,0.03), transparent);
+        }
+
+        .touch-nav-zone.right {
+            right: 0;
+            background: linear-gradient(to left, rgba(0,0,0,0.03), transparent);
+        }
+
+        .touch-nav-zone .nav-hint {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.3;
+            font-size: 24px;
+            color: #6b7280;
+            transition: opacity 0.2s;
+        }
+
+        .touch-nav-zone.left .nav-hint {
+            left: 8px;
+        }
+
+        .touch-nav-zone.right .nav-hint {
+            right: 8px;
+        }
+
+        .touch-nav-zone:active .nav-hint {
+            opacity: 0.8;
+        }
+
+        .touch-nav-zone.disabled {
+            pointer-events: none;
+        }
+
+        .touch-nav-zone.disabled .nav-hint {
+            opacity: 0.1;
+        }
+
+        /* Show touch zones on mobile/tablet */
+        @media (max-width: 768px) {
+            .touch-nav-zone {
+                display: flex;
+                align-items: center;
+            }
+
+            /* Hide bottom navigation buttons on mobile */
+            .bottom-nav-buttons {
+                display: none !important;
+            }
+
+            /* Code block word wrap on mobile */
+            .code-block pre {
+                white-space: pre-wrap;
+                word-wrap: break-word;
+                word-break: break-all;
+            }
+
+            .code-block code {
+                white-space: pre-wrap;
+                word-wrap: break-word;
+                word-break: break-all;
+            }
+        }
+
+        /* Show bottom buttons on desktop */
+        @media (min-width: 769px) {
+            .bottom-nav-buttons {
+                display: flex !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen text-gray-800">
+    <!-- Mobile Touch Navigation Zones -->
+    <div id="touchNavLeft" class="touch-nav-zone left" onclick="prevSlide()">
+        <span class="nav-hint">‹</span>
+    </div>
+    <div id="touchNavRight" class="touch-nav-zone right" onclick="nextSlide()">
+        <span class="nav-hint">›</span>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="fixed top-0 left-0 right-0 h-1 bg-gray-200 z-50">
+        <div id="progress" class="progress-bar h-full bg-blue-600" style="width: 0%"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-2 sm:top-4 left-1/2 -translate-x-1/2 z-40 bg-white/95 backdrop-blur-lg rounded-full px-4 sm:px-6 py-2 sm:py-3 flex items-center gap-2 sm:gap-4 shadow-md border border-gray-200 max-w-[90vw]">
+        <span class="text-blue-600 font-semibold text-sm sm:text-base truncate">KV 教程</span>
+        <span class="text-gray-300 hidden sm:inline">|</span>
+        <span id="slideCounter" class="text-gray-500 text-sm sm:text-base whitespace-nowrap">1 / 15</span>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-3 sm:px-4 pt-16 sm:pt-24 pb-28 sm:pb-32 max-w-4xl">
+
+        <!-- Slide 1: 介绍 -->
+        <section class="slide active" data-slide="1">
+            <div class="text-center mb-8 sm:mb-12">
+                <div class="inline-block p-3 sm:p-4 bg-green-100 rounded-2xl mb-4 sm:mb-6 float-animation">
+                    <svg class="w-12 h-12 sm:w-16 sm:h-16 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
+                    </svg>
+                </div>
+                <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-gray-900">
+                    Cloudflare KV
+                </h1>
+                <p class="text-lg sm:text-xl text-gray-500 mb-6 sm:mb-8">全球分布式键值存储 · 完全指南</p>
+            </div>
+
+            <div class="card p-5 sm:p-8">
+                <h2 class="text-2xl font-semibold mb-6 text-center text-gray-800">🎯 学习目标</h2>
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div class="flex items-start gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                        <span class="text-2xl">📦</span>
+                        <div>
+                            <h3 class="font-medium text-gray-800">理解 KV 本质</h3>
+                            <p class="text-sm text-gray-500">掌握键值存储的核心概念与限制</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                        <span class="text-2xl">⚡</span>
+                        <div>
+                            <h3 class="font-medium text-gray-800">Pages Functions</h3>
+                            <p class="text-sm text-gray-500">无服务器后端开发与前端调用</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                        <span class="text-2xl">🛠️</span>
+                        <div>
+                            <h3 class="font-medium text-gray-800">Wrangler CLI</h3>
+                            <p class="text-sm text-gray-500">命令行工具全面用法</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                        <span class="text-2xl">🔐</span>
+                        <div>
+                            <h3 class="font-medium text-gray-800">安全架构</h3>
+                            <p class="text-sm text-gray-500">正确处理敏感数据与 Token</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 2: KV 的本质 -->
+        <section class="slide" data-slide="2">
+            <h2 class="text-3xl font-bold mb-8 text-center text-gray-900">KV 是什么？</h2>
+
+            <div class="card p-8 mb-8">
+                <p class="text-lg text-gray-600 mb-6 text-center">
+                    KV 不是传统的关系型数据库（如 MySQL），而是一个<br>
+                    <span class="text-2xl font-bold text-green-600">全球分布的巨大字典</span>
+                </p>
+
+                <!-- 动态图形：Key-Value 可视化 -->
+                <div class="flex justify-center mb-8">
+                    <div class="bg-gray-50 rounded-xl p-6 w-full max-w-md border border-gray-200">
+                        <div class="text-sm text-gray-500 mb-4 text-center">键值对结构</div>
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-4 p-3 bg-white rounded-lg border border-green-200 transform transition-all hover:scale-105 hover:shadow-md">
+                                <span class="px-3 py-1 bg-blue-600 text-white rounded text-sm font-mono">user:001</span>
+                                <span class="text-gray-400">→</span>
+                                <span class="text-green-600 font-mono text-sm">{"name": "Alice"}</span>
+                            </div>
+                            <div class="flex items-center gap-4 p-3 bg-white rounded-lg border border-green-200 transform transition-all hover:scale-105 hover:shadow-md">
+                                <span class="px-3 py-1 bg-blue-600 text-white rounded text-sm font-mono">config</span>
+                                <span class="text-gray-400">→</span>
+                                <span class="text-green-600 font-mono text-sm">"dark_mode"</span>
+                            </div>
+                            <div class="flex items-center gap-4 p-3 bg-white rounded-lg border border-green-200 transform transition-all hover:scale-105 hover:shadow-md">
+                                <span class="px-3 py-1 bg-blue-600 text-white rounded text-sm font-mono">cache:api</span>
+                                <span class="text-gray-400">→</span>
+                                <span class="text-green-600 font-mono text-sm">[1, 2, 3, 4]</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-4 text-center">
+                    <div class="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                        <div class="text-3xl mb-2">🔑</div>
+                        <div class="font-semibold text-blue-700">Key (键)</div>
+                        <div class="text-sm text-gray-500">唯一标识符，最大 512 字节</div>
+                    </div>
+                    <div class="p-4 bg-green-50 rounded-xl border border-green-200">
+                        <div class="text-3xl mb-2">📄</div>
+                        <div class="font-semibold text-green-700">Value (值)</div>
+                        <div class="text-sm text-gray-500">存储的数据，最大 25 MB</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-green p-4 rounded-xl">
+                <p class="text-green-800 text-center">
+                    <strong>💡 核心限制：</strong>不支持复杂查询（如 SQL WHERE），也不支持通过 Value 反查 Key
+                </p>
+            </div>
+        </section>
+
+        <!-- Slide 3: 最终一致性动画 -->
+        <section class="slide" data-slide="3">
+            <h2 class="text-3xl font-bold mb-6 text-center text-gray-900">核心特性：最终一致性</h2>
+            <p class="text-gray-500 text-center mb-8">Eventual Consistency</p>
+
+            <div class="card p-8 mb-8">
+                <p class="text-center text-lg mb-8 text-gray-700">
+                    想象全球有 <span class="text-blue-600 font-bold">300 个教室</span>，每个都有一块黑板
+                </p>
+
+                <!-- 动态黑板同步动画 -->
+                <div class="relative h-56 sm:h-64 mb-8">
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <!-- 中心黑板 -->
+                        <div class="blackboard w-24 sm:w-32 h-16 sm:h-20 flex items-center justify-center relative z-10">
+                            <span class="text-white font-mono text-base sm:text-lg">A=1</span>
+                            <div class="absolute -top-7 sm:-top-8 left-1/2 -translate-x-1/2 text-xs text-orange-500 font-semibold whitespace-nowrap">✏️ 写入点</div>
+                        </div>
+
+                        <!-- 周围的黑板 - 移动端更紧凑 -->
+                        <div class="absolute top-2 sm:top-4 left-[10%] sm:left-1/4 blackboard w-16 sm:w-24 h-12 sm:h-16 flex items-center justify-center">
+                            <span class="sync-dot text-white font-mono text-sm sm:text-base" style="animation-delay: 0.5s">A=1</span>
+                            <div class="absolute -bottom-5 sm:-bottom-6 text-xs text-gray-500 whitespace-nowrap">🗼 东京</div>
+                        </div>
+                        <div class="absolute top-2 sm:top-4 right-[10%] sm:right-1/4 blackboard w-16 sm:w-24 h-12 sm:h-16 flex items-center justify-center">
+                            <span class="sync-dot text-white font-mono text-sm sm:text-base" style="animation-delay: 1s">A=1</span>
+                            <div class="absolute -bottom-5 sm:-bottom-6 text-xs text-gray-500 whitespace-nowrap">🗽 纽约</div>
+                        </div>
+                        <div class="absolute bottom-2 sm:bottom-4 left-[10%] sm:left-1/4 blackboard w-16 sm:w-24 h-12 sm:h-16 flex items-center justify-center">
+                            <span class="sync-dot text-white font-mono text-sm sm:text-base" style="animation-delay: 1.5s">A=1</span>
+                            <div class="absolute -bottom-5 sm:-bottom-6 text-xs text-gray-500 whitespace-nowrap">🎡 伦敦</div>
+                        </div>
+                        <div class="absolute bottom-2 sm:bottom-4 right-[10%] sm:right-1/4 blackboard w-16 sm:w-24 h-12 sm:h-16 flex items-center justify-center">
+                            <span class="sync-dot text-white font-mono text-sm sm:text-base" style="animation-delay: 2s">A=1</span>
+                            <div class="absolute -bottom-5 sm:-bottom-6 text-xs text-gray-500 whitespace-nowrap">🦘 悉尼</div>
+                        </div>
+
+                        <!-- 同步波纹 -->
+                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div class="w-20 sm:w-24 h-20 sm:h-24 border-2 border-blue-400/50 rounded-full" style="animation: pulse-ring 2s ease-out infinite"></div>
+                            <div class="absolute w-20 sm:w-24 h-20 sm:h-24 border-2 border-blue-400/30 rounded-full" style="animation: pulse-ring 2s ease-out infinite 0.5s"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+                    <span class="text-amber-700 font-semibold">⏱️ 同步延迟约 60 秒</span>
+                    <p class="text-sm text-gray-600 mt-2">写入后，其他地区的用户可能在短时间内读到旧数据</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 4: 适用场景 Quiz -->
+        <section class="slide" data-slide="4">
+            <h2 class="text-3xl font-bold mb-8 text-center text-gray-900">🧠 小测验：适用场景</h2>
+
+            <div class="card p-8 mb-8">
+                <p class="text-xl mb-6 text-center text-gray-700">以下哪个场景<span class="text-green-600 font-bold">适合</span>使用 KV？</p>
+
+                <div class="space-y-4" id="quiz1">
+                    <div class="quiz-option p-4 bg-white rounded-xl border border-gray-200 flex items-center gap-4" data-correct="false" onclick="checkAnswer(this, 1)">
+                        <span class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-sm font-medium">A</span>
+                        <span>实时库存扣减系统</span>
+                    </div>
+                    <div class="quiz-option p-4 bg-white rounded-xl border border-gray-200 flex items-center gap-4" data-correct="true" onclick="checkAnswer(this, 1)">
+                        <span class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-sm font-medium">B</span>
+                        <span>网站配置和文章内容缓存</span>
+                    </div>
+                    <div class="quiz-option p-4 bg-white rounded-xl border border-gray-200 flex items-center gap-4" data-correct="false" onclick="checkAnswer(this, 1)">
+                        <span class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-sm font-medium">C</span>
+                        <span>银行转账记录</span>
+                    </div>
+                    <div class="quiz-option p-4 bg-white rounded-xl border border-gray-200 flex items-center gap-4" data-correct="false" onclick="checkAnswer(this, 1)">
+                        <span class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-sm font-medium">D</span>
+                        <span>实时在线人数计数器</span>
+                    </div>
+                </div>
+
+                <div id="quiz1-explanation" class="mt-6 hidden">
+                    <div class="p-4 bg-green-50 border border-green-200 rounded-xl">
+                        <p class="text-green-700 font-semibold mb-2">✓ 正确！</p>
+                        <p class="text-gray-700">KV 适合<strong>读多写少</strong>的场景。网站配置和文章内容很少变化，但经常被读取。</p>
+                        <p class="text-gray-500 text-sm mt-2">而库存扣减、银行转账、实时计数器都需要<strong>强一致性</strong>和<strong>高频写入</strong>，不适合 KV。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 5: 免费额度 -->
+        <section class="slide" data-slide="5">
+            <h2 class="text-3xl font-bold mb-8 text-center text-gray-900">📊 免费版额度限制</h2>
+
+            <div class="card p-8 mb-8">
+                <p class="text-gray-500 text-center mb-8">架构设计必须基于"天花板"来考虑 · 每日限额</p>
+
+                <div class="grid md:grid-cols-2 gap-6 mb-8">
+                    <!-- 读取 -->
+                    <div class="p-6 bg-white rounded-xl border border-gray-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-lg font-semibold text-gray-700">📖 读取 (Read)</span>
+                            <span class="text-green-600 text-2xl font-bold">100,000</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div class="bg-green-500 h-3 rounded-full" style="width: 95%"></div>
+                        </div>
+                        <p class="text-sm text-green-600 mt-2">非常宽裕 ✅</p>
+                    </div>
+
+                    <!-- 写入 -->
+                    <div class="p-6 bg-white rounded-xl border-2 border-red-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-lg font-semibold text-gray-700">✏️ 写入 (Write)</span>
+                            <span class="text-red-500 text-2xl font-bold">1,000</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div class="bg-red-500 h-3 rounded-full" style="width: 10%"></div>
+                        </div>
+                        <p class="text-sm text-red-500 mt-2">非常紧张 ⚠️</p>
+                    </div>
+
+                    <!-- 删除 -->
+                    <div class="p-6 bg-white rounded-xl border border-gray-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-lg font-semibold text-gray-700">🗑️ 删除 (Delete)</span>
+                            <span class="text-amber-500 text-2xl font-bold">1,000</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div class="bg-amber-500 h-3 rounded-full" style="width: 10%"></div>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">需要节省使用</p>
+                    </div>
+
+                    <!-- 列出 -->
+                    <div class="p-6 bg-white rounded-xl border border-gray-200">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-lg font-semibold text-gray-700">📋 列出 (List)</span>
+                            <span class="text-amber-500 text-2xl font-bold">1,000</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div class="bg-amber-500 h-3 rounded-full" style="width: 10%"></div>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2">需要节省使用</p>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <p class="text-blue-700 font-semibold mb-2">💡 破局之道：使用 TTL 自动过期</p>
+                    <p class="text-sm text-gray-600 mb-3">既然删除消耗额度，就在写入时设置 TTL，让数据到期自动消失！</p>
+                    <div class="code-block rounded-lg p-4 overflow-x-auto">
+                        <pre class="text-sm"><code><span class="syntax-keyword">await</span> context.env.MY_KV.<span class="syntax-function">put</span>(key, value, {
+  <span class="syntax-variable">expirationTtl</span>: <span class="syntax-number">5184000</span> <span class="syntax-comment">// 60天后自动删除</span>
+});</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 6: 查询项目列表 -->
+        <section class="slide" data-slide="6">
+            <h2 class="text-3xl font-bold mb-8 text-center text-gray-900">🔍 查询现有项目</h2>
+
+            <div class="card p-8 mb-8">
+                <p class="text-gray-600 text-center mb-8">创建 KV 库后，需要知道配置文件中的项目名应该填什么</p>
+
+                <!-- Pages 项目 -->
+                <div class="mb-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <span class="text-xl">📄</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-800">列出 Pages 项目（网页/全栈）</h3>
+                            <p class="text-sm text-gray-500">查看所有已部署的 Pages 项目名称、域名及 Git 状态</p>
+                        </div>
+                    </div>
+                    <div class="code-block rounded-lg p-4 overflow-x-auto">
+                        <pre class="text-sm"><code><span class="syntax-function">npx wrangler pages project list</span></code></pre>
+                    </div>
+                    <div class="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200 text-sm">
+                        <span class="text-gray-600">输出示例：</span>
+                        <code class="text-blue-600 ml-2">my-blog</code>
+                        <code class="text-gray-400 ml-2">·</code>
+                        <code class="text-green-600 ml-2">my-blog.pages.dev</code>
+                    </div>
+                </div>
+
+                <!-- Workers 项目 -->
+                <div class="mb-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <span class="text-xl">⚙️</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-800">列出 Workers 项目（纯后端）</h3>
+                            <p class="text-sm text-gray-500">查看当前部署记录和账号信息</p>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="code-block rounded-lg p-4 overflow-x-auto">
+                            <pre class="text-sm"><code><span class="syntax-comment"># 查看当前 Worker 部署记录</span>
+<span class="syntax-function">npx wrangler deployments list</span>
+
+<span class="syntax-comment"># 查看当前登录账号</span>
+<span class="syntax-function">npx wrangler whoami</span></code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                    <p class="text-amber-700 font-semibold mb-2">💡 提示</p>
+                    <p class="text-sm text-gray-600">Wrangler 对 Workers 的管理基于当前目录。若要查看所有 Worker 列表，建议直接访问 <a href="https://dash.cloudflare.com" class="text-blue-600 underline" target="_blank">Cloudflare Dashboard</a> 网页端。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 7: Wrangler 配置 -->
+        <section class="slide" data-slide="7">
+            <h2 class="text-3xl font-bold mb-8 text-center text-gray-900">🔧 Wrangler 配置</h2>
+
+            <div class="card p-8 mb-8">
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm">1</span>
+                        <span class="text-gray-800">绑定 (Binding) 是什么？</span>
+                    </h3>
+                    <p class="text-gray-600 mb-4">绑定是连接<span class="text-blue-600 font-medium">代码变量</span>与<span class="text-green-600 font-medium">真实数据库</span>的桥梁</p>
+
+                    <!-- 可视化绑定关系 -->
+                    <div class="flex items-center justify-center gap-6 p-6 bg-gray-50 rounded-xl border border-gray-200">
+                        <div class="text-center">
+                            <div class="w-24 h-20 bg-blue-600 rounded-xl flex items-center justify-center mb-2 text-white">
+                                <span class="font-mono text-sm">MY_KV</span>
+                            </div>
+                            <span class="text-xs text-gray-500">代码变量</span>
+                        </div>
+                        <div class="text-4xl text-gray-300">→</div>
+                        <div class="text-center">
+                            <div class="w-24 h-20 bg-green-600 rounded-xl flex items-center justify-center mb-2 text-white">
+                                <span class="font-mono text-xs">abc123...</span>
+                            </div>
+                            <span class="text-xs text-gray-500">数据库 ID</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm">2</span>
+                        <span class="text-gray-800">配置文件 wrangler.toml</span>
+                    </h3>
+                    <div class="code-block rounded-lg p-4 overflow-x-auto">
+                        <div class="flex items-center gap-2 mb-3 text-gray-500 text-sm">
+                            <span class="w-3 h-3 bg-red-400 rounded-full"></span>
+                            <span class="w-3 h-3 bg-yellow-400 rounded-full"></span>
+                            <span class="w-3 h-3 bg-green-400 rounded-full"></span>
+                            <span class="ml-2">wrangler.toml</span>
+                        </div>
+                        <pre class="text-sm"><code><span class="syntax-variable">name</span> = <span class="syntax-string">"my-project"</span>  <span class="syntax-comment"># 从 pages project list 获取</span>
+
+<span class="syntax-comment"># KV 命名空间配置</span>
+[[<span class="syntax-variable">kv_namespaces</span>]]
+<span class="syntax-variable">binding</span> = <span class="syntax-string">"MY_KV"</span>      <span class="syntax-comment"># 代码里用的变量名</span>
+<span class="syntax-variable">id</span> = <span class="syntax-string">"xxxxxxxxxxxxx"</span>   <span class="syntax-comment"># KV 的真实 ID（创建时获得）</span></code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 8: CLI 命令 - 库管理 -->
+        <section class="slide" data-slide="8">
+            <h2 class="text-3xl font-bold mb-8 text-center text-gray-900">💻 CLI 命令：库管理</h2>
+
+            <div class="card p-8 mb-8">
+                <p class="text-gray-500 text-center mb-6">不运行代码，直接以管理员身份操作数据库</p>
+
+                <div class="space-y-4">
+                    <!-- 创建 -->
+                    <div class="p-4 bg-white rounded-xl border-l-4 border-green-500 shadow-sm">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-green-500 text-xl">➕</span>
+                            <span class="font-semibold text-gray-800">创建 KV 库</span>
+                        </div>
+                        <code class="text-sm text-gray-700 bg-gray-100 px-3 py-2 rounded block font-mono">npx wrangler kv namespace create "库的名字"</code>
+                    </div>
+
+                    <!-- 列出 -->
+                    <div class="p-4 bg-white rounded-xl border-l-4 border-blue-500 shadow-sm">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-blue-500 text-xl">📋</span>
+                            <span class="font-semibold text-gray-800">列出所有库</span>
+                        </div>
+                        <code class="text-sm text-gray-700 bg-gray-100 px-3 py-2 rounded block font-mono">npx wrangler kv namespace list</code>
+                    </div>
+
+                    <!-- 删除 -->
+                    <div class="p-4 bg-white rounded-xl border-l-4 border-red-500 shadow-sm">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-red-500 text-xl">🗑️</span>
+                            <span class="font-semibold text-gray-800">删除 KV 库</span>
+                            <span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded">⚠️ 高危</span>
+                        </div>
+                        <code class="text-sm text-gray-700 bg-gray-100 px-3 py-2 rounded block font-mono">npx wrangler kv namespace delete --namespace-id &lt;ID&gt;</code>
+                    </div>
+                </div>
+
+                <div class="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                    <p class="text-amber-700 font-semibold mb-2">⚠️ 版本语法差异</p>
+                    <div class="grid md:grid-cols-2 gap-4 text-sm">
+                        <div class="flex items-center gap-2">
+                            <span class="text-gray-500">旧版 (v1/v2):</span>
+                            <code class="text-red-600 bg-red-50 px-2 py-1 rounded">kv:namespace create</code>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-gray-500">新版 (v3+):</span>
+                            <code class="text-green-600 bg-green-50 px-2 py-1 rounded">kv namespace create</code>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-600 mt-2">遇到 "Unknown arguments" 错误时，把<strong>冒号</strong>改成<strong>空格</strong>！</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 9: CLI 命令 - 数据操作 -->
+        <section class="slide" data-slide="9">
+            <h2 class="text-3xl font-bold mb-8 text-center text-gray-900">💻 CLI 命令：数据操作</h2>
+
+            <div class="card p-8 mb-8">
+                <div class="space-y-4">
+                    <!-- 写入 -->
+                    <div class="p-4 bg-white rounded-xl border-l-4 border-yellow-500 shadow-sm">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-yellow-500 text-xl">✏️</span>
+                            <span class="font-semibold text-gray-800">写入数据</span>
+                        </div>
+                        <code class="text-sm text-gray-700 bg-gray-100 px-3 py-2 rounded block font-mono">npx wrangler kv key put --binding MY_KV "key" "value"</code>
+                    </div>
+
+                    <!-- 读取 -->
+                    <div class="p-4 bg-white rounded-xl border-l-4 border-purple-500 shadow-sm">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-purple-500 text-xl">📖</span>
+                            <span class="font-semibold text-gray-800">读取数据</span>
+                        </div>
+                        <code class="text-sm text-gray-700 bg-gray-100 px-3 py-2 rounded block font-mono">npx wrangler kv key get --binding MY_KV "key"</code>
+                    </div>
+
+                    <!-- 删除 -->
+                    <div class="p-4 bg-white rounded-xl border-l-4 border-red-500 shadow-sm">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-red-500 text-xl">🗑️</span>
+                            <span class="font-semibold text-gray-800">删除数据</span>
+                        </div>
+                        <code class="text-sm text-gray-700 bg-gray-100 px-3 py-2 rounded block font-mono">npx wrangler kv key delete --binding MY_KV "key"</code>
+                    </div>
+
+                    <!-- 列出 -->
+                    <div class="p-4 bg-white rounded-xl border-l-4 border-cyan-500 shadow-sm">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-cyan-500 text-xl">📋</span>
+                            <span class="font-semibold text-gray-800">列出所有键</span>
+                        </div>
+                        <code class="text-sm text-gray-700 bg-gray-100 px-3 py-2 rounded block font-mono">npx wrangler kv key list --binding MY_KV</code>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 10: List 特性详解 -->
+        <section class="slide" data-slide="10">
+            <h2 class="text-3xl font-bold mb-8 text-center text-gray-900">📋 List 命令详解</h2>
+
+            <div class="card p-8 mb-8">
+                <div class="mb-6">
+                    <h3 class="font-semibold text-gray-800 mb-3">⚠️ 分页机制</h3>
+                    <p class="text-gray-600 mb-4">List 命令<strong>不是</strong>交互式的！每次最多返回 1000 条记录。</p>
+
+                    <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-start gap-3 sm:gap-4">
+                            <div class="flex-1">
+                                <div class="text-sm text-gray-500 mb-2">第一页</div>
+                                <code class="text-xs sm:text-sm bg-white px-3 py-2 rounded border block font-mono overflow-x-auto">npx wrangler kv key list --binding MY_KV</code>
+                            </div>
+                            <div class="text-xl sm:text-2xl text-gray-300 self-center hidden sm:block">→</div>
+                            <div class="text-center text-gray-400 sm:hidden">↓</div>
+                            <div class="flex-1">
+                                <div class="text-sm text-gray-500 mb-2">下一页（手动传入 cursor）</div>
+                                <code class="text-xs sm:text-sm bg-white px-3 py-2 rounded border block font-mono overflow-x-auto">npx wrangler kv key list --binding MY_KV --cursor "xxx"</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <h3 class="font-semibold text-gray-800 mb-3">📤 返回结构</h3>
+                    <div class="code-block rounded-lg p-4 overflow-x-auto">
+                        <pre class="text-sm"><code>{
+  <span class="syntax-string">"keys"</span>: [
+    { <span class="syntax-string">"name"</span>: <span class="syntax-string">"user:001"</span>, <span class="syntax-string">"expiration"</span>: <span class="syntax-number">1234567890</span> },
+    { <span class="syntax-string">"name"</span>: <span class="syntax-string">"user:002"</span> }
+  ],
+  <span class="syntax-string">"list_complete"</span>: <span class="syntax-keyword">false</span>,
+  <span class="syntax-string">"cursor"</span>: <span class="syntax-string">"abc123..."</span>  <span class="syntax-comment">// 用于获取下一页</span>
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <p class="text-blue-700 font-semibold mb-2">💡 重要提示</p>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• <code class="bg-white px-1 rounded">list_complete: true</code> 表示已经是最后一页</li>
+                        <li>• List 只返回 <strong>Key 名称</strong>，不返回 Value 内容</li>
+                        <li>• 若需获取 Value，需用返回的 Key 逐个调用 <code class="bg-white px-1 rounded">get</code></li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 11: JSON 数据读写 -->
+        <section class="slide" data-slide="11">
+            <h2 class="text-3xl font-bold mb-8 text-center text-gray-900">📦 CLI 操作 JSON 数据</h2>
+
+            <div class="card p-8 mb-8">
+                <p class="text-gray-600 text-center mb-6">KV 本质存储的是<strong>字符串</strong>，操作 JSON 需注意 Shell 转义</p>
+
+                <!-- 写入 JSON -->
+                <div class="mb-6">
+                    <h3 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                        <span class="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-xs">✏️</span>
+                        写入 JSON
+                    </h3>
+
+                    <div class="space-y-3">
+                        <div>
+                            <div class="text-sm text-gray-500 mb-2">方法 1：单引号包裹（Linux/macOS/PowerShell）✅ 推荐</div>
+                            <div class="code-block rounded-lg p-3 overflow-x-auto">
+                                <pre class="text-sm"><code>npx wrangler kv key put --binding MY_KV myKey <span class="syntax-string">'{"name":"Alice","age":25}'</span></code></pre>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="text-sm text-gray-500 mb-2">方法 2：从文件读取（复杂 JSON）✅ 最稳妥</div>
+                            <div class="code-block rounded-lg p-3 overflow-x-auto">
+                                <pre class="text-sm"><code><span class="syntax-comment"># 先创建 data.json 文件，然后：</span>
+npx wrangler kv key put --binding MY_KV myKey <span class="syntax-string">"$(cat data.json)"</span></code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 读取 JSON -->
+                <div class="mb-6">
+                    <h3 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                        <span class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs">📖</span>
+                        读取并格式化 JSON
+                    </h3>
+
+                    <div class="space-y-3">
+                        <div>
+                            <div class="text-sm text-gray-500 mb-2">Linux / macOS（使用 jq）</div>
+                            <div class="code-block rounded-lg p-3 overflow-x-auto">
+                                <pre class="text-sm"><code>npx wrangler kv key get --binding MY_KV myKey | <span class="syntax-function">jq</span></code></pre>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="text-sm text-gray-500 mb-2">Windows PowerShell</div>
+                            <div class="code-block rounded-lg p-3 overflow-x-auto">
+                                <pre class="text-sm"><code>npx wrangler kv key get --binding MY_KV myKey | <span class="syntax-function">ConvertFrom-Json</span></code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 故障排查 -->
+                <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+                    <p class="text-red-700 font-semibold mb-2">🔧 故障排查：JSON 解析报错</p>
+                    <p class="text-sm text-gray-600 mb-2">报错 <code class="bg-white px-1 rounded">Unexpected character 'P'</code>？</p>
+                    <p class="text-sm text-gray-600 mb-3">原因：Wrangler 输出了额外的日志信息（如 Proxy environment...）</p>
+                    <div class="code-block rounded-lg p-3 overflow-x-auto">
+                        <pre class="text-sm"><code><span class="syntax-comment"># 方案：正则过滤，只保留 JSON 行</span>
+$json = npx wrangler kv key get --binding MY_KV myKey | Where-Object { $_ -match <span class="syntax-string">'^\s*[\{\[]'</span> }
+$json | ConvertFrom-Json</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 12: 后端代码 -->
+        <section class="slide" data-slide="12">
+            <h2 class="text-3xl font-bold mb-8 text-center text-gray-900">⚡ Pages Functions 代码</h2>
+
+            <div class="card p-8 mb-8">
+                <p class="text-gray-500 text-center mb-6">Pages Functions 充当"保镖"：前端请求后端，后端验证后操作数据库</p>
+
+                <!-- 代码标签页 -->
+                <div class="flex gap-2 mb-4 overflow-x-auto">
+                    <button class="code-tab tab-active px-4 py-2 rounded-lg text-sm font-medium" onclick="showCodeTab('put')">写入 PUT</button>
+                    <button class="code-tab tab-inactive px-4 py-2 rounded-lg text-sm font-medium" onclick="showCodeTab('get')">读取 GET</button>
+                    <button class="code-tab tab-inactive px-4 py-2 rounded-lg text-sm font-medium" onclick="showCodeTab('delete')">删除 DELETE</button>
+                    <button class="code-tab tab-inactive px-4 py-2 rounded-lg text-sm font-medium" onclick="showCodeTab('list')">列出 LIST</button>
+                </div>
+
+                <!-- PUT -->
+                <div id="code-put" class="code-content code-block rounded-lg p-4 overflow-x-auto">
+                    <div class="flex items-center gap-2 mb-3 text-gray-500 text-sm">
+                        <span>📁</span>
+                        <span>functions/api/add.js</span>
+                    </div>
+                    <pre class="text-sm"><code><span class="syntax-keyword">export async function</span> <span class="syntax-function">onRequestPost</span>(context) {
+  <span class="syntax-keyword">const</span> body = <span class="syntax-keyword">await</span> context.request.<span class="syntax-function">json</span>();
+
+  <span class="syntax-keyword">await</span> context.env.MY_KV.<span class="syntax-function">put</span>(body.key, body.value);
+
+  <span class="syntax-keyword">return new</span> <span class="syntax-function">Response</span>(<span class="syntax-string">"保存成功"</span>);
+}</code></pre>
+                </div>
+
+                <!-- GET -->
+                <div id="code-get" class="code-content code-block rounded-lg p-4 overflow-x-auto hidden">
+                    <div class="flex items-center gap-2 mb-3 text-gray-500 text-sm">
+                        <span>📁</span>
+                        <span>functions/api/get.js</span>
+                    </div>
+                    <pre class="text-sm"><code><span class="syntax-keyword">export async function</span> <span class="syntax-function">onRequest</span>(context) {
+  <span class="syntax-keyword">const</span> url = <span class="syntax-keyword">new</span> <span class="syntax-function">URL</span>(context.request.url);
+  <span class="syntax-keyword">const</span> key = url.searchParams.<span class="syntax-function">get</span>(<span class="syntax-string">"key"</span>);
+
+  <span class="syntax-keyword">const</span> value = <span class="syntax-keyword">await</span> context.env.MY_KV.<span class="syntax-function">get</span>(key);
+
+  <span class="syntax-keyword">return</span> value
+    ? <span class="syntax-keyword">new</span> <span class="syntax-function">Response</span>(value)
+    : <span class="syntax-keyword">new</span> <span class="syntax-function">Response</span>(<span class="syntax-string">"没找到"</span>, {status: <span class="syntax-number">404</span>});
+}</code></pre>
+                </div>
+
+                <!-- DELETE -->
+                <div id="code-delete" class="code-content code-block rounded-lg p-4 overflow-x-auto hidden">
+                    <div class="flex items-center gap-2 mb-3 text-gray-500 text-sm">
+                        <span>📁</span>
+                        <span>functions/api/del.js</span>
+                    </div>
+                    <pre class="text-sm"><code><span class="syntax-keyword">export async function</span> <span class="syntax-function">onRequestDelete</span>(context) {
+  <span class="syntax-keyword">const</span> url = <span class="syntax-keyword">new</span> <span class="syntax-function">URL</span>(context.request.url);
+  <span class="syntax-keyword">const</span> key = url.searchParams.<span class="syntax-function">get</span>(<span class="syntax-string">"key"</span>);
+
+  <span class="syntax-keyword">await</span> context.env.MY_KV.<span class="syntax-function">delete</span>(key);
+
+  <span class="syntax-keyword">return new</span> <span class="syntax-function">Response</span>(<span class="syntax-string">"已删除"</span>);
+}</code></pre>
+                </div>
+
+                <!-- LIST -->
+                <div id="code-list" class="code-content code-block rounded-lg p-4 overflow-x-auto hidden">
+                    <div class="flex items-center gap-2 mb-3 text-gray-500 text-sm">
+                        <span>📁</span>
+                        <span>functions/api/list.js</span>
+                    </div>
+                    <pre class="text-sm"><code><span class="syntax-keyword">export async function</span> <span class="syntax-function">onRequest</span>(context) {
+  <span class="syntax-keyword">const</span> url = <span class="syntax-keyword">new</span> <span class="syntax-function">URL</span>(context.request.url);
+  <span class="syntax-keyword">const</span> cursor = url.searchParams.<span class="syntax-function">get</span>(<span class="syntax-string">"cursor"</span>);
+
+  <span class="syntax-comment">// 支持分页：前端传入 cursor 获取下一页</span>
+  <span class="syntax-keyword">const</span> options = cursor ? { cursor } : {};
+  <span class="syntax-keyword">const</span> list = <span class="syntax-keyword">await</span> context.env.MY_KV.<span class="syntax-function">list</span>(options);
+
+  <span class="syntax-keyword">return new</span> <span class="syntax-function">Response</span>(JSON.<span class="syntax-function">stringify</span>(list));
+}</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 13: 前端调用 -->
+        <section class="slide" data-slide="13">
+            <h2 class="text-3xl font-bold mb-8 text-center text-gray-900">🌐 前端调用示例</h2>
+
+            <div class="card p-8 mb-8">
+                <p class="text-gray-500 text-center mb-6">前端 <strong>不直接连接 KV</strong>，而是通过 fetch 调用后端接口</p>
+
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-6">
+                    <div class="flex items-center gap-2 mb-3 text-gray-500 text-sm">
+                        <span>📁</span>
+                        <span>index.html 或 app.js</span>
+                    </div>
+                    <pre class="text-sm"><code><span class="syntax-comment">// 写入数据</span>
+<span class="syntax-keyword">await</span> <span class="syntax-function">fetch</span>(<span class="syntax-string">'/api/add'</span>, {
+  <span class="syntax-variable">method</span>: <span class="syntax-string">'POST'</span>,
+  <span class="syntax-variable">headers</span>: { <span class="syntax-string">'Content-Type'</span>: <span class="syntax-string">'application/json'</span> },
+  <span class="syntax-variable">body</span>: JSON.<span class="syntax-function">stringify</span>({ <span class="syntax-variable">key</span>: <span class="syntax-string">"user:001"</span>, <span class="syntax-variable">value</span>: <span class="syntax-string">"Alice"</span> })
+});
+
+<span class="syntax-comment">// 读取数据</span>
+<span class="syntax-keyword">const</span> res = <span class="syntax-keyword">await</span> <span class="syntax-function">fetch</span>(<span class="syntax-string">'/api/get?key=user:001'</span>);
+<span class="syntax-keyword">const</span> data = <span class="syntax-keyword">await</span> res.<span class="syntax-function">text</span>();
+
+<span class="syntax-comment">// 删除数据</span>
+<span class="syntax-keyword">await</span> <span class="syntax-function">fetch</span>(<span class="syntax-string">'/api/del?key=user:001'</span>, { <span class="syntax-variable">method</span>: <span class="syntax-string">'DELETE'</span> });
+
+<span class="syntax-comment">// 列出数据（支持分页）</span>
+<span class="syntax-keyword">const</span> listRes = <span class="syntax-keyword">await</span> <span class="syntax-function">fetch</span>(<span class="syntax-string">'/api/list'</span>);
+<span class="syntax-keyword">const</span> { keys, cursor, list_complete } = <span class="syntax-keyword">await</span> listRes.<span class="syntax-function">json</span>();
+
+<span class="syntax-comment">// 加载更多（传入上次的 cursor）</span>
+<span class="syntax-keyword">const</span> nextPage = <span class="syntax-keyword">await</span> <span class="syntax-function">fetch</span>(<span class="syntax-string">`/api/list?cursor=</span><span class="syntax-variable">${cursor}</span><span class="syntax-string">`</span>);</code></pre>
+                </div>
+
+                <div class="bg-green-50 border border-green-200 rounded-xl p-4">
+                    <p class="text-green-700 font-semibold mb-2">💡 翻页体验策略</p>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• <strong>后端：</strong>不要用 while 循环遍历所有数据（会超时）</li>
+                        <li>• <strong>前端：</strong>采用"点击加载更多"，将 cursor 传给后端获取下一页</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 14: 安全架构 -->
+        <section class="slide" data-slide="14">
+            <h2 class="text-3xl font-bold mb-8 text-center text-gray-900">🔐 安全架构</h2>
+
+            <div class="card p-8 mb-8">
+                <!-- 架构图 -->
+                <div class="relative mb-8">
+                    <div class="flex items-center justify-between max-w-2xl mx-auto">
+                        <!-- 用户 -->
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-2 mx-auto border-2 border-blue-300">
+                                <span class="text-2xl">👤</span>
+                            </div>
+                            <span class="text-sm text-gray-600">用户</span>
+                        </div>
+
+                        <div class="text-2xl text-gray-300">→</div>
+
+                        <!-- 后端 -->
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-2 mx-auto relative border-2 border-green-300">
+                                <span class="text-2xl">🛡️</span>
+                                <div class="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center text-xs text-white">✓</div>
+                            </div>
+                            <span class="text-sm text-gray-600">Pages Functions</span>
+                        </div>
+
+                        <div class="text-2xl text-gray-300">→</div>
+
+                        <!-- 数据库 -->
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-2 mx-auto border-2 border-amber-300">
+                                <span class="text-2xl">🗄️</span>
+                            </div>
+                            <span class="text-sm text-gray-600">KV 数据库</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-4 mb-6">
+                    <div class="p-4 bg-red-50 border border-red-200 rounded-xl">
+                        <h4 class="text-red-700 font-semibold mb-2">❌ 错误做法</h4>
+                        <p class="text-sm text-gray-600">前端直接调用 API，Token 写在 JS 里</p>
+                        <p class="text-xs text-red-600 mt-2">用户查看源代码就能拿到 Token！</p>
+                    </div>
+                    <div class="p-4 bg-green-50 border border-green-200 rounded-xl">
+                        <h4 class="text-green-700 font-semibold mb-2">✅ 正确做法</h4>
+                        <p class="text-sm text-gray-600">通过 Pages Functions 代理请求</p>
+                        <p class="text-xs text-green-600 mt-2">Token 安全存储在后端环境变量中</p>
+                    </div>
+                </div>
+
+                <!-- Quiz -->
+                <div class="p-6 bg-gray-50 rounded-xl border border-gray-200">
+                    <p class="text-lg mb-4 text-gray-800">🧠 <strong>wrangler.toml</strong> 可以提交到 GitHub 吗？</p>
+                    <div class="space-y-3" id="quiz2">
+                        <div class="quiz-option p-3 bg-white rounded-lg border border-gray-200 flex items-center gap-3" data-correct="true" onclick="checkAnswer(this, 2)">
+                            <span class="w-6 h-6 flex items-center justify-center bg-gray-100 rounded-full text-xs font-medium">A</span>
+                            <span>可以，里面的 ID 只是"门牌号"</span>
+                        </div>
+                        <div class="quiz-option p-3 bg-white rounded-lg border border-gray-200 flex items-center gap-3" data-correct="false" onclick="checkAnswer(this, 2)">
+                            <span class="w-6 h-6 flex items-center justify-center bg-gray-100 rounded-full text-xs font-medium">B</span>
+                            <span>不可以，会泄露数据库密码</span>
+                        </div>
+                    </div>
+                    <div id="quiz2-explanation" class="mt-4 hidden">
+                        <div class="p-3 bg-green-50 border border-green-200 rounded-lg text-sm">
+                            <p class="text-green-700">✓ 正确！wrangler.toml 中的 ID 只是标识符，不是密钥。真正的 API Token 应该存在本地环境变量或 GitHub Secrets 中。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 15: 术语速查 + 总结 -->
+        <section class="slide" data-slide="15">
+            <h2 class="text-3xl font-bold mb-8 text-center text-gray-900">🎓 学习完成！</h2>
+
+            <div class="card p-8 mb-8">
+                <div class="text-center mb-8">
+                    <div class="inline-block p-4 bg-green-100 rounded-full mb-4">
+                        <span class="text-5xl">🏆</span>
+                    </div>
+                    <p class="text-xl text-gray-600">恭喜你完成了 Cloudflare KV 完整教程</p>
+                </div>
+
+                <h3 class="text-xl font-semibold mb-4 text-center text-gray-800">📚 常用术语速查</h3>
+                <div class="grid md:grid-cols-2 gap-3 mb-8">
+                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <span class="text-blue-600 font-semibold">Binding</span>
+                        <span class="text-gray-400 mx-2">—</span>
+                        <span class="text-gray-600 text-sm">变量名到数据库 ID 的映射</span>
+                    </div>
+                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <span class="text-blue-600 font-semibold">TTL</span>
+                        <span class="text-gray-400 mx-2">—</span>
+                        <span class="text-gray-600 text-sm">Time To Live，数据生存时间</span>
+                    </div>
+                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <span class="text-blue-600 font-semibold">Serialize</span>
+                        <span class="text-gray-400 mx-2">—</span>
+                        <span class="text-gray-600 text-sm">序列化：对象 → 字符串</span>
+                    </div>
+                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <span class="text-blue-600 font-semibold">Parse</span>
+                        <span class="text-gray-400 mx-2">—</span>
+                        <span class="text-gray-600 text-sm">解析：字符串 → 对象</span>
+                    </div>
+                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <span class="text-blue-600 font-semibold">Eventual Consistency</span>
+                        <span class="text-gray-400 mx-2">—</span>
+                        <span class="text-gray-600 text-sm">最终一致性</span>
+                    </div>
+                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <span class="text-blue-600 font-semibold">Monorepo</span>
+                        <span class="text-gray-400 mx-2">—</span>
+                        <span class="text-gray-600 text-sm">前后端同一仓库管理</span>
+                    </div>
+                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <span class="text-blue-600 font-semibold">Cursor</span>
+                        <span class="text-gray-400 mx-2">—</span>
+                        <span class="text-gray-600 text-sm">分页游标，用于获取下一页</span>
+                    </div>
+                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <span class="text-blue-600 font-semibold">Namespace</span>
+                        <span class="text-gray-400 mx-2">—</span>
+                        <span class="text-gray-600 text-sm">KV 命名空间（即一个独立的库）</span>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                    <h4 class="text-blue-700 font-semibold mb-2">🔑 核心要点回顾</h4>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• KV 是<strong>读多写少</strong>的键值存储，具有<strong>最终一致性</strong></li>
+                        <li>• 免费版每天只有 <strong>1000 次写入</strong>，善用 TTL 减少删除操作</li>
+                        <li>• 通过 <strong>Pages Functions</strong> 作为后端中间层，保护 Token 安全</li>
+                        <li>• CLI 新版用<strong>空格</strong>分隔命令，旧版用<strong>冒号</strong></li>
+                    </ul>
+                </div>
+
+                <div class="text-center">
+                    <button onclick="restartTutorial()" class="btn-primary px-6 py-3 rounded-xl font-semibold transition-all hover:shadow-lg">
+                        🔄 重新学习
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Navigation Buttons (Desktop only) -->
+    <div class="bottom-nav-buttons fixed bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 sm:gap-4 w-[calc(100%-24px)] sm:w-auto max-w-md justify-center">
+        <button id="prevBtn" onclick="prevSlide()" class="btn-secondary flex-1 sm:flex-none px-4 sm:px-6 py-3 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 sm:gap-2 text-sm sm:text-base">
+            <span>←</span> <span>上一页</span>
+        </button>
+        <button id="nextBtn" onclick="nextSlide()" class="btn-primary flex-1 sm:flex-none px-4 sm:px-6 py-3 rounded-xl font-semibold transition-all hover:shadow-lg flex items-center justify-center gap-1 sm:gap-2 text-sm sm:text-base">
+            <span>下一页</span> <span>→</span>
+        </button>
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 15;
+
+        function updateSlide() {
+            // Hide all slides
+            document.querySelectorAll('.slide').forEach(slide => {
+                slide.classList.remove('active');
+            });
+
+            // Show current slide
+            const activeSlide = document.querySelector(`[data-slide="${currentSlide}"]`);
+            if (activeSlide) {
+                activeSlide.classList.add('active');
+            }
+
+            // Update progress
+            const progress = (currentSlide / totalSlides) * 100;
+            document.getElementById('progress').style.width = `${progress}%`;
+
+            // Update counter
+            document.getElementById('slideCounter').textContent = `${currentSlide} / ${totalSlides}`;
+
+            // Update desktop buttons
+            document.getElementById('prevBtn').disabled = currentSlide === 1;
+
+            const nextBtn = document.getElementById('nextBtn');
+            if (currentSlide === totalSlides) {
+                nextBtn.innerHTML = '完成 ✓';
+            } else {
+                nextBtn.innerHTML = '下一页 <span>→</span>';
+            }
+
+            // Update mobile touch navigation zones
+            const touchNavLeft = document.getElementById('touchNavLeft');
+            const touchNavRight = document.getElementById('touchNavRight');
+
+            if (currentSlide === 1) {
+                touchNavLeft.classList.add('disabled');
+            } else {
+                touchNavLeft.classList.remove('disabled');
+            }
+
+            if (currentSlide === totalSlides) {
+                touchNavRight.classList.add('disabled');
+            } else {
+                touchNavRight.classList.remove('disabled');
+            }
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                currentSlide++;
+                updateSlide();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                currentSlide--;
+                updateSlide();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function restartTutorial() {
+            currentSlide = 1;
+            // Reset quizzes
+            document.querySelectorAll('.quiz-option').forEach(opt => {
+                opt.classList.remove('correct', 'wrong');
+            });
+            document.querySelectorAll('[id$="-explanation"]').forEach(exp => {
+                exp.classList.add('hidden');
+            });
+            updateSlide();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function checkAnswer(element, quizNum) {
+            const parent = element.parentElement;
+            const options = parent.querySelectorAll('.quiz-option');
+
+            // Prevent re-answering
+            if (parent.querySelector('.correct') || parent.querySelector('.wrong')) {
+                return;
+            }
+
+            options.forEach(opt => {
+                if (opt.dataset.correct === 'true') {
+                    opt.classList.add('correct');
+                } else if (opt === element) {
+                    opt.classList.add('wrong');
+                }
+            });
+
+            // Show explanation
+            const explanation = document.getElementById(`quiz${quizNum}-explanation`);
+            if (explanation) {
+                explanation.classList.remove('hidden');
+            }
+        }
+
+        function showCodeTab(tab) {
+            // Update tabs
+            document.querySelectorAll('.code-tab').forEach(t => {
+                t.classList.remove('tab-active');
+                t.classList.add('tab-inactive');
+            });
+            event.target.classList.remove('tab-inactive');
+            event.target.classList.add('tab-active');
+
+            // Update content
+            document.querySelectorAll('.code-content').forEach(c => {
+                c.classList.add('hidden');
+            });
+            document.getElementById(`code-${tab}`).classList.remove('hidden');
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                prevSlide();
+            }
+        });
+
+        // Initialize
+        updateSlide();
+    </script>
+</body>
+</html>

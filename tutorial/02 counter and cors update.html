@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全栈计数器代码详解 - 交互式教程</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        * { scroll-behavior: smooth; }
+        .code-line { transition: all 0.3s; cursor: pointer; padding: 2px 8px; border-left: 3px solid transparent; }
+        .code-line:hover { background: rgba(59, 130, 246, 0.2); }
+        .code-line.active { background: rgba(59, 130, 246, 0.3); border-left-color: #3b82f6; }
+        .flow-step { opacity: 0.3; transition: all 0.5s; }
+        .flow-step.active { opacity: 1; transform: scale(1.05); }
+        .concept-card { transition: all 0.3s; }
+        .concept-card:hover { transform: translateY(-5px); box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .gradient-text { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .arrow-animate { animation: arrowMove 1.5s ease-in-out infinite; }
+        @keyframes arrowMove { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(10px); } }
+        .tag-html { color: #f97316; }
+        .tag-css { color: #ec4899; }
+        .tag-js { color: #eab308; }
+        .tag-sql { color: #22c55e; }
+        pre { white-space: pre-wrap; word-wrap: break-word; }
+        .collapse-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
+        .collapse-content.open { max-height: 2000px; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <!-- 导航栏 -->
+    <nav class="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-sm shadow-sm z-50">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <span class="font-bold text-xl gradient-text">📚 全栈教程</span>
+            <div class="hidden md:flex gap-6 text-sm">
+                <a href="#overview" class="hover:text-blue-600 transition">架构概览</a>
+                <a href="#frontend" class="hover:text-blue-600 transition">前端代码</a>
+                <a href="#backend" class="hover:text-blue-600 transition">后端代码</a>
+                <a href="#flow" class="hover:text-blue-600 transition">数据流动</a>
+                <a href="#concepts" class="hover:text-blue-600 transition">核心概念</a>
+                <a href="#security" class="hover:text-blue-600 transition">安全进阶</a>
+                <a href="#pitfalls" class="hover:text-blue-600 transition">常见坑点</a>
+                <a href="#quiz" class="hover:text-blue-600 transition">测验</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 text-white pt-16">
+        <div class="text-center px-4">
+            <h1 class="text-5xl md:text-7xl font-bold mb-6">🔧 全栈计数器</h1>
+            <p class="text-xl md:text-2xl mb-4 opacity-90">从零理解现代 Web 全栈开发</p>
+            <p class="text-lg opacity-75 max-w-2xl mx-auto mb-8">
+                这个教程将带你逐行剖析一个完整的前后端应用，涵盖 CORS、边缘计算、SQL 防注入、API 安全等核心知识点
+            </p>
+            <div class="flex flex-wrap justify-center gap-4 mb-12">
+                <span class="px-4 py-2 bg-white/20 rounded-full text-sm">HTML/CSS/JS</span>
+                <span class="px-4 py-2 bg-white/20 rounded-full text-sm">Cloudflare Workers</span>
+                <span class="px-4 py-2 bg-white/20 rounded-full text-sm">D1 Database</span>
+                <span class="px-4 py-2 bg-white/20 rounded-full text-sm">RESTful API</span>
+            </div>
+            <a href="#overview" class="inline-flex items-center gap-2 bg-white text-purple-600 px-8 py-4 rounded-full font-bold hover:scale-105 transition">
+                开始学习 <span class="arrow-animate">→</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- 架构概览 -->
+    <section id="overview" class="py-20 px-4">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-4">🏗️ 系统架构概览</h2>
+            <p class="text-center text-gray-600 mb-12 max-w-2xl mx-auto">理解整个系统是如何工作的，每个部分扮演什么角色</p>
+
+            <!-- 架构图 -->
+            <div class="bg-white rounded-2xl shadow-xl p-8 mb-12">
+                <div class="flex flex-col md:flex-row items-center justify-between gap-8">
+                    <div class="text-center flex-1">
+                        <div class="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">👤</div>
+                        <h3 class="font-bold text-lg">用户</h3>
+                        <p class="text-sm text-gray-500">打开网页浏览</p>
+                    </div>
+                    <div class="text-3xl text-gray-300 arrow-animate">→</div>
+                    <div class="text-center flex-1">
+                        <div class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">🖥️</div>
+                        <h3 class="font-bold text-lg">前端 (HTML)</h3>
+                        <p class="text-sm text-gray-500">显示界面 + 发送请求</p>
+                    </div>
+                    <div class="text-3xl text-gray-300 arrow-animate">→</div>
+                    <div class="text-center flex-1">
+                        <div class="w-24 h-24 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">⚡</div>
+                        <h3 class="font-bold text-lg">后端 (Worker)</h3>
+                        <p class="text-sm text-gray-500">处理请求 + 业务逻辑</p>
+                    </div>
+                    <div class="text-3xl text-gray-300 arrow-animate">→</div>
+                    <div class="text-center flex-1">
+                        <div class="w-24 h-24 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">🗄️</div>
+                        <h3 class="font-bold text-lg">数据库 (D1)</h3>
+                        <p class="text-sm text-gray-500">存储访问记录</p>
+                    </div>
+                </div>
+                <div class="mt-8 p-4 bg-gray-50 rounded-lg">
+                    <p class="text-center text-sm text-gray-600">
+                        <span class="font-bold">工作流程：</span>
+                        用户访问网页 → 前端 JavaScript 发起 fetch 请求 → Worker 接收请求并写入数据库 → 查询总数 → 返回 JSON → 前端更新显示
+                    </p>
+                </div>
+            </div>
+
+            <!-- 技术栈卡片 -->
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="bg-white rounded-xl p-6 shadow-lg concept-card">
+                    <div class="text-3xl mb-4">📄</div>
+                    <h3 class="font-bold text-lg mb-2">前端技术</h3>
+                    <ul class="text-sm text-gray-600 space-y-2">
+                        <li>• <strong>HTML5</strong>: 页面结构</li>
+                        <li>• <strong>CSS3</strong>: 样式设计</li>
+                        <li>• <strong>JavaScript</strong>: 动态交互</li>
+                        <li>• <strong>Fetch API</strong>: 网络请求</li>
+                    </ul>
+                </div>
+                <div class="bg-white rounded-xl p-6 shadow-lg concept-card">
+                    <div class="text-3xl mb-4">⚡</div>
+                    <h3 class="font-bold text-lg mb-2">后端技术</h3>
+                    <ul class="text-sm text-gray-600 space-y-2">
+                        <li>• <strong>Cloudflare Workers</strong>: 边缘计算</li>
+                        <li>• <strong>ES Modules</strong>: 模块语法</li>
+                        <li>• <strong>Async/Await</strong>: 异步处理</li>
+                        <li>• <strong>RESTful API</strong>: 接口设计</li>
+                    </ul>
+                </div>
+                <div class="bg-white rounded-xl p-6 shadow-lg concept-card">
+                    <div class="text-3xl mb-4">🗄️</div>
+                    <h3 class="font-bold text-lg mb-2">数据库技术</h3>
+                    <ul class="text-sm text-gray-600 space-y-2">
+                        <li>• <strong>D1</strong>: Cloudflare 的 SQLite</li>
+                        <li>• <strong>SQL</strong>: 数据查询语言</li>
+                        <li>• <strong>参数化查询</strong>: 防 SQL 注入</li>
+                        <li>• <strong>CRUD</strong>: 增删改查</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 前端代码详解 -->
+    <section id="frontend" class="py-20 px-4 bg-white">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-4">📄 前端代码逐行详解</h2>
+            <p class="text-center text-gray-600 mb-12">点击任意代码行查看详细解释</p>
+
+            <div class="grid lg:grid-cols-2 gap-8">
+                <!-- 代码区域 -->
+                <div class="bg-gray-900 rounded-2xl overflow-hidden shadow-2xl">
+                    <div class="flex items-center gap-2 px-4 py-3 bg-gray-800">
+                        <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        <span class="ml-2 text-gray-400 text-sm">index.html</span>
+                    </div>
+                    <div class="p-4 overflow-auto max-h-[600px] text-sm font-mono" id="frontend-code"></div>
+                </div>
+
+                <!-- 解释区域 -->
+                <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-6 shadow-lg">
+                    <div id="frontend-explanation" class="min-h-[400px]">
+                        <div class="text-center py-12">
+                            <div class="text-6xl mb-4">👆</div>
+                            <p class="text-gray-500">点击左侧的代码行查看详细解释</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 后端代码详解 -->
+    <section id="backend" class="py-20 px-4 bg-gray-100">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-4">⚡ 后端代码逐行详解</h2>
+            <p class="text-center text-gray-600 mb-12">点击任意代码行查看详细解释</p>
+
+            <div class="grid lg:grid-cols-2 gap-8">
+                <!-- 代码区域 -->
+                <div class="bg-gray-900 rounded-2xl overflow-hidden shadow-2xl">
+                    <div class="flex items-center gap-2 px-4 py-3 bg-gray-800">
+                        <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        <span class="ml-2 text-gray-400 text-sm">src/index.js (Cloudflare Worker)</span>
+                    </div>
+                    <div class="p-4 overflow-auto max-h-[600px] text-sm font-mono" id="backend-code"></div>
+                </div>
+
+                <!-- 解释区域 -->
+                <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 shadow-lg">
+                    <div id="backend-explanation" class="min-h-[400px]">
+                        <div class="text-center py-12">
+                            <div class="text-6xl mb-4">👆</div>
+                            <p class="text-gray-500">点击左侧的代码行查看详细解释</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 数据流动可视化 -->
+    <section id="flow" class="py-20 px-4 bg-white">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-4">🔄 数据流动可视化</h2>
+            <p class="text-center text-gray-600 mb-12">点击下方按钮，观察数据如何在前后端之间流动</p>
+
+            <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 text-white">
+                <div class="flex justify-center gap-4 mb-8">
+                    <button id="startFlowBtn" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold transition">▶️ 开始演示</button>
+                    <button id="resetFlowBtn" class="px-6 py-3 bg-gray-600 hover:bg-gray-700 rounded-lg font-bold transition">🔄 重置</button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-center mb-8">
+                    <div id="flow-1" class="flow-step bg-blue-600/30 border-2 border-blue-500 rounded-xl p-4 text-center">
+                        <div class="text-3xl mb-2">👤</div>
+                        <div class="font-bold">用户访问</div>
+                        <div class="text-xs opacity-75">打开网页</div>
+                    </div>
+                    <div class="text-center text-2xl hidden md:block">→</div>
+                    <div id="flow-2" class="flow-step bg-green-600/30 border-2 border-green-500 rounded-xl p-4 text-center">
+                        <div class="text-3xl mb-2">📤</div>
+                        <div class="font-bold">fetch 请求</div>
+                        <div class="text-xs opacity-75">发送到 Worker</div>
+                    </div>
+                    <div class="text-center text-2xl hidden md:block">→</div>
+                    <div id="flow-3" class="flow-step bg-purple-600/30 border-2 border-purple-500 rounded-xl p-4 text-center">
+                        <div class="text-3xl mb-2">⚡</div>
+                        <div class="font-bold">Worker 处理</div>
+                        <div class="text-xs opacity-75">CORS + 收集信息</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-center mb-8">
+                    <div id="flow-4" class="flow-step bg-orange-600/30 border-2 border-orange-500 rounded-xl p-4 text-center">
+                        <div class="text-3xl mb-2">💾</div>
+                        <div class="font-bold">写入数据库</div>
+                        <div class="text-xs opacity-75">INSERT 语句</div>
+                    </div>
+                    <div class="text-center text-2xl hidden md:block">→</div>
+                    <div id="flow-5" class="flow-step bg-yellow-600/30 border-2 border-yellow-500 rounded-xl p-4 text-center">
+                        <div class="text-3xl mb-2">🔍</div>
+                        <div class="font-bold">查询总数</div>
+                        <div class="text-xs opacity-75">SELECT COUNT</div>
+                    </div>
+                    <div class="text-center text-2xl hidden md:block">→</div>
+                    <div id="flow-6" class="flow-step bg-pink-600/30 border-2 border-pink-500 rounded-xl p-4 text-center">
+                        <div class="text-3xl mb-2">📥</div>
+                        <div class="font-bold">返回 JSON</div>
+                        <div class="text-xs opacity-75">带 CORS 头</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+                    <div class="md:col-start-3">
+                        <div id="flow-7" class="flow-step bg-cyan-600/30 border-2 border-cyan-500 rounded-xl p-4 text-center">
+                            <div class="text-3xl mb-2">✨</div>
+                            <div class="font-bold">更新页面</div>
+                            <div class="text-xs opacity-75">显示计数</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="flow-description" class="mt-8 p-4 bg-white/10 rounded-lg text-center">
+                    <p>点击"开始演示"观察数据流动过程</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 核心概念深入 -->
+    <section id="concepts" class="py-20 px-4 bg-gray-100">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-4">💡 核心概念深入</h2>
+            <p class="text-center text-gray-600 mb-12">点击卡片展开详细内容</p>
+
+            <div class="space-y-4" id="concepts-container">
+                <!-- 概念卡片会通过JS动态生成 -->
+            </div>
+        </div>
+    </section>
+
+    <!-- 安全与进阶 -->
+    <section id="security" class="py-20 px-4 bg-white">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-4">🔐 安全与进阶</h2>
+            <p class="text-center text-gray-600 mb-12">深入理解 API 安全、防御机制与路由设计</p>
+
+            <div class="space-y-4" id="security-container">
+                <!-- 安全卡片会通过JS动态生成 -->
+            </div>
+        </div>
+    </section>
+
+    <!-- 常见坑点 -->
+    <section id="pitfalls" class="py-20 px-4 bg-gray-100">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-4">⚠️ 常见坑点与解决方案</h2>
+            <p class="text-center text-gray-600 mb-12">这些都是实战中真实踩过的坑！</p>
+
+            <div class="space-y-4" id="pitfalls-container">
+                <!-- 坑点卡片会通过JS动态生成 -->
+            </div>
+        </div>
+    </section>
+
+    <!-- 互动测验 -->
+    <section id="quiz" class="py-20 px-4 bg-gradient-to-br from-purple-600 to-pink-600 text-white">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-4xl font-bold text-center mb-4">🎯 知识测验</h2>
+            <p class="text-center opacity-90 mb-12">检验一下你的理解程度！</p>
+
+            <div id="quiz-container" class="bg-white/10 backdrop-blur-sm rounded-2xl p-8">
+                <div id="quiz-question" class="text-xl font-bold mb-6"></div>
+                <div id="quiz-options" class="space-y-3"></div>
+                <div id="quiz-feedback" class="mt-6 hidden p-4 rounded-lg"></div>
+                <div class="mt-6 flex justify-between items-center">
+                    <div id="quiz-progress" class="text-sm opacity-75"></div>
+                    <button id="quiz-next" class="hidden px-6 py-2 bg-white text-purple-600 rounded-lg font-bold hover:scale-105 transition">下一题 →</button>
+                </div>
+            </div>
+
+            <div id="quiz-result" class="hidden text-center py-12">
+                <div class="text-6xl mb-4">🎉</div>
+                <h3 class="text-3xl font-bold mb-4">测验完成！</h3>
+                <p id="quiz-score" class="text-xl mb-6"></p>
+                <button id="restart-quiz" class="px-8 py-3 bg-white text-purple-600 rounded-lg font-bold hover:scale-105 transition">重新测验</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="bg-gray-900 text-white py-12 px-4">
+        <div class="max-w-6xl mx-auto text-center">
+            <p class="text-gray-400 mb-4">📚 全栈计数器教程 - 交互式学习</p>
+            <p class="text-sm text-gray-500">掌握了这些知识，你就可以构建更复杂的全栈应用了！</p>
+            <div class="mt-6 flex flex-wrap justify-center gap-4 text-sm">
+                <span class="px-3 py-1 bg-gray-800 rounded">HTML</span>
+                <span class="px-3 py-1 bg-gray-800 rounded">CSS</span>
+                <span class="px-3 py-1 bg-gray-800 rounded">JavaScript</span>
+                <span class="px-3 py-1 bg-gray-800 rounded">Cloudflare Workers</span>
+                <span class="px-3 py-1 bg-gray-800 rounded">D1 Database</span>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+    (function() {
+        // ==================== 前端代码数据 ====================
+        var frontendCode = [
+            { code: '<!DOCTYPE html>', type: 'html', title: 'HTML5 文档声明', icon: '📄', desc: '这是 HTML5 的标准声明，告诉浏览器这是一个 HTML5 文档。必须放在文档最开头。' },
+            { code: '<html lang="zh-CN">', type: 'html', title: 'HTML 根元素', icon: '🌐', desc: 'lang="zh-CN" 告诉搜索引擎和屏幕阅读器这是简体中文页面，有助于 SEO 和无障碍访问。' },
+            { code: '<head>', type: 'html', title: 'head 标签', icon: '🧠', desc: '头部区域，包含页面的元信息（如编码、标题、样式），这些内容不会直接显示在页面上。' },
+            { code: '  <meta charset="UTF-8">', type: 'html', title: '字符编码声明', icon: '🔤', desc: 'UTF-8 是一种通用编码，支持中文、日文、表情符号等几乎所有字符。没有它，中文可能显示为乱码。' },
+            { code: '  <meta name="viewport" ...>', type: 'html', title: '视口设置', icon: '📱', desc: '让页面在手机上也能正常显示。width=device-width 表示宽度等于设备宽度，initial-scale=1.0 表示初始缩放比例为 1。' },
+            { code: '  <title>我的全栈计数器</title>', type: 'html', title: '页面标题', icon: '🏷️', desc: '显示在浏览器标签页上的文字，也是搜索引擎抓取的重要信息。' },
+            { code: '  <style>', type: 'css', title: 'style 内部样式表', icon: '🎨', desc: '在 HTML 文件内直接编写 CSS 样式。适合小型项目或独立页面。' },
+            { code: '    body { display: flex; ... }', type: 'css', title: 'Flexbox 居中布局', icon: '📐', desc: 'display: flex 启用弹性盒布局，justify-content: center 水平居中，align-items: center 垂直居中，height: 100vh 高度为视窗的 100%。' },
+            { code: '    .card { background: white; ... }', type: 'css', title: '卡片样式', icon: '🃏', desc: 'border-radius: 1rem 圆角边框，box-shadow 阴影效果让卡片"浮起来"，text-align: center 文字居中。' },
+            { code: '  </style>', type: 'css', title: '样式标签结束', icon: '✅', desc: 'CSS 代码结束。' },
+            { code: '</head>', type: 'html', title: 'head 结束', icon: '✅', desc: '头部信息定义完毕，接下来是页面可见内容。' },
+            { code: '<body>', type: 'html', title: 'body 开始', icon: '👁️', desc: '页面的主体内容区域，用户能看到的所有内容都在这里。' },
+            { code: '  <div class="card">', type: 'html', title: '卡片容器', icon: '📦', desc: 'class="card" 应用了上面定义的 .card 样式，创建一个白色圆角卡片。' },
+            { code: '    <p>网页总访问量</p>', type: 'html', title: '段落文字', icon: '📝', desc: '静态文字，告诉用户这个数字代表什么。' },
+            { code: '    <h1 id="count-display">...</h1>', type: 'html', title: '计数显示区', icon: '🔢', desc: 'id="count-display" 给这个元素一个唯一标识符，JavaScript 可以通过这个 ID 找到它并更新内容。初始显示 "..." 表示正在加载。' },
+            { code: '    <div id="info-display">...</div>', type: 'html', title: '信息显示区', icon: '📍', desc: '用于显示用户位置信息。id 让 JS 可以动态更新它。' },
+            { code: '  </div>', type: 'html', title: 'div 结束', icon: '✅', desc: '卡片容器关闭。' },
+            { code: '  <script>', type: 'js', title: 'JavaScript 开始', icon: '⚡', desc: '页面的动态交互逻辑从这里开始。' },
+            { code: '    const API_URL = "https://...";', type: 'js', title: 'API 地址常量', icon: '🔗', desc: 'const 声明常量（不可修改），这个 URL 指向你部署的 Cloudflare Worker 后端。需要替换成你自己的 Worker 地址！' },
+            { code: '    async function recordVisit() {', type: 'js', title: '异步函数定义', icon: '🔄', desc: 'async 标记这是一个异步函数，函数名叫 recordVisit（记录访问）。异步函数内可以使用 await 等待耗时操作。' },
+            { code: '      try {', type: 'js', title: 'try 块开始', icon: '🛡️', desc: '尝试执行下面的代码。如果出错，会跳转到 catch 块，而不是让程序崩溃。这叫"错误处理"。' },
+            { code: '        const response = await fetch(API_URL);', type: 'js', title: '发送 HTTP 请求', icon: '📤', desc: 'fetch(API_URL) 向后端发送 GET 请求，await 等待请求完成，response 包含状态码、响应头等信息。' },
+            { code: '        const data = await response.json();', type: 'js', title: '解析 JSON', icon: '📥', desc: 'response.json() 把响应体解析为 JavaScript 对象。解析后 data 就是后端返回的对象，如 { total_visits: 123 }。' },
+            { code: '        document.getElementById(...)', type: 'js', title: '更新页面显示', icon: '🔢', desc: 'document.getElementById() 通过 ID 找到页面元素，.innerText 设置元素的文本内容为后端返回的数据。' },
+            { code: '      } catch (error) {', type: 'js', title: 'catch 错误捕获', icon: '🚨', desc: '如果 try 块中任何代码出错（如网络断开），程序会跳到这里。error 变量包含错误详情。' },
+            { code: '        console.error("出错了:", error);', type: 'js', title: '打印错误日志', icon: '🔍', desc: 'console.error() 在浏览器开发者工具的控制台打印红色错误信息，方便调试。' },
+            { code: '      }', type: 'js', title: 'try-catch 结束', icon: '✅', desc: '错误处理块结束。' },
+            { code: '    }', type: 'js', title: '函数结束', icon: '✅', desc: 'recordVisit 函数定义完毕。' },
+            { code: '    recordVisit();', type: 'js', title: '立即调用函数', icon: '🚀', desc: '页面加载完成后，立即执行 recordVisit() 函数，发起请求获取数据。这行是实际触发网络请求的代码！' },
+            { code: '  <\/script>', type: 'js', title: 'JavaScript 结束', icon: '✅', desc: '脚本标签关闭。' },
+            { code: '</body>', type: 'html', title: 'body 结束', icon: '✅', desc: '页面主体内容结束。' },
+            { code: '</html>', type: 'html', title: 'HTML 结束', icon: '🏁', desc: '整个 HTML 文档结束。' }
+        ];
+
+        // ==================== 后端代码数据 ====================
+        var backendCode = [
+            { code: 'export default {', type: 'js', title: 'ES Module 导出', icon: '📦', desc: 'export default 是 ES6 模块语法，导出一个默认对象。Cloudflare Workers 使用这种格式来定义处理逻辑。' },
+            { code: '  async fetch(request, env, ctx) {', type: 'js', title: 'fetch 处理函数', icon: '⚡', desc: '这是 Worker 的核心函数。request 是请求对象（快递包裹），env 是环境变量/工具箱（包含数据库 env.DB），ctx 是上下文对象。' },
+            { code: '    const corsHeaders = {', type: 'js', title: 'CORS 响应头对象', icon: '🛡️', desc: '定义一组 HTTP 响应头，告诉浏览器"我允许跨域访问"。这是一个 JavaScript 对象。' },
+            { code: '      "Access-Control-Allow-Origin": "*",', type: 'js', title: '允许的来源', icon: '🌐', desc: '* (星号) 表示允许任何域名访问。生产环境应改为具体域名如 "https://mysite.com" 更安全。注意：不要加尾部斜杠！' },
+            { code: '      "Access-Control-Allow-Methods": "...",', type: 'js', title: '允许的 HTTP 方法', icon: '📋', desc: '告诉浏览器可以使用哪些 HTTP 方法：GET 获取数据，POST 提交数据，OPTIONS 预检请求。' },
+            { code: '    };', type: 'js', title: '对象结束', icon: '✅', desc: 'corsHeaders 对象定义完毕。' },
+            { code: '    if (request.method === "OPTIONS") {', type: 'js', title: '处理预检请求', icon: '❓', desc: 'OPTIONS 是浏览器的"预检请求"，在发送实际请求前先问服务器"我能访问你吗？"。' },
+            { code: '      return new Response(null, {...});', type: 'js', title: '返回预检响应', icon: '✅', desc: '创建一个空响应，附带 CORS 允许头。浏览器收到后知道可以继续发送正式请求。' },
+            { code: '    }', type: 'js', title: 'if 结束', icon: '✅', desc: '预检请求处理完毕。' },
+            { code: '    const country = request.cf?.country;', type: 'js', title: '获取国家代码', icon: '🌍', desc: 'request.cf 是 Cloudflare 自动添加的地理信息对象，?. 是可选链操作符（如果 cf 不存在不会报错），|| "Unknown" 是默认值。' },
+            { code: '    const userAgent = request.headers.get(...);', type: 'js', title: '获取用户代理', icon: '💻', desc: '从请求头获取浏览器信息，包含浏览器类型、版本、操作系统等。' },
+            { code: '    const time = new Date().toISOString();', type: 'js', title: '获取当前时间', icon: '🕐', desc: 'new Date() 创建当前时间对象，.toISOString() 转换为标准格式如 "2024-01-15T08:30:00.000Z"。' },
+            { code: '    try {', type: 'js', title: 'try 块开始', icon: '🛡️', desc: '尝试执行数据库操作。如果数据库出错，会被 catch 捕获。' },
+            { code: '      await env.DB.prepare(...)', type: 'js', title: '准备 SQL 语句', icon: '📋', desc: 'env.DB 是在 wrangler.toml 中绑定的 D1 数据库，.prepare() 准备一条 SQL 语句（但还没执行）。' },
+            { code: '        "INSERT INTO ... VALUES (?, ?, ?)"', type: 'sql', title: 'SQL INSERT 语句', icon: '💾', desc: '向 Visit_Logs 表插入数据。VALUES (?, ?, ?) 三个问号是占位符，防止 SQL 注入！绝对不要用字符串拼接！' },
+            { code: '      ).bind(time, country, userAgent).run();', type: 'js', title: '绑定参数并执行', icon: '▶️', desc: '.bind() 把变量按顺序填入 ? 占位符，.run() 执行这条 SQL。这种方式叫"参数化查询"，100% 防 SQL 注入。' },
+            { code: '      const result = await env.DB.prepare(...)', type: 'js', title: '准备查询语句', icon: '📋', desc: '准备另一条 SQL 语句来查询统计数据。' },
+            { code: '        "SELECT COUNT(*) as total FROM ..."', type: 'sql', title: 'SQL COUNT 查询', icon: '🔢', desc: 'SELECT COUNT(*) 统计表中所有行的数量，as total 给结果起别名叫 "total"，方便取值。' },
+            { code: '      ).first();', type: 'js', title: '获取第一行结果', icon: '1️⃣', desc: '.first() 只返回结果的第一行。因为 COUNT(*) 只会返回一行，所以用 first() 而不是 all()。' },
+            { code: '      return Response.json({...}, {...});', type: 'js', title: '返回 JSON 响应', icon: '📤', desc: 'Response.json() 自动将对象转为 JSON 字符串。关键：必须附带 corsHeaders，否则浏览器会拒绝读取数据！' },
+            { code: '    } catch (e) {', type: 'js', title: 'catch 错误捕获', icon: '🚨', desc: '如果数据库操作失败，程序会跳到这里。e 变量包含错误信息。' },
+            { code: '      return new Response(e.message, {...});', type: 'js', title: '返回错误响应', icon: '⚠️', desc: 'status: 500 表示服务器内部错误。即使出错也要带 CORS 头！否则前端只会看到"网络错误"而非真实错误原因。' },
+            { code: '    }', type: 'js', title: 'try-catch 结束', icon: '✅', desc: '错误处理块结束。' },
+            { code: '  },', type: 'js', title: 'fetch 函数结束', icon: '✅', desc: 'fetch 处理函数定义完毕。' },
+            { code: '};', type: 'js', title: '模块导出结束', icon: '🏁', desc: '整个 Worker 模块定义完成。当有请求来时，Cloudflare 会调用这个模块的 fetch 函数。' }
+        ];
+
+        // ==================== 概念数据 ====================
+        var conceptsData = [
+            {
+                id: 'fetch',
+                icon: '🐕',
+                title: 'fetch 是什么？',
+                subtitle: '理解网络请求的核心 API',
+                content: '<div class="space-y-4"><div><h4 class="font-bold text-lg mb-2">🐶 单词本义："去把球捡回来"</h4><p class="text-gray-600">Fetch 在英语中最常见的场景是<strong>逗狗</strong>。当你把球扔出去，对狗喊一声 "Fetch!"，狗的动作包含：</p><div class="flex items-center gap-4 mt-3 text-sm flex-wrap"><span class="px-3 py-1 bg-blue-100 rounded">1. 跑过去 (Go)</span><span>→</span><span class="px-3 py-1 bg-green-100 rounded">2. 把球叼起来 (Get)</span><span>→</span><span class="px-3 py-1 bg-purple-100 rounded">3. 跑回来交给你 (Bring back)</span></div><p class="text-gray-600 mt-3"><strong>Fetch = 去 + 拿 + 回来</strong>，强调一个往返的过程。</p></div><div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded"><h5 class="font-bold text-blue-700 mb-2">🌐 代码中的含义</h5><p class="text-blue-800">当你写下 <code class="bg-blue-100 px-1 rounded">fetch("https://...")</code> 时，浏览器就在做那只"狗"的工作：</p><ul class="mt-2 space-y-1 text-sm text-blue-800"><li>• <strong>扔球 (Request)</strong>：你给它一个网址 (URL)</li><li>• <strong>跑过去</strong>：浏览器通过网络跑到服务器</li><li>• <strong>叼球 (Processing)</strong>：服务器准备好数据</li><li>• <strong>跑回来 (Response)</strong>：带着数据返回给你的代码</li></ul></div><div><h4 class="font-bold text-lg mb-2">🚗 fetch 是万能快递员</h4><p class="text-gray-600 mb-3">不管你想 GET（拿东西）、POST（送东西）、DELETE（删东西），派出去的都是 fetch 这位快递员。区别只在于"任务备注"不同。</p><div class="grid md:grid-cols-2 gap-4"><div class="bg-green-50 p-4 rounded"><h5 class="font-bold text-green-700 mb-2">GET (默认) - "空车去，拉货回"</h5><pre class="text-sm bg-gray-800 text-green-400 p-3 rounded">fetch("https://api.com/users");\n// 不写 method，默认就是 GET</pre></div><div class="bg-purple-50 p-4 rounded"><h5 class="font-bold text-purple-700 mb-2">POST - "满载去，卸货回"</h5><pre class="text-sm bg-gray-800 text-purple-400 p-3 rounded">fetch("https://api.com/users", {\n    method: "POST",\n    body: JSON.stringify(data)\n});</pre></div></div></div></div>'
+            },
+            {
+                id: 'beacon',
+                icon: '📡',
+                title: 'sendBeacon vs fetch',
+                subtitle: '两种发送请求方式的区别与选择',
+                content: '<div class="space-y-4"><div><h4 class="font-bold text-lg mb-2">🤔 如果只想记录访问，不需要显示结果？</h4><p class="text-gray-600">如果你只想在数据库中记录有多少人访问了网站，但不打算把它显示出来，代码可以极大简化：</p></div><div class="grid md:grid-cols-2 gap-4"><div class="bg-blue-50 p-4 rounded"><h5 class="font-bold text-blue-700 mb-2">方案一：极简 fetch</h5><pre class="text-sm bg-gray-800 text-blue-400 p-3 rounded">// 发后即焚，不关心结果\nfetch("https://backend.workers.dev/", {\n    method: "POST",\n    keepalive: true  // 关键！网页关了也能发出去\n}).catch(() => {});</pre><p class="text-xs text-blue-600 mt-2">keepalive: true 让请求拥有"不死之身"</p></div><div class="bg-green-50 p-4 rounded"><h5 class="font-bold text-green-700 mb-2">方案二：sendBeacon（专业统计）</h5><pre class="text-sm bg-gray-800 text-green-400 p-3 rounded">// 浏览器专门为"埋点统计"设计\nnavigator.sendBeacon(\n    "https://backend.workers.dev/"\n);</pre><p class="text-xs text-green-600 mt-2">即使网页关闭也保证送达</p></div></div><div class="bg-orange-50 border-l-4 border-orange-500 p-4 rounded"><h5 class="font-bold text-orange-700 mb-2">📦 sendBeacon 在幕后做了什么？</h5><p class="text-orange-800 mb-2">等同于执行这条 curl 命令：</p><pre class="text-sm bg-gray-800 text-orange-400 p-3 rounded">curl -X POST "https://backend.workers.dev/" \\\n     -H "Content-Type: text/plain;charset=UTF-8" \\\n     -H "Origin: https://yoursite.com" \\\n     -d ""</pre><ul class="mt-3 text-sm text-orange-800 space-y-1"><li>• <strong>强制 POST</strong>：即使没传数据也是 POST</li><li>• <strong>托管任务</strong>：浏览器会把请求交给后台进程发送</li><li>• <strong>不关心回复</strong>：只负责发，不负责收</li></ul></div></div>'
+            },
+            {
+                id: 'cors',
+                icon: '🛡️',
+                title: 'CORS (跨域资源共享)',
+                subtitle: '浏览器安全机制与解决方案',
+                content: '<div class="space-y-4"><div><h4 class="font-bold text-lg mb-2">🤔 什么是 CORS？</h4><p class="text-gray-600">CORS (Cross-Origin Resource Sharing) 是浏览器的一种安全策略。当你的网页（源A）试图请求另一个不同域名的服务器（源B）时，浏览器会阻止这个请求，除非服务器明确表示"我允许你访问"。</p></div><div class="bg-red-50 border-l-4 border-red-500 p-4 rounded"><h5 class="font-bold text-red-700">❌ 没有 CORS 头时的错误</h5><code class="text-sm text-red-600 block mt-2 bg-red-100 p-2 rounded">Access to fetch at \'https://api.example.com\' from origin \'http://localhost\' has been blocked by CORS policy</code></div><div class="bg-green-50 border-l-4 border-green-500 p-4 rounded"><h5 class="font-bold text-green-700">✅ 解决方案</h5><pre class="text-sm mt-2 bg-gray-800 text-green-400 p-3 rounded overflow-x-auto">const corsHeaders = {\n  "Access-Control-Allow-Origin": "*",\n  "Access-Control-Allow-Methods": "GET,POST",\n  "Access-Control-Allow-Headers": "Content-Type"\n};</pre></div><div><h4 class="font-bold text-lg mb-2">🔍 预检请求 (Preflight)</h4><p class="text-gray-600 mb-2">浏览器在发送某些请求前，会先发一个 OPTIONS 请求"打探一下"。</p></div></div>'
+            },
+            {
+                id: 'sql',
+                icon: '💉',
+                title: 'SQL 注入防护',
+                subtitle: '参数化查询的重要性',
+                content: '<div class="space-y-4"><div><h4 class="font-bold text-lg mb-2">🤔 什么是 SQL 注入？</h4><p class="text-gray-600">SQL 注入是一种攻击方式，黑客通过在输入框中填入特殊的 SQL 代码，试图操控数据库执行非预期的命令。</p></div><div class="bg-red-50 border-l-4 border-red-500 p-4 rounded"><h5 class="font-bold text-red-700">❌ 危险的字符串拼接</h5><pre class="text-sm mt-2 bg-gray-800 text-red-400 p-3 rounded overflow-x-auto">// 🚫 千万不要这样写！\nconst sql = "INSERT INTO logs VALUES (\'" + userInput + "\')";\n// 如果 userInput = "\'); DROP TABLE logs; --"\n// 你的表就被删除了！</pre></div><div class="bg-green-50 border-l-4 border-green-500 p-4 rounded"><h5 class="font-bold text-green-700">✅ 安全的参数化查询</h5><pre class="text-sm mt-2 bg-gray-800 text-green-400 p-3 rounded overflow-x-auto">// ✅ 正确做法：使用 ? 占位符\nawait env.DB.prepare(\n  "INSERT INTO Visit_Logs VALUES (?, ?, ?)"\n).bind(time, country, userAgent).run();\n\n// 数据库会自动把参数当作"纯文本"处理</pre></div><div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded"><h5 class="font-bold text-yellow-700">💡 记忆口诀</h5><p class="text-yellow-800 font-bold">"永远不要相信用户输入，永远使用参数化查询"</p></div></div>'
+            },
+            {
+                id: 'async',
+                icon: '⏳',
+                title: 'Async/Await 异步编程',
+                subtitle: '理解 JavaScript 的异步机制',
+                content: '<div class="space-y-4"><div><h4 class="font-bold text-lg mb-2">🤔 为什么需要异步？</h4><p class="text-gray-600">网络请求、数据库操作都是"耗时操作"。如果 JavaScript 傻等这些操作完成，页面就会卡住。异步让程序"先去做别的事，等结果回来再处理"。</p></div><div class="grid md:grid-cols-2 gap-4"><div class="bg-blue-50 p-4 rounded"><h5 class="font-bold text-blue-700 mb-2">async 函数</h5><pre class="text-sm bg-gray-800 text-blue-400 p-3 rounded">async function fetchData() {\n  // 标记这个函数是异步的\n  // 它会返回一个 Promise\n}</pre></div><div class="bg-purple-50 p-4 rounded"><h5 class="font-bold text-purple-700 mb-2">await 关键字</h5><pre class="text-sm bg-gray-800 text-purple-400 p-3 rounded">const result = await fetch(url);\n// "等等，等这个请求完成"\n// 拿到结果后再继续执行</pre></div></div></div>'
+            },
+            {
+                id: 'cf',
+                icon: '🌍',
+                title: 'request.cf 边缘计算元数据',
+                subtitle: 'Cloudflare 提供的地理位置信息',
+                content: '<div class="space-y-4"><div><h4 class="font-bold text-lg mb-2">🤔 什么是 request.cf？</h4><p class="text-gray-600">当请求经过 Cloudflare 的全球网络时，Cloudflare 会自动分析请求来源，并把这些信息附加到 request.cf 对象中。这是边缘计算的福利！</p></div><div class="bg-orange-50 border-l-4 border-orange-500 p-4 rounded"><h5 class="font-bold text-orange-700 mb-2">📦 request.cf 包含的信息</h5><pre class="text-sm bg-gray-800 text-orange-400 p-3 rounded overflow-x-auto">{\n  country: "CN",           // 国家代码\n  city: "Shanghai",        // 城市\n  continent: "AS",         // 大洲\n  latitude: "31.2222",     // 纬度\n  longitude: "121.4581",   // 经度\n  timezone: "Asia/Shanghai" // 时区\n}</pre></div></div>'
+            }
+        ];
+
+        // ==================== 安全数据 ====================
+        var securityData = [
+            {
+                id: 'urlsafe',
+                icon: '🏪',
+                title: '暴露后端 URL 安全吗？',
+                subtitle: '餐厅地址 vs 金库钥匙',
+                content: '<div class="space-y-4"><div class="bg-green-50 border-l-4 border-green-500 p-4 rounded"><h5 class="font-bold text-green-700 mb-2">✅ 直接回答</h5><p class="text-green-800">暴露后端网址（API URL）本身是<strong>完全正常</strong>的，甚至是<strong>不可避免</strong>的。但你需要确保后端有能力防御"坏人"的骚扰。</p></div><div><h4 class="font-bold text-lg mb-2">🏪 比喻：餐厅的地址</h4><div class="grid md:grid-cols-2 gap-4"><div class="bg-blue-50 p-4 rounded"><h5 class="font-bold text-blue-700 mb-2">后端 URL = 餐厅地址</h5><p class="text-sm text-blue-800">如果你不把地址印在传单（前端代码）上，真正的顾客（用户）就找不到地方吃饭。所以，地址<strong>必须</strong>公开。</p></div><div class="bg-red-50 p-4 rounded"><h5 class="font-bold text-red-700 mb-2">API Key / 密码 = 金库钥匙</h5><p class="text-sm text-red-800">这个<strong>绝对不能</strong>暴露在前端！数据库 ID、Token 都藏在后端的 env 里，用户看不到。</p></div></div></div><div><h4 class="font-bold text-lg mb-2">⚠️ 潜在风险：裸奔的代价</h4><div class="space-y-2 text-sm"><div class="flex items-start gap-2"><span class="text-red-500">❌</span><div><strong>数据灌水</strong>：坏人写脚本一秒访问 10,000 次，数据库瞬间塞满垃圾</div></div><div class="flex items-start gap-2"><span class="text-red-500">❌</span><div><strong>资源耗尽</strong>：恶意超大流量攻击（DDoS）可能耗尽你的免费额度</div></div><div class="flex items-start gap-2"><span class="text-red-500">❌</span><div><strong>伪造请求</strong>：别人可以在他的网站上调用你的接口</div></div></div></div></div>'
+            },
+            {
+                id: 'corsscript',
+                icon: '🤖',
+                title: '为什么 CORS 防不住脚本攻击？',
+                subtitle: '浏览器 vs 脚本的本质区别',
+                content: '<div class="space-y-4"><div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded"><h5 class="font-bold text-yellow-700 mb-2">💡 一句话答案</h5><p class="text-yellow-800">CORS 是<strong>浏览器自己给自己戴的手铐</strong>，而脚本（Python/Curl）根本不戴这副手铐。</p></div><div class="grid md:grid-cols-2 gap-4"><div class="bg-blue-50 p-4 rounded"><h5 class="font-bold text-blue-700 mb-2">🧑‍💼 浏览器 = "守法公民"</h5><ol class="text-sm text-blue-800 space-y-1 list-decimal list-inside"><li>你的网页想请求 backend.workers.dev</li><li>浏览器拦截请求，检查 CORS 头</li><li>后端说"只允许 myblog.com"</li><li>浏览器发现你是 localhost，<strong>自己拒绝</strong>给你看数据</li></ol></div><div class="bg-red-50 p-4 rounded"><h5 class="font-bold text-red-700 mb-2">🦹 Python脚本 = "法外狂徒"</h5><ol class="text-sm text-red-800 space-y-1 list-decimal list-inside"><li>Python 直接发包给后端</li><li>后端返回数据 + "只允许 myblog.com"</li><li>Python 看到那句话，心想：<strong>"关我屁事"</strong></li><li>直接拿数据用了</li></ol></div></div><div><h4 class="font-bold text-lg mb-2">🛡️ 那怎么防脚本？</h4><div class="space-y-2 text-sm"><div class="flex items-start gap-2 p-2 bg-white rounded"><span class="text-green-500">✓</span><div><strong>API Token/Key</strong>：进门要刷卡，后端验证密码不对直接踢人</div></div><div class="flex items-start gap-2 p-2 bg-white rounded"><span class="text-green-500">✓</span><div><strong>人机验证 (Turnstile/ReCaptcha)</strong>：只有人能点的"我不是机器人"</div></div><div class="flex items-start gap-2 p-2 bg-white rounded"><span class="text-green-500">✓</span><div><strong>速率限制 (Rate Limiting)</strong>：同一个 IP 每分钟只能访问 N 次</div></div></div></div></div>'
+            },
+            {
+                id: 'ratelimit',
+                icon: '⏱️',
+                title: '速率限制 (Rate Limiting)',
+                subtitle: 'KV 做计数器的利弊分析',
+                content: '<div class="space-y-4"><div><h4 class="font-bold text-lg mb-2">🤔 问题：KV 适合做速率限制吗？</h4><p class="text-gray-600">你可能记得：KV 读取快，但<strong>写入后全球同步需要时间</strong>（几十秒甚至一分钟）。那用它做计数器准吗？</p></div><div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded"><h5 class="font-bold text-yellow-700 mb-2">💡 答案：不准，但够用！</h5><p class="text-yellow-800">对于<strong>防滥用</strong>场景，我们不需要"绝对精准"：</p><ul class="mt-2 text-sm text-yellow-800 space-y-1"><li>• <strong>银行转账</strong>：必须 100% 准确 → 绝对不能用 KV</li><li>• <strong>防刷限流</strong>：规则是 100 次/分钟，KV 可能漏计 5 次 → <strong>影响几乎没有</strong></li></ul></div><div><h4 class="font-bold text-lg mb-2">📝 简单逻辑演示</h4><pre class="text-sm bg-gray-800 text-cyan-400 p-4 rounded overflow-x-auto">// 在处理请求之前...\nconst ip = request.headers.get("CF-Connecting-IP");\nconst limitKey = `rate_limit_${ip}`;\n\n// 1. 查一下这个 IP 最近访问了几次\nconst currentCount = await env.KV.get(limitKey) || 0;\n\n// 2. 如果超过 10 次，直接拒绝\nif (currentCount > 10) {\n  return new Response("访问太频繁", { status: 429 });\n}\n\n// 3. 计数器 +1，60 秒后自动过期\nawait env.KV.put(limitKey, Number(currentCount) + 1, \n  { expirationTtl: 60 });</pre></div></div>'
+            },
+            {
+                id: 'routing',
+                icon: '🚦',
+                title: '后端路由设计',
+                subtitle: '如何添加"只看不记"的管理员功能',
+                content: '<div class="space-y-4"><div><h4 class="font-bold text-lg mb-2">🤔 需求</h4><p class="text-gray-600">想要通过后端获取数据库中所有访客信息，但又不想增加计数器的数值。</p></div><div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded"><h5 class="font-bold text-blue-700 mb-2">💡 解决方案：路由 (Routing)</h5><p class="text-blue-800">把后端逻辑从"不管请求什么都执行"改成"根据路径分流"：</p><ul class="mt-2 text-sm text-blue-800 space-y-1"><li>• 访问 <code class="bg-blue-100 px-1 rounded">/admin/logs</code> → 只看日志，不增加计数</li><li>• 访问 <code class="bg-blue-100 px-1 rounded">/</code> (首页) → 记录访问并统计</li></ul></div><div><h4 class="font-bold text-lg mb-2">📝 核心代码</h4><pre class="text-sm bg-gray-800 text-green-400 p-4 rounded overflow-x-auto">// 1. 解析 URL\nconst url = new URL(request.url);\n\n// 2. 路由分流\nif (url.pathname === "/admin/logs") {\n  // 🔐 简单的安全检查\n  const secretKey = url.searchParams.get("key");\n  if (secretKey !== "你的密码") {\n    return new Response("密码错误！", { status: 403 });\n  }\n  \n  // 📖 从数据库捞出最近 50 条记录\n  const logs = await env.DB.prepare(\n    "SELECT * FROM Visit_Logs ORDER BY id DESC LIMIT 50"\n  ).all();\n  \n  return Response.json(logs.results);\n}\n\n// 默认功能：记录访问 + 计数</pre></div></div>'
+            }
+        ];
+
+        // ==================== 坑点数据 ====================
+        var pitfallsData = [
+            {
+                id: 'slash',
+                icon: '🔪',
+                title: 'CORS 尾部斜杠问题',
+                subtitle: '一个符号引发的血案',
+                content: '<div class="space-y-4"><div class="bg-red-50 border-l-4 border-red-500 p-4 rounded"><h5 class="font-bold text-red-700 mb-2">❌ 报错信息</h5><code class="text-xs text-red-600 block bg-red-100 p-2 rounded break-all">The \'Access-Control-Allow-Origin\' header has a value \'https://mysite.pages.dev/\' that is not equal to the supplied origin.</code></div><div><h4 class="font-bold text-lg mb-2">🕵️ 罪魁祸首</h4><div class="grid md:grid-cols-2 gap-4"><div class="bg-gray-100 p-4 rounded"><p class="font-bold text-gray-700">浏览器发送的 Origin:</p><code class="text-blue-600">https://mysite.pages.dev</code></div><div class="bg-gray-100 p-4 rounded"><p class="font-bold text-gray-700">后端要求的 Origin:</p><code class="text-red-600">https://mysite.pages.dev<strong class="text-2xl">/</strong></code></div></div><p class="mt-4 text-gray-600"><strong>在 Web 标准中，Origin 绝不包含尾部斜杠！</strong>它只有三部分：协议 + :// + 域名</p></div><div class="grid md:grid-cols-2 gap-4"><div class="bg-red-50 p-4 rounded"><h5 class="font-bold text-red-700 mb-2">❌ 错误写法</h5><pre class="text-sm bg-gray-800 text-red-400 p-3 rounded">"Access-Control-Allow-Origin": \n  "https://mysite.pages.dev/"  \n  // 多了个斜杠！</pre></div><div class="bg-green-50 p-4 rounded"><h5 class="font-bold text-green-700 mb-2">✅ 正确写法</h5><pre class="text-sm bg-gray-800 text-green-400 p-3 rounded">"Access-Control-Allow-Origin": \n  "https://mysite.pages.dev"\n  // 没有斜杠</pre></div></div></div>'
+            },
+            {
+                id: 'multicors',
+                icon: '🌐',
+                title: '多域名 CORS 配置',
+                subtitle: '同时支持生产环境和本地调试',
+                content: '<div class="space-y-4"><div><h4 class="font-bold text-lg mb-2">🤔 问题</h4><p class="text-gray-600"><code>Access-Control-Allow-Origin</code> 只能写<strong>一个</strong>域名，不支持数组。那如何同时支持 pages.dev（生产）和 localhost（调试）？</p></div><div><h4 class="font-bold text-lg mb-2">💡 解决方案：动态设置</h4><pre class="text-sm bg-gray-800 text-cyan-400 p-4 rounded overflow-x-auto">// 1. 定义白名单\nconst allowedOrigins = [\n  "https://mysite.pages.dev",\n  "http://localhost:3000",\n  "http://127.0.0.1:5500"\n];\n\n// 2. 获取当前请求是谁发的\nconst origin = request.headers.get("Origin");\n\n// 3. 检查是否在白名单里\nlet allowOrigin = "https://mysite.pages.dev"; // 默认值\nif (allowedOrigins.includes(origin)) {\n  allowOrigin = origin; // 如果在名单里，就允许这一位\n}\n\n// 4. 设置 Header\nconst corsHeaders = {\n  "Access-Control-Allow-Origin": allowOrigin, // 动态填入\n  ...\n};</pre></div></div>'
+            },
+            {
+                id: 'adblock',
+                icon: '🚫',
+                title: '广告拦截器阻止请求',
+                subtitle: 'sendBeacon 被拦截的解决方案',
+                content: '<div class="space-y-4"><div><h4 class="font-bold text-lg mb-2">🤔 为什么会被拦截？</h4><p class="text-gray-600">广告拦截插件（AdBlocker）的逻辑是<strong>"宁可错杀一千，不可放过一个"</strong>：</p><ul class="mt-2 text-sm text-gray-600 space-y-1"><li>• <strong>域名可疑</strong>：workers.dev 是公共域名，很多恶意脚本也用它</li><li>• <strong>行为可疑</strong>：sendBeacon 专门用于"埋点"，插件看到就警觉</li><li>• <strong>跨域传输</strong>：网页在 pages.dev，请求却发往 workers.dev</li></ul></div><div><h4 class="font-bold text-lg mb-2">🛡️ 解决方案</h4><div class="space-y-4"><div class="bg-blue-50 p-4 rounded"><h5 class="font-bold text-blue-700 mb-2">方案一：换马甲 (fetch + keepalive)</h5><pre class="text-sm bg-gray-800 text-blue-400 p-3 rounded">// 用 fetch 伪装成普通请求\nfetch("https://backend.workers.dev/", {\n    method: "POST",\n    keepalive: true,  // 关键！作用等同于 beacon\n    headers: { "Content-Type": "text/plain" }\n}).catch(() => {});</pre><p class="text-xs text-blue-600 mt-2">广告插件不敢随便拦截 fetch，否则会把正常网站搞崩</p></div><div class="bg-green-50 p-4 rounded"><h5 class="font-bold text-green-700 mb-2">方案二：洗白域名</h5><p class="text-sm text-green-800">把 Worker 绑定到你自己的域名（如 api.yoursite.com）而不是用 workers.dev</p></div><div class="bg-purple-50 p-4 rounded"><h5 class="font-bold text-purple-700 mb-2">方案三：灯下黑 (同源代理)</h5><p class="text-sm text-purple-800">使用 Cloudflare Pages Functions，把后端放在前端同一个域名下</p></div></div></div></div>'
+            }
+        ];
+
+        // ==================== 测验数据 ====================
+        var quizQuestions = [
+            {
+                question: "fetch 这个单词的本义是什么？",
+                options: ["抓取 - 从内存中读取数据", "去拿回来 - 向服务器发送请求并获取响应", "发送 - 向服务器推送数据", "存储 - 把数据保存到本地"],
+                correct: 1,
+                explanation: "fetch 源自逗狗时喊的'去把球捡回来'，强调往返过程。"
+            },
+            {
+                question: "为什么 CORS 防不住 Python 脚本的攻击？",
+                options: ["Python 比浏览器更快", "CORS 是浏览器自己的安全策略，脚本不遵守", "Python 可以伪造 Origin 头", "CORS 只在 HTTPS 下有效"],
+                correct: 1,
+                explanation: "CORS 是浏览器自己给自己戴的手铐。Python 脚本直接发请求，不理会 CORS。"
+            },
+            {
+                question: "Access-Control-Allow-Origin: 'https://mysite.com/' 有什么问题？",
+                options: ["缺少协议前缀", "域名拼写错误", "多了一个尾部斜杠", "没有问题"],
+                correct: 2,
+                explanation: "Origin 绝不包含尾部斜杠！多一个 / 就匹配失败。"
+            },
+            {
+                question: "sendBeacon 和 fetch 的主要区别是什么？",
+                options: ["sendBeacon 更快", "sendBeacon 是同步的", "sendBeacon 保证送达且不关心响应", "sendBeacon 只能 GET"],
+                correct: 2,
+                explanation: "sendBeacon 专为'埋点统计'设计，即使网页关闭也保证送达。"
+            },
+            {
+                question: "为什么使用 VALUES (?, ?, ?) 而不是字符串拼接？",
+                options: ["让代码更简洁", "防止 SQL 注入攻击", "提高查询速度", "代码风格偏好"],
+                correct: 1,
+                explanation: "使用参数化查询可以防止 SQL 注入攻击。"
+            },
+            {
+                question: "用 KV 做速率限制时，为什么说'不准但够用'？",
+                options: ["KV 读取太慢", "KV 写入后全球同步需要时间，可能漏计", "KV 存储容量有限", "KV 不支持数字"],
+                correct: 1,
+                explanation: "KV 写入后同步需要时间，可能漏计几次，但防滥用够用。"
+            },
+            {
+                question: "为什么 catch 块中也要附带 corsHeaders？",
+                options: ["代码风格，不是必需", "让错误信息更美观", "否则前端会看到 CORS 错误而非真实错误", "加快响应速度"],
+                correct: 2,
+                explanation: "错误响应不带 CORS 头，浏览器会拦截，前端只看到'网络错误'。"
+            },
+            {
+                question: "广告拦截插件拦截 sendBeacon，最简单的解决方案是？",
+                options: ["让用户关闭插件", "改用 fetch + keepalive: true", "使用 WebSocket", "放弃统计功能"],
+                correct: 1,
+                explanation: "fetch + keepalive 可伪装成普通请求，插件不敢随便拦截。"
+            }
+        ];
+
+        var currentQuestion = 0;
+        var score = 0;
+
+        // ==================== 工具函数 ====================
+        function escapeHtml(text) {
+            var div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ==================== 渲染代码块 ====================
+        function renderCodeBlock(containerId, codeData, explanationId) {
+            var container = document.getElementById(containerId);
+            if (!container) return;
+
+            var html = '';
+            for (var i = 0; i < codeData.length; i++) {
+                var line = codeData[i];
+                var typeClass = 'text-gray-300';
+                if (line.type === 'html') typeClass = 'tag-html';
+                else if (line.type === 'css') typeClass = 'tag-css';
+                else if (line.type === 'js') typeClass = 'tag-js';
+                else if (line.type === 'sql') typeClass = 'tag-sql';
+
+                var lineNum = String(i + 1).padStart(2, '0');
+                html += '<div class="code-line ' + typeClass + '" data-index="' + i + '">';
+                html += '<span class="text-gray-600 select-none mr-4">' + lineNum + '</span>';
+                html += escapeHtml(line.code);
+                html += '</div>';
+            }
+            container.innerHTML = html;
+
+            var lines = container.querySelectorAll('.code-line');
+            for (var j = 0; j < lines.length; j++) {
+                (function(el) {
+                    el.addEventListener('click', function() {
+                        var idx = parseInt(this.getAttribute('data-index'));
+                        showExplanation(containerId, idx, explanationId, codeData);
+                    });
+                })(lines[j]);
+            }
+        }
+
+        function showExplanation(containerId, index, explanationId, codeData) {
+            var line = codeData[index];
+
+            var allLines = document.querySelectorAll('#' + containerId + ' .code-line');
+            for (var i = 0; i < allLines.length; i++) {
+                allLines[i].classList.remove('active');
+            }
+
+            var activeLine = document.querySelector('#' + containerId + ' .code-line[data-index="' + index + '"]');
+            if (activeLine) activeLine.classList.add('active');
+
+            var expContainer = document.getElementById(explanationId);
+            if (!expContainer || !line) return;
+
+            var typeLabel = line.type.toUpperCase();
+            var typeBg = 'bg-gray-100 text-gray-700';
+            if (line.type === 'html') typeBg = 'bg-orange-100 text-orange-700';
+            else if (line.type === 'css') typeBg = 'bg-pink-100 text-pink-700';
+            else if (line.type === 'js') typeBg = 'bg-yellow-100 text-yellow-700';
+            else if (line.type === 'sql') typeBg = 'bg-green-100 text-green-700';
+
+            expContainer.innerHTML =
+                '<div class="mb-4"><span class="text-4xl">' + line.icon + '</span></div>' +
+                '<h3 class="text-xl font-bold mb-4 text-gray-800">' + line.title + '</h3>' +
+                '<div class="bg-white rounded-lg p-4 mb-4 shadow-sm overflow-x-auto">' +
+                    '<code class="text-sm text-purple-600 font-mono">' + escapeHtml(line.code) + '</code>' +
+                '</div>' +
+                '<p class="text-gray-600 leading-relaxed">' + line.desc + '</p>' +
+                '<div class="mt-4 pt-4 border-t border-gray-200">' +
+                    '<span class="text-xs px-2 py-1 rounded bg-gray-200 text-gray-600">第 ' + (index + 1) + ' 行</span>' +
+                    '<span class="text-xs px-2 py-1 rounded ml-2 ' + typeBg + '">' + typeLabel + '</span>' +
+                '</div>';
+        }
+
+        // ==================== 渲染可折叠卡片 ====================
+        function renderCollapsibleCards(containerId, data) {
+            var container = document.getElementById(containerId);
+            if (!container) return;
+
+            var html = '';
+            for (var i = 0; i < data.length; i++) {
+                var item = data[i];
+                html += '<div class="bg-white rounded-2xl shadow-lg overflow-hidden">';
+                html += '<button class="collapse-toggle w-full p-6 flex items-center justify-between hover:bg-gray-50 transition" data-target="' + item.id + '-content">';
+                html += '<div class="flex items-center gap-4">';
+                html += '<span class="text-4xl">' + item.icon + '</span>';
+                html += '<div class="text-left">';
+                html += '<h3 class="font-bold text-xl">' + item.title + '</h3>';
+                html += '<p class="text-gray-500">' + item.subtitle + '</p>';
+                html += '</div></div>';
+                html += '<span class="text-2xl transition-transform" id="' + item.id + '-arrow">▼</span>';
+                html += '</button>';
+                html += '<div id="' + item.id + '-content" class="collapse-content px-6 pb-6">';
+                html += '<div class="bg-gray-50 rounded-xl p-6">' + item.content + '</div>';
+                html += '</div></div>';
+            }
+            container.innerHTML = html;
+
+            var toggles = container.querySelectorAll('.collapse-toggle');
+            for (var j = 0; j < toggles.length; j++) {
+                toggles[j].addEventListener('click', function() {
+                    var targetId = this.getAttribute('data-target');
+                    var content = document.getElementById(targetId);
+                    var arrow = document.getElementById(targetId.replace('-content', '-arrow'));
+
+                    if (content.classList.contains('open')) {
+                        content.classList.remove('open');
+                        if (arrow) arrow.style.transform = 'rotate(0deg)';
+                    } else {
+                        content.classList.add('open');
+                        if (arrow) arrow.style.transform = 'rotate(180deg)';
+                    }
+                });
+            }
+        }
+
+        // ==================== 数据流动动画 ====================
+        var flowStep = 0;
+        var flowInterval = null;
+        var flowDescriptions = [
+            "🧑 用户在浏览器中打开你的网页...",
+            "📤 页面加载完成，JavaScript 调用 fetch() 向 Worker 发送请求...",
+            "⚡ Worker 接收请求，检查 CORS，收集用户的国家和浏览器信息...",
+            "💾 Worker 执行 INSERT 语句，将访问记录写入 D1 数据库...",
+            "🔍 Worker 执行 SELECT COUNT(*) 查询，统计总访问量...",
+            "📥 Worker 将结果打包成 JSON，附上 CORS 头返回给前端...",
+            "✨ 前端收到数据，更新页面显示访问量和用户信息！"
+        ];
+
+        function startFlow() {
+            resetFlow();
+            flowStep = 0;
+            flowInterval = setInterval(function() {
+                if (flowStep >= 7) {
+                    clearInterval(flowInterval);
+                    return;
+                }
+                var el = document.getElementById('flow-' + (flowStep + 1));
+                if (el) el.classList.add('active');
+                var desc = document.getElementById('flow-description');
+                if (desc) desc.innerHTML = '<p>' + flowDescriptions[flowStep] + '</p>';
+                flowStep++;
+            }, 1500);
+        }
+
+        function resetFlow() {
+            if (flowInterval) clearInterval(flowInterval);
+            flowStep = 0;
+            for (var i = 1; i <= 7; i++) {
+                var el = document.getElementById('flow-' + i);
+                if (el) el.classList.remove('active');
+            }
+            var desc = document.getElementById('flow-description');
+            if (desc) desc.innerHTML = '<p>点击"开始演示"观察数据流动过程</p>';
+        }
+
+        // ==================== 测验系统 ====================
+        function renderQuestion() {
+            var q = quizQuestions[currentQuestion];
+            var questionEl = document.getElementById('quiz-question');
+            var optionsEl = document.getElementById('quiz-options');
+            var progressEl = document.getElementById('quiz-progress');
+            var feedbackEl = document.getElementById('quiz-feedback');
+            var nextBtn = document.getElementById('quiz-next');
+
+            if (questionEl) questionEl.textContent = (currentQuestion + 1) + '. ' + q.question;
+
+            if (optionsEl) {
+                var optionsHtml = '';
+                for (var i = 0; i < q.options.length; i++) {
+                    optionsHtml += '<button class="quiz-option w-full text-left p-4 bg-white/20 hover:bg-white/30 rounded-lg transition" data-index="' + i + '">';
+                    optionsHtml += '<span class="font-bold mr-2">' + String.fromCharCode(65 + i) + '.</span> ' + q.options[i];
+                    optionsHtml += '</button>';
+                }
+                optionsEl.innerHTML = optionsHtml;
+
+                var options = optionsEl.querySelectorAll('.quiz-option');
+                for (var j = 0; j < options.length; j++) {
+                    options[j].addEventListener('click', function() {
+                        var idx = parseInt(this.getAttribute('data-index'));
+                        checkAnswer(idx);
+                    });
+                }
+            }
+
+            if (progressEl) progressEl.textContent = (currentQuestion + 1) + ' / ' + quizQuestions.length;
+            if (feedbackEl) feedbackEl.classList.add('hidden');
+            if (nextBtn) nextBtn.classList.add('hidden');
+        }
+
+        function checkAnswer(selected) {
+            var q = quizQuestions[currentQuestion];
+            var feedbackEl = document.getElementById('quiz-feedback');
+            var nextBtn = document.getElementById('quiz-next');
+            var options = document.querySelectorAll('.quiz-option');
+
+            for (var i = 0; i < options.length; i++) {
+                options[i].style.pointerEvents = 'none';
+                if (i === q.correct) {
+                    options[i].classList.remove('bg-white/20');
+                    options[i].classList.add('bg-green-500/50');
+                } else if (i === selected && selected !== q.correct) {
+                    options[i].classList.remove('bg-white/20');
+                    options[i].classList.add('bg-red-500/50');
+                }
+            }
+
+            if (selected === q.correct) {
+                score++;
+                if (feedbackEl) {
+                    feedbackEl.innerHTML = '<div class="text-green-200">✅ 正确！' + q.explanation + '</div>';
+                    feedbackEl.className = 'mt-6 p-4 rounded-lg bg-green-500/30';
+                }
+            } else {
+                if (feedbackEl) {
+                    feedbackEl.innerHTML = '<div class="text-red-200">❌ 错误。' + q.explanation + '</div>';
+                    feedbackEl.className = 'mt-6 p-4 rounded-lg bg-red-500/30';
+                }
+            }
+            if (feedbackEl) feedbackEl.classList.remove('hidden');
+
+            if (currentQuestion < quizQuestions.length - 1) {
+                if (nextBtn) nextBtn.classList.remove('hidden');
+            } else {
+                setTimeout(showResult, 1500);
+            }
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            renderQuestion();
+        }
+
+        function showResult() {
+            var container = document.getElementById('quiz-container');
+            var result = document.getElementById('quiz-result');
+            var scoreEl = document.getElementById('quiz-score');
+
+            if (container) container.classList.add('hidden');
+            if (result) result.classList.remove('hidden');
+
+            var percentage = Math.round((score / quizQuestions.length) * 100);
+            var message = '';
+            if (percentage === 100) message = '🎉 完美！你已经完全掌握了！';
+            else if (percentage >= 80) message = '👏 很棒！基本概念都理解了！';
+            else if (percentage >= 60) message = '👍 不错，再复习一下就更好了！';
+            else message = '📚 建议再回顾一下教程内容哦！';
+
+            if (scoreEl) {
+                scoreEl.innerHTML = '你答对了 ' + score + ' / ' + quizQuestions.length + ' 题 (' + percentage + '%)<br><span class="text-lg">' + message + '</span>';
+            }
+        }
+
+        function restartQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            var container = document.getElementById('quiz-container');
+            var result = document.getElementById('quiz-result');
+            if (container) container.classList.remove('hidden');
+            if (result) result.classList.add('hidden');
+            renderQuestion();
+        }
+
+        // ==================== 初始化 ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            // 渲染代码块
+            renderCodeBlock('frontend-code', frontendCode, 'frontend-explanation');
+            renderCodeBlock('backend-code', backendCode, 'backend-explanation');
+
+            // 渲染可折叠卡片
+            renderCollapsibleCards('concepts-container', conceptsData);
+            renderCollapsibleCards('security-container', securityData);
+            renderCollapsibleCards('pitfalls-container', pitfallsData);
+
+            // 初始化测验
+            renderQuestion();
+
+            // 绑定数据流动按钮
+            var startBtn = document.getElementById('startFlowBtn');
+            var resetBtn = document.getElementById('resetFlowBtn');
+            if (startBtn) startBtn.addEventListener('click', startFlow);
+            if (resetBtn) resetBtn.addEventListener('click', resetFlow);
+
+            // 绑定测验按钮
+            var nextBtn = document.getElementById('quiz-next');
+            var restartBtn = document.getElementById('restart-quiz');
+            if (nextBtn) nextBtn.addEventListener('click', nextQuestion);
+            if (restartBtn) restartBtn.addEventListener('click', restartQuiz);
+        });
+    })();
+    </script>
+</body>
+</html>

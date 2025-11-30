@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Workers vs Pages Functions 深度解析</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', system-ui, sans-serif; }
+
+        .lesson-card {
+            transition: all 0.3s ease;
+        }
+        .lesson-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .progress-ring {
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .slide-in {
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .pulse-glow {
+            animation: pulseGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
+        }
+
+        .quiz-option {
+            transition: all 0.2s ease;
+        }
+        .quiz-option:hover:not(.selected):not(.disabled) {
+            background: #f0f9ff;
+            border-color: #3b82f6;
+        }
+        .quiz-option.correct {
+            background: #dcfce7 !important;
+            border-color: #22c55e !important;
+        }
+        .quiz-option.incorrect {
+            background: #fee2e2 !important;
+            border-color: #ef4444 !important;
+        }
+
+        .code-block {
+            background: #1e293b;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+
+        .timeline-dot {
+            transition: all 0.3s ease;
+        }
+        .timeline-dot.active {
+            transform: scale(1.3);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.3);
+        }
+
+        .comparison-card {
+            transition: all 0.3s ease;
+        }
+        .comparison-card:hover {
+            transform: scale(1.02);
+        }
+
+        .nav-dot {
+            transition: all 0.2s ease;
+        }
+        .nav-dot.active {
+            background: #6366f1;
+            transform: scale(1.2);
+        }
+
+        .expandable-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .expandable-content.open {
+            max-height: 1000px;
+        }
+
+        .hibernation-demo .worker {
+            transition: all 0.5s ease;
+        }
+        .hibernation-demo .worker.sleeping {
+            opacity: 0.4;
+            filter: grayscale(1);
+        }
+        .hibernation-demo .worker.active {
+            opacity: 1;
+            filter: grayscale(0);
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation Progress -->
+    <nav class="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-sm z-50 border-b border-gray-200">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-500 rounded-lg flex items-center justify-center">
+                    <span class="text-white font-bold text-sm">CF</span>
+                </div>
+                <span class="font-semibold text-gray-800">Workers vs Pages Functions</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-sm text-gray-500" id="progressText">1 / 7</span>
+                <div class="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div id="progressBar" class="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-300" style="width: 14%"></div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-20 pb-24 px-4">
+        <div class="max-w-3xl mx-auto">
+
+            <!-- Section 1: Introduction -->
+            <section id="section-1" class="lesson-section fade-in">
+                <div class="bg-white rounded-2xl shadow-lg p-8 mb-6">
+                    <div class="inline-flex items-center gap-2 bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-medium mb-4">
+                        <span>📚</span> 第一章
+                    </div>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-4">
+                        Workers 与 Pages Functions：<br>
+                        <span class="text-indigo-600">它们的本质区别是什么？</span>
+                    </h1>
+                    <p class="text-lg text-gray-600 mb-6">
+                        让我们用一个简单的比喻来理解这两者的关系。
+                    </p>
+
+                    <!-- Key Insight Box -->
+                    <div class="bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-500 p-5 rounded-r-lg mb-8">
+                        <div class="flex items-start gap-3">
+                            <span class="text-2xl">💡</span>
+                            <div>
+                                <h3 class="font-semibold text-gray-900 mb-1">核心洞察</h3>
+                                <p class="text-gray-700">
+                                    它们的心脏（运行引擎）是<strong>完全一样的</strong>，区别只在于"生活方式"和"工作编制"不同。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Visual Comparison -->
+                    <div class="grid md:grid-cols-2 gap-6 mb-8">
+                        <div class="comparison-card bg-blue-50 rounded-xl p-6 border-2 border-blue-200 cursor-pointer" onclick="showDetail('worker')">
+                            <div class="text-4xl mb-3">🚴</div>
+                            <h3 class="text-xl font-bold text-blue-900 mb-2">Workers</h3>
+                            <p class="text-blue-700 font-medium mb-2">独立外卖员</p>
+                            <p class="text-sm text-blue-600">
+                                独立自主，有自己的专属域名，可以服务任何人
+                            </p>
+                            <div class="mt-4 text-xs text-blue-500">点击了解更多 →</div>
+                        </div>
+
+                        <div class="comparison-card bg-green-50 rounded-xl p-6 border-2 border-green-200 cursor-pointer" onclick="showDetail('pages')">
+                            <div class="text-4xl mb-3">🏠</div>
+                            <h3 class="text-xl font-bold text-green-900 mb-2">Pages Functions</h3>
+                            <p class="text-green-700 font-medium mb-2">餐厅驻店配送员</p>
+                            <p class="text-sm text-green-600">
+                                依附于前端，与网页同域名，同源零跨域
+                            </p>
+                            <div class="mt-4 text-xs text-green-500">点击了解更多 →</div>
+                        </div>
+                    </div>
+
+                    <!-- Detail Modal -->
+                    <div id="detailModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onclick="closeDetail()">
+                        <div class="bg-white rounded-2xl max-w-lg w-full p-6 slide-in" onclick="event.stopPropagation()">
+                            <div id="detailContent"></div>
+                            <button onclick="closeDetail()" class="mt-4 w-full py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 font-medium transition">
+                                关闭
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Quiz -->
+                <div class="bg-white rounded-2xl shadow-lg p-8">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">?</span>
+                        小测验
+                    </h3>
+                    <p class="text-gray-700 mb-4">Pages Functions 本质上是什么？</p>
+                    <div class="space-y-3" id="quiz1">
+                        <div class="quiz-option border-2 border-gray-200 rounded-lg p-4 cursor-pointer" onclick="checkAnswer(this, false, 'quiz1')">
+                            <span class="font-medium">A.</span> 一种全新的运行引擎
+                        </div>
+                        <div class="quiz-option border-2 border-gray-200 rounded-lg p-4 cursor-pointer" onclick="checkAnswer(this, true, 'quiz1')">
+                            <span class="font-medium">B.</span> 本质上就是 Worker，只是部署方式不同
+                        </div>
+                        <div class="quiz-option border-2 border-gray-200 rounded-lg p-4 cursor-pointer" onclick="checkAnswer(this, false, 'quiz1')">
+                            <span class="font-medium">C.</span> 专门用于数据库操作的服务
+                        </div>
+                    </div>
+                    <div id="quiz1-feedback" class="mt-4 hidden"></div>
+                </div>
+            </section>
+
+            <!-- Section 2: Detailed Comparison -->
+            <section id="section-2" class="lesson-section hidden">
+                <div class="bg-white rounded-2xl shadow-lg p-8 mb-6 fade-in">
+                    <div class="inline-flex items-center gap-2 bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-medium mb-4">
+                        <span>⚔️</span> 第二章
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">全方位对比分析</h2>
+
+                    <!-- Comparison Table -->
+                    <div class="overflow-x-auto mb-8">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="px-4 py-3 text-left font-semibold text-gray-700 rounded-tl-lg">特性</th>
+                                    <th class="px-4 py-3 text-left font-semibold text-blue-700">🚴 Workers</th>
+                                    <th class="px-4 py-3 text-left font-semibold text-green-700 rounded-tr-lg">🏠 Pages Functions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                <tr class="hover:bg-gray-50 transition">
+                                    <td class="px-4 py-3 font-medium text-gray-700">主要用途</td>
+                                    <td class="px-4 py-3 text-gray-600">独立 API、代理、定时任务</td>
+                                    <td class="px-4 py-3 text-gray-600">为网站提供后端支持</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50 transition">
+                                    <td class="px-4 py-3 font-medium text-gray-700">代码位置</td>
+                                    <td class="px-4 py-3 text-gray-600">独立项目文件夹</td>
+                                    <td class="px-4 py-3 text-gray-600">前端的 <code class="bg-gray-100 px-1 rounded">functions</code> 文件夹</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50 transition">
+                                    <td class="px-4 py-3 font-medium text-gray-700">部署方式</td>
+                                    <td class="px-4 py-3 text-gray-600"><code class="bg-gray-100 px-1 rounded">npx wrangler deploy</code></td>
+                                    <td class="px-4 py-3 text-gray-600"><code class="bg-gray-100 px-1 rounded">git push</code> 自动发布</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50 transition">
+                                    <td class="px-4 py-3 font-medium text-gray-700">路由方式</td>
+                                    <td class="px-4 py-3 text-gray-600">手动代码判断</td>
+                                    <td class="px-4 py-3 text-gray-600">文件即路由（自动）</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50 transition">
+                                    <td class="px-4 py-3 font-medium text-gray-700">跨域 (CORS)</td>
+                                    <td class="px-4 py-3"><span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-medium">必须配置</span></td>
+                                    <td class="px-4 py-3"><span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium">不需要</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- CORS Explanation -->
+                    <div class="bg-gray-50 rounded-xl p-6">
+                        <h4 class="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                            <span>🔐</span> 什么是跨域 (CORS)？
+                        </h4>
+                        <div class="space-y-4">
+                            <p class="text-gray-600">
+                                想象你在肯德基（网页）吃饭，却想点麦当劳（Worker）的外卖：
+                            </p>
+                            <div class="flex items-center gap-4 justify-center py-4">
+                                <div class="text-center">
+                                    <div class="text-3xl mb-2">🍔</div>
+                                    <div class="text-xs text-gray-500">你的网页<br><code class="bg-gray-200 px-1 rounded">pages.dev</code></div>
+                                </div>
+                                <div class="text-2xl text-red-500">🚫</div>
+                                <div class="text-center">
+                                    <div class="text-3xl mb-2">🍟</div>
+                                    <div class="text-xs text-gray-500">Worker<br><code class="bg-gray-200 px-1 rounded">workers.dev</code></div>
+                                </div>
+                            </div>
+                            <p class="text-gray-600 text-sm">
+                                浏览器（保安）会拦住跨域请求，要求检查"证件"（CORS 头）。而 Pages Functions 与网页同源，根本不需要过安检！
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- File Routing Demo -->
+                <div class="bg-white rounded-2xl shadow-lg p-8 fade-in">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">📁 文件即路由演示</h3>
+                    <p class="text-gray-600 mb-6">Pages Functions 的路由完全由文件结构决定：</p>
+
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="code-block p-4">
+                            <div class="text-gray-400 text-xs mb-2">📂 项目结构</div>
+                            <pre class="text-green-400 text-sm"><code>functions/
+├── api/
+│   ├── login.js
+│   ├── user/
+│   │   └── [id].js
+│   └── posts.js
+└── hello.js</code></pre>
+                        </div>
+                        <div class="bg-gray-100 rounded-lg p-4">
+                            <div class="text-gray-500 text-xs mb-2">🔗 自动生成的路由</div>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-gray-400">→</span>
+                                    <code class="text-indigo-600">/api/login</code>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-gray-400">→</span>
+                                    <code class="text-indigo-600">/api/user/:id</code>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-gray-400">→</span>
+                                    <code class="text-indigo-600">/api/posts</code>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-gray-400">→</span>
+                                    <code class="text-indigo-600">/hello</code>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 3: When to Use Which -->
+            <section id="section-3" class="lesson-section hidden">
+                <div class="bg-white rounded-2xl shadow-lg p-8 mb-6 fade-in">
+                    <div class="inline-flex items-center gap-2 bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-medium mb-4">
+                        <span>🤔</span> 第三章
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">你该选哪个？</h2>
+
+                    <!-- Decision Tree -->
+                    <div class="space-y-4">
+                        <div class="border-2 border-green-200 bg-green-50 rounded-xl p-5">
+                            <div class="flex items-start gap-4">
+                                <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span class="text-white text-xl">✓</span>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-green-900 mb-2">选 Pages Functions 的场景</h4>
+                                    <ul class="space-y-2 text-green-800">
+                                        <li class="flex items-center gap-2">
+                                            <span>📊</span> 给网页加个简单后端（如访客计数器）
+                                        </li>
+                                        <li class="flex items-center gap-2">
+                                            <span>🛡️</span> 需要躲避广告插件拦截（同源请求更安全）
+                                        </li>
+                                        <li class="flex items-center gap-2">
+                                            <span>🚀</span> 想要最简单的开发体验（git push 即部署）
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-2 border-blue-200 bg-blue-50 rounded-xl p-5">
+                            <div class="flex items-start gap-4">
+                                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span class="text-white text-xl">⚡</span>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-blue-900 mb-2">选 Workers 的场景</h4>
+                                    <ul class="space-y-2 text-blue-800">
+                                        <li class="flex items-center gap-2">
+                                            <span>⏰</span> 需要定时任务（Cron Triggers）
+                                        </li>
+                                        <li class="flex items-center gap-2">
+                                            <span>🌐</span> 后端要服务多个前端/App
+                                        </li>
+                                        <li class="flex items-center gap-2">
+                                            <span>🎮</span> 做多人游戏服务器
+                                        </li>
+                                        <li class="flex items-center gap-2">
+                                            <span>📧</span> 处理邮件/队列等特殊触发器
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Scenario Quiz -->
+                <div class="bg-white rounded-2xl shadow-lg p-8 fade-in">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">🎯</span>
+                        场景判断
+                    </h3>
+                    <p class="text-gray-700 mb-4">你想做一个每天凌晨自动清理30天前旧数据的功能，应该用什么？</p>
+                    <div class="space-y-3" id="quiz2">
+                        <div class="quiz-option border-2 border-gray-200 rounded-lg p-4 cursor-pointer" onclick="checkAnswer(this, false, 'quiz2')">
+                            <span class="font-medium">A.</span> Pages Functions
+                        </div>
+                        <div class="quiz-option border-2 border-gray-200 rounded-lg p-4 cursor-pointer" onclick="checkAnswer(this, true, 'quiz2')">
+                            <span class="font-medium">B.</span> Workers (使用 Cron Triggers)
+                        </div>
+                        <div class="quiz-option border-2 border-gray-200 rounded-lg p-4 cursor-pointer" onclick="checkAnswer(this, false, 'quiz2')">
+                            <span class="font-medium">C.</span> 两者都可以
+                        </div>
+                    </div>
+                    <div id="quiz2-feedback" class="mt-4 hidden"></div>
+                </div>
+            </section>
+
+            <!-- Section 4: Workers Unique Advantages -->
+            <section id="section-4" class="lesson-section hidden">
+                <div class="bg-white rounded-2xl shadow-lg p-8 mb-6 fade-in">
+                    <div class="inline-flex items-center gap-2 bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-medium mb-4">
+                        <span>💪</span> 第四章
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">Workers 的独特优势</h2>
+                    <p class="text-gray-600 mb-8">除了定时任务，Workers 还有哪些 Pages Functions 做不到的事情？</p>
+
+                    <!-- Expandable Cards -->
+                    <div class="space-y-4">
+                        <!-- Trigger Types -->
+                        <div class="border border-gray-200 rounded-xl overflow-hidden">
+                            <div class="bg-gray-50 p-4 cursor-pointer flex items-center justify-between" onclick="toggleExpand('trigger')">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-2xl">🎯</span>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-900">多样的触发方式</h4>
+                                        <p class="text-sm text-gray-500">不仅仅是 HTTP 请求</p>
+                                    </div>
+                                </div>
+                                <span id="trigger-arrow" class="text-gray-400 transition-transform">▼</span>
+                            </div>
+                            <div id="trigger-content" class="expandable-content">
+                                <div class="p-5 border-t border-gray-200 space-y-4">
+                                    <div class="flex items-start gap-3 bg-amber-50 p-4 rounded-lg">
+                                        <span class="text-xl">📧</span>
+                                        <div>
+                                            <h5 class="font-medium text-gray-900">Email Triggers</h5>
+                                            <p class="text-sm text-gray-600">收到邮件时自动触发，可分析邮件内容、提取附件</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start gap-3 bg-blue-50 p-4 rounded-lg">
+                                        <span class="text-xl">📬</span>
+                                        <div>
+                                            <h5 class="font-medium text-gray-900">Queue Triggers</h5>
+                                            <p class="text-sm text-gray-600">监听消息队列，处理高并发任务（如批量图片压缩）</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start gap-3 bg-purple-50 p-4 rounded-lg">
+                                        <span class="text-xl">⏰</span>
+                                        <div>
+                                            <h5 class="font-medium text-gray-900">Cron Triggers</h5>
+                                            <p class="text-sm text-gray-600">定时执行，如每天凌晨清理数据</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Independence -->
+                        <div class="border border-gray-200 rounded-xl overflow-hidden">
+                            <div class="bg-gray-50 p-4 cursor-pointer flex items-center justify-between" onclick="toggleExpand('independence')">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-2xl">🌐</span>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-900">纯粹的独立性</h4>
+                                        <p class="text-sm text-gray-500">服务于全平台</p>
+                                    </div>
+                                </div>
+                                <span id="independence-arrow" class="text-gray-400 transition-transform">▼</span>
+                            </div>
+                            <div id="independence-content" class="expandable-content">
+                                <div class="p-5 border-t border-gray-200">
+                                    <div class="grid md:grid-cols-2 gap-4">
+                                        <div class="bg-gray-100 p-4 rounded-lg">
+                                            <div class="text-2xl mb-2">📱</div>
+                                            <h5 class="font-medium text-gray-900 mb-1">App 后端</h5>
+                                            <p class="text-xs text-gray-600">iOS/Android App 不需要网页，直接调用 Worker API</p>
+                                        </div>
+                                        <div class="bg-gray-100 p-4 rounded-lg">
+                                            <div class="text-2xl mb-2">🔗</div>
+                                            <h5 class="font-medium text-gray-900 mb-1">第三方接口</h5>
+                                            <p class="text-xs text-gray-600">Python 脚本、其他服务都可以调用</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Traffic Control -->
+                        <div class="border border-gray-200 rounded-xl overflow-hidden">
+                            <div class="bg-gray-50 p-4 cursor-pointer flex items-center justify-between" onclick="toggleExpand('traffic')">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-2xl">🚦</span>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-900">高级流量控制</h4>
+                                        <p class="text-sm text-gray-500">你是交通警察</p>
+                                    </div>
+                                </div>
+                                <span id="traffic-arrow" class="text-gray-400 transition-transform">▼</span>
+                            </div>
+                            <div id="traffic-content" class="expandable-content">
+                                <div class="p-5 border-t border-gray-200 space-y-3">
+                                    <div class="flex items-center gap-3">
+                                        <span class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-600">↔️</span>
+                                        <div>
+                                            <span class="font-medium">反向代理</span>
+                                            <span class="text-gray-500 text-sm">- 转发请求到其他服务器</span>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <span class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">🔀</span>
+                                        <div>
+                                            <span class="font-medium">A/B 测试</span>
+                                            <span class="text-gray-500 text-sm">- 50% 用户看 v1，50% 看 v2</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Service Bindings -->
+                        <div class="border border-gray-200 rounded-xl overflow-hidden">
+                            <div class="bg-gray-50 p-4 cursor-pointer flex items-center justify-between" onclick="toggleExpand('binding')">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-2xl">⚡</span>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-900">Service Bindings</h4>
+                                        <p class="text-sm text-gray-500">极致性能的内网通话</p>
+                                    </div>
+                                </div>
+                                <span id="binding-arrow" class="text-gray-400 transition-transform">▼</span>
+                            </div>
+                            <div id="binding-content" class="expandable-content">
+                                <div class="p-5 border-t border-gray-200">
+                                    <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-lg mb-4">
+                                        <p class="text-sm text-gray-700">
+                                            Worker A 调用 Worker B，<strong>不走公网</strong>，直接在内存里完成数据交换。
+                                        </p>
+                                    </div>
+                                    <div class="flex items-center justify-around text-center">
+                                        <div>
+                                            <div class="text-2xl mb-1">🚀</div>
+                                            <div class="text-xs text-gray-500">零延迟</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-2xl mb-1">💰</div>
+                                            <div class="text-xs text-gray-500">完全免费</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-2xl mb-1">🔒</div>
+                                            <div class="text-xs text-gray-500">更安全</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 5: WebSocket & Hibernation -->
+            <section id="section-5" class="lesson-section hidden">
+                <div class="bg-white rounded-2xl shadow-lg p-8 mb-6 fade-in">
+                    <div class="inline-flex items-center gap-2 bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-medium mb-4">
+                        <span>🎮</span> 第五章
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">WebSocket 与游戏开发</h2>
+                    <p class="text-gray-600 mb-6">Worker 不是有 10ms 的运算时间限制吗？如何做到"一直在线"？</p>
+
+                    <!-- Key Concept -->
+                    <div class="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-xl p-6 mb-8">
+                        <h3 class="font-bold text-red-900 mb-3 flex items-center gap-2">
+                            <span>🎯</span> 核心概念
+                        </h3>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div class="bg-white/70 rounded-lg p-4">
+                                <h4 class="font-medium text-gray-900 mb-2">❌ 墙上时间 (Wall Clock)</h4>
+                                <p class="text-sm text-gray-600">连接保持了多久？（如游戏玩了1小时）</p>
+                                <p class="text-xs text-red-600 mt-2">不计入限制</p>
+                            </div>
+                            <div class="bg-white/70 rounded-lg p-4">
+                                <h4 class="font-medium text-gray-900 mb-2">✓ CPU 时间</h4>
+                                <p class="text-sm text-gray-600">CPU 真正计算的时间</p>
+                                <p class="text-xs text-green-600 mt-2">这才是被限制的</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Guard Analogy -->
+                    <div class="bg-gray-50 rounded-xl p-6 mb-8">
+                        <h4 class="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                            <span>👮‍♂️</span> 保安亭的比喻
+                        </h4>
+                        <div class="space-y-3 text-gray-700">
+                            <p>你雇了一个保安（Worker）看门。</p>
+                            <p>保安坐在亭子里坐了 <strong>8 小时</strong>，但其中 7 小时 59 分钟都在发呆喝茶。</p>
+                            <p class="text-indigo-700 font-medium">Cloudflare 的计费规则：只算保安「站起来开门、登记」的那一瞬间！</p>
+                        </div>
+                    </div>
+
+                    <!-- Hibernation Demo -->
+                    <h4 class="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <span>❄️</span> 冬眠机制演示
+                    </h4>
+                    <div class="hibernation-demo bg-gray-900 rounded-xl p-6 mb-4">
+                        <div class="flex items-center justify-around mb-6">
+                            <div class="text-center">
+                                <div class="text-3xl mb-2">👤</div>
+                                <div class="text-xs text-gray-400">玩家</div>
+                            </div>
+                            <div id="message-arrow" class="text-gray-600 transition-all">
+                                <span class="text-2xl">→</span>
+                            </div>
+                            <div class="text-center">
+                                <div id="worker-icon" class="worker sleeping text-4xl mb-2">⚙️</div>
+                                <div class="text-xs text-gray-400">Worker</div>
+                                <div id="worker-status" class="text-xs text-gray-500 mt-1">💤 冬眠中</div>
+                            </div>
+                        </div>
+                        <button onclick="simulateHibernation()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition">
+                            模拟发送消息
+                        </button>
+                        <div id="hibernation-log" class="mt-4 text-xs text-gray-400 font-mono h-20 overflow-y-auto"></div>
+                    </div>
+
+                    <div class="text-sm text-gray-500 bg-gray-50 rounded-lg p-4">
+                        <strong>关键点：</strong>每次收到消息，Worker 会从冬眠中「解冻」，处理完立即再次冬眠。CPU 时间只计算真正运行代码的那几毫秒！
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 6: Durable Objects -->
+            <section id="section-6" class="lesson-section hidden">
+                <div class="bg-white rounded-2xl shadow-lg p-8 mb-6 fade-in">
+                    <div class="inline-flex items-center gap-2 bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-medium mb-4">
+                        <span>🏰</span> 第六章
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Durable Objects：多人游戏的秘密武器</h2>
+
+                    <!-- Problem -->
+                    <div class="bg-red-50 border border-red-200 rounded-xl p-6 mb-6">
+                        <h4 class="font-semibold text-red-900 mb-3 flex items-center gap-2">
+                            <span>❌</span> 普通 Worker 的问题
+                        </h4>
+                        <div class="flex items-center justify-around py-4">
+                            <div class="text-center">
+                                <div class="text-2xl mb-1">👤</div>
+                                <div class="text-xs text-gray-600">玩家 A (北京)</div>
+                                <div class="text-xs text-gray-400">→ 北京节点</div>
+                            </div>
+                            <div class="text-3xl text-red-400">≠</div>
+                            <div class="text-center">
+                                <div class="text-2xl mb-1">👤</div>
+                                <div class="text-xs text-gray-600">玩家 B (伦敦)</div>
+                                <div class="text-xs text-gray-400">→ 伦敦节点</div>
+                            </div>
+                        </div>
+                        <p class="text-sm text-red-700 text-center">他们连到了不同的 Worker 副本，内存不互通！</p>
+                    </div>
+
+                    <!-- Solution -->
+                    <div class="bg-green-50 border border-green-200 rounded-xl p-6 mb-6">
+                        <h4 class="font-semibold text-green-900 mb-3 flex items-center gap-2">
+                            <span>✓</span> Durable Objects 的解决方案
+                        </h4>
+                        <div class="flex items-center justify-center gap-4 py-4">
+                            <div class="text-center">
+                                <div class="text-2xl mb-1">👤</div>
+                                <div class="text-xs">玩家 A</div>
+                            </div>
+                            <div class="text-xl text-green-500">→</div>
+                            <div class="text-center bg-white rounded-xl p-4 shadow-sm border-2 border-green-300">
+                                <div class="text-3xl mb-1">🏠</div>
+                                <div class="text-sm font-medium text-green-800">Room_101</div>
+                                <div class="text-xs text-gray-500">单例实例</div>
+                            </div>
+                            <div class="text-xl text-green-500">←</div>
+                            <div class="text-center">
+                                <div class="text-2xl mb-1">👤</div>
+                                <div class="text-xs">玩家 B</div>
+                            </div>
+                        </div>
+                        <p class="text-sm text-green-700 text-center">Cloudflare 强制将所有请求路由到同一个物理节点！</p>
+                    </div>
+
+                    <!-- Key Points -->
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <div class="bg-gray-50 rounded-lg p-4 text-center">
+                            <div class="text-2xl mb-2">🌍</div>
+                            <div class="font-medium text-gray-900">全球单例</div>
+                            <div class="text-xs text-gray-500">同名 DO 只有一个实例</div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4 text-center">
+                            <div class="text-2xl mb-2">💾</div>
+                            <div class="font-medium text-gray-900">状态持久化</div>
+                            <div class="text-xs text-gray-500">内存变量可以保持</div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4 text-center">
+                            <div class="text-2xl mb-2">📡</div>
+                            <div class="font-medium text-gray-900">广播能力</div>
+                            <div class="text-xs text-gray-500">轻松同步所有玩家</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quiz -->
+                <div class="bg-white rounded-2xl shadow-lg p-8 fade-in">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">?</span>
+                        理解检验
+                    </h3>
+                    <p class="text-gray-700 mb-4">为什么做多人联机游戏必须用 Durable Objects？</p>
+                    <div class="space-y-3" id="quiz3">
+                        <div class="quiz-option border-2 border-gray-200 rounded-lg p-4 cursor-pointer" onclick="checkAnswer(this, false, 'quiz3')">
+                            <span class="font-medium">A.</span> 因为它速度更快
+                        </div>
+                        <div class="quiz-option border-2 border-gray-200 rounded-lg p-4 cursor-pointer" onclick="checkAnswer(this, true, 'quiz3')">
+                            <span class="font-medium">B.</span> 因为需要让所有玩家连接到同一个实例，共享内存状态
+                        </div>
+                        <div class="quiz-option border-2 border-gray-200 rounded-lg p-4 cursor-pointer" onclick="checkAnswer(this, false, 'quiz3')">
+                            <span class="font-medium">C.</span> 因为它可以存储更多数据
+                        </div>
+                    </div>
+                    <div id="quiz3-feedback" class="mt-4 hidden"></div>
+                </div>
+            </section>
+
+            <!-- Section 7: Pricing & Limits -->
+            <section id="section-7" class="lesson-section hidden">
+                <div class="bg-white rounded-2xl shadow-lg p-8 mb-6 fade-in">
+                    <div class="inline-flex items-center gap-2 bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-medium mb-4">
+                        <span>💰</span> 第七章
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">定价与限制</h2>
+
+                    <!-- Pricing Cards -->
+                    <div class="grid md:grid-cols-2 gap-6 mb-8">
+                        <div class="border-2 border-gray-200 rounded-xl p-6">
+                            <div class="text-sm font-medium text-gray-500 mb-2">免费版</div>
+                            <div class="text-3xl font-bold text-gray-900 mb-4">$0<span class="text-lg text-gray-400">/月</span></div>
+                            <ul class="space-y-3 text-sm">
+                                <li class="flex items-center gap-2">
+                                    <span class="text-green-500">✓</span>
+                                    <span>CPU 单次限制：<strong>10ms</strong></span>
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <span class="text-green-500">✓</span>
+                                    <span>请求总数：<strong>100,000 次/天</strong></span>
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <span class="text-red-500">✗</span>
+                                    <span class="text-gray-500">Durable Objects</span>
+                                </li>
+                            </ul>
+                            <div class="mt-4 text-xs text-gray-500">适合开发测试</div>
+                        </div>
+
+                        <div class="border-2 border-indigo-500 rounded-xl p-6 bg-indigo-50 relative">
+                            <div class="absolute -top-3 right-4 bg-indigo-500 text-white text-xs px-2 py-1 rounded-full">推荐</div>
+                            <div class="text-sm font-medium text-indigo-600 mb-2">付费版</div>
+                            <div class="text-3xl font-bold text-gray-900 mb-4">$5<span class="text-lg text-gray-400">/月</span></div>
+                            <ul class="space-y-3 text-sm">
+                                <li class="flex items-center gap-2">
+                                    <span class="text-green-500">✓</span>
+                                    <span>CPU 单次限制：<strong>50ms+</strong></span>
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <span class="text-green-500">✓</span>
+                                    <span>请求总数：<strong>无上限</strong></span>
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <span class="text-green-500">✓</span>
+                                    <span><strong>Durable Objects</strong></span>
+                                </li>
+                            </ul>
+                            <div class="mt-4 text-xs text-gray-500">适合正式项目</div>
+                        </div>
+                    </div>
+
+                    <!-- Important Notes -->
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-6">
+                        <h4 class="font-semibold text-amber-900 mb-3 flex items-center gap-2">
+                            <span>⚠️</span> 重要提醒
+                        </h4>
+                        <ul class="space-y-2 text-sm text-amber-800">
+                            <li class="flex items-start gap-2">
+                                <span>•</span>
+                                <span>等待数据库/网络的时间 <strong>不算入</strong> CPU 时间</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span>•</span>
+                                <span>WebSocket 使用冬眠模式时，每条消息计时器都是 <strong>重新归零</strong></span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span>•</span>
+                                <span>10ms 对于简单的转发逻辑 <strong>绰绰有余</strong>（通常只需 0.1~1ms）</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Summary -->
+                <div class="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl shadow-lg p-8 text-white fade-in">
+                    <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+                        <span>🎓</span> 课程总结
+                    </h3>
+                    <div class="space-y-4 mb-6">
+                        <div class="bg-white/10 rounded-lg p-4">
+                            <div class="font-medium mb-1">Pages Functions</div>
+                            <div class="text-sm text-indigo-200">网页后端的最佳选择，同源防拦截，开发最省事</div>
+                        </div>
+                        <div class="bg-white/10 rounded-lg p-4">
+                            <div class="font-medium mb-1">Workers</div>
+                            <div class="text-sm text-indigo-200">特种部队，处理定时任务、复杂计算、游戏联机</div>
+                        </div>
+                        <div class="bg-white/10 rounded-lg p-4">
+                            <div class="font-medium mb-1">最佳实践</div>
+                            <div class="text-sm text-indigo-200">两者混合使用，共享同一个 D1 数据库</div>
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-4xl mb-2">🎉</div>
+                        <div class="text-lg font-medium">恭喜完成学习！</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
+        <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+            <button id="prevBtn" onclick="navigate(-1)" class="px-5 py-2 rounded-lg font-medium text-gray-500 hover:bg-gray-100 transition disabled:opacity-50" disabled>
+                ← 上一节
+            </button>
+            <div class="flex gap-2">
+                <div class="nav-dot w-2 h-2 bg-gray-300 rounded-full cursor-pointer active" onclick="goToSection(1)"></div>
+                <div class="nav-dot w-2 h-2 bg-gray-300 rounded-full cursor-pointer" onclick="goToSection(2)"></div>
+                <div class="nav-dot w-2 h-2 bg-gray-300 rounded-full cursor-pointer" onclick="goToSection(3)"></div>
+                <div class="nav-dot w-2 h-2 bg-gray-300 rounded-full cursor-pointer" onclick="goToSection(4)"></div>
+                <div class="nav-dot w-2 h-2 bg-gray-300 rounded-full cursor-pointer" onclick="goToSection(5)"></div>
+                <div class="nav-dot w-2 h-2 bg-gray-300 rounded-full cursor-pointer" onclick="goToSection(6)"></div>
+                <div class="nav-dot w-2 h-2 bg-gray-300 rounded-full cursor-pointer" onclick="goToSection(7)"></div>
+            </div>
+            <button id="nextBtn" onclick="navigate(1)" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition">
+                下一节 →
+            </button>
+        </div>
+    </nav>
+
+    <script>
+        let currentSection = 1;
+        const totalSections = 7;
+
+        function navigate(direction) {
+            const newSection = currentSection + direction;
+            if (newSection >= 1 && newSection <= totalSections) {
+                goToSection(newSection);
+            }
+        }
+
+        function goToSection(section) {
+            // Hide current section
+            document.getElementById(`section-${currentSection}`).classList.add('hidden');
+
+            // Show new section
+            currentSection = section;
+            const newSectionEl = document.getElementById(`section-${currentSection}`);
+            newSectionEl.classList.remove('hidden');
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Update progress
+            updateProgress();
+
+            // Update buttons
+            document.getElementById('prevBtn').disabled = currentSection === 1;
+            document.getElementById('nextBtn').textContent = currentSection === totalSections ? '完成 ✓' : '下一节 →';
+
+            // Update nav dots
+            document.querySelectorAll('.nav-dot').forEach((dot, index) => {
+                dot.classList.toggle('active', index + 1 === currentSection);
+            });
+        }
+
+        function updateProgress() {
+            const progress = (currentSection / totalSections) * 100;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+            document.getElementById('progressText').textContent = `${currentSection} / ${totalSections}`;
+        }
+
+        function showDetail(type) {
+            const modal = document.getElementById('detailModal');
+            const content = document.getElementById('detailContent');
+
+            if (type === 'worker') {
+                content.innerHTML = `
+                    <div class="text-4xl mb-4">🚴</div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Workers 详解</h3>
+                    <ul class="space-y-3 text-gray-700">
+                        <li class="flex items-start gap-2">
+                            <span class="text-blue-500">•</span>
+                            <span><strong>住址：</strong>有自己的专属域名 (xxx.workers.dev)</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-blue-500">•</span>
+                            <span><strong>工作：</strong>不依附任何网页，可以服务任何客户端</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-blue-500">•</span>
+                            <span><strong>路由：</strong>需要手动在代码里写 if/switch 判断</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-red-500">•</span>
+                            <span><strong>痛点：</strong>跨域 (CORS) 必须配置</span>
+                        </li>
+                    </ul>
+                `;
+            } else {
+                content.innerHTML = `
+                    <div class="text-4xl mb-4">🏠</div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Pages Functions 详解</h3>
+                    <ul class="space-y-3 text-gray-700">
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-500">•</span>
+                            <span><strong>住址：</strong>住在网页域名的"地下室" (name.pages.dev/api/...)</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-500">•</span>
+                            <span><strong>工作：</strong>与前端代码住在同一个 Git 仓库，一次推送全部部署</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-500">•</span>
+                            <span><strong>路由：</strong>文件即路由，functions/api/login.js → /api/login</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-500">•</span>
+                            <span><strong>优势：</strong>同源请求，根本不存在 CORS 问题！</span>
+                        </li>
+                    </ul>
+                `;
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeDetail() {
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+
+        function checkAnswer(element, isCorrect, quizId) {
+            const quiz = document.getElementById(quizId);
+            const options = quiz.querySelectorAll('.quiz-option');
+            const feedback = document.getElementById(`${quizId}-feedback`);
+
+            // Disable all options
+            options.forEach(opt => {
+                opt.classList.add('disabled');
+                opt.style.cursor = 'default';
+            });
+
+            if (isCorrect) {
+                element.classList.add('correct');
+                feedback.innerHTML = `
+                    <div class="bg-green-50 text-green-800 p-4 rounded-lg flex items-center gap-2">
+                        <span class="text-xl">✓</span>
+                        <span>正确！你已经理解了这个概念。</span>
+                    </div>
+                `;
+            } else {
+                element.classList.add('incorrect');
+                // Find and highlight correct answer
+                options.forEach(opt => {
+                    if (opt.onclick.toString().includes('true')) {
+                        opt.classList.add('correct');
+                    }
+                });
+                feedback.innerHTML = `
+                    <div class="bg-red-50 text-red-800 p-4 rounded-lg flex items-center gap-2">
+                        <span class="text-xl">✗</span>
+                        <span>不太对哦，看看正确答案吧。</span>
+                    </div>
+                `;
+            }
+
+            feedback.classList.remove('hidden');
+        }
+
+        function toggleExpand(id) {
+            const content = document.getElementById(`${id}-content`);
+            const arrow = document.getElementById(`${id}-arrow`);
+
+            content.classList.toggle('open');
+            arrow.style.transform = content.classList.contains('open') ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+
+        let hibernationStep = 0;
+        function simulateHibernation() {
+            const workerIcon = document.getElementById('worker-icon');
+            const workerStatus = document.getElementById('worker-status');
+            const log = document.getElementById('hibernation-log');
+            const arrow = document.getElementById('message-arrow');
+
+            hibernationStep++;
+            const time = new Date().toLocaleTimeString();
+
+            // Show message being sent
+            arrow.innerHTML = '<span class="text-2xl text-indigo-400">📦→</span>';
+            log.innerHTML += `<div class="text-indigo-400">[${time}] 📤 发送消息: 玩家移动到 (x:${Math.floor(Math.random()*100)}, y:${Math.floor(Math.random()*100)})</div>`;
+
+            setTimeout(() => {
+                // Worker wakes up
+                workerIcon.classList.remove('sleeping');
+                workerIcon.classList.add('active');
+                workerStatus.innerHTML = '⚡ 处理中...';
+                workerStatus.className = 'text-xs text-green-400 mt-1';
+                log.innerHTML += `<div class="text-green-400">[${time}] ⚡ Worker 解冻，开始处理 (CPU: 0.3ms)</div>`;
+            }, 300);
+
+            setTimeout(() => {
+                // Worker processes
+                arrow.innerHTML = '<span class="text-2xl text-green-400">✓</span>';
+                log.innerHTML += `<div class="text-yellow-400">[${time}] 📊 转发位置给其他玩家...</div>`;
+            }, 600);
+
+            setTimeout(() => {
+                // Worker goes back to sleep
+                workerIcon.classList.remove('active');
+                workerIcon.classList.add('sleeping');
+                workerStatus.innerHTML = '💤 冬眠中';
+                workerStatus.className = 'text-xs text-gray-500 mt-1';
+                arrow.innerHTML = '<span class="text-2xl text-gray-600">→</span>';
+                log.innerHTML += `<div class="text-gray-500">[${time}] ❄️ 处理完成，Worker 再次冬眠</div>`;
+                log.innerHTML += `<div class="text-gray-600">---</div>`;
+                log.scrollTop = log.scrollHeight;
+            }, 1200);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            updateProgress();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+name = "cfdynamic"
+[[kv_namespaces]]
+binding = "ApiSecret"      # 代码里用的变量名
+id = "1e5f50a69c664355aa7af3d607cf400a"   # KV 的真实 ID (通过创建指令获取)

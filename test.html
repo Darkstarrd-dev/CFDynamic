@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全栈免费开发环境搭建指南</title>
+    <!-- Tailwind CSS v4 -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* 字体配置 */
+        * { font-family: 'Inter', sans-serif; }
+        code, pre { font-family: 'Fira Code', monospace; }
+
+        /* 代码高亮系统 */
+        .code-block { background: #f8f9fa; border: 1px solid #e0e0e0; position: relative; }
+        .syntax-keyword { color: #0066cc; font-weight: 500; }   /* const, return, function */
+        .syntax-string { color: #22863a; }    /* "string" */
+        .syntax-function { color: #6f42c1; }  /* functionName */
+        .syntax-comment { color: #6a737d; font-style: italic; } /* // comment */
+        .syntax-variable { color: #e36209; }  /* variable */
+        .syntax-number { color: #005cc5; }    /* 123 */
+        .syntax-obj { color: #24292e; }
+
+        /* 动画定义 */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse-soft {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .float-animation { animation: float 3s ease-in-out infinite; }
+        .fade-in { animation: fadeIn 0.5s ease forwards; }
+        .progress-bar { transition: width 0.5s ease; }
+
+        /* 幻灯片逻辑 */
+        .slide { display: none; opacity: 0; transition: opacity 0.4s ease; }
+        .slide.active { display: block; opacity: 1; animation: fadeIn 0.4s ease forwards; }
+
+        /* 交互组件：测验 */
+        .quiz-option { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; position: relative; overflow: hidden; }
+        .quiz-option:hover { transform: translateY(-2px); border-color: #2563eb; background: #eff6ff; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.1); }
+        .quiz-option:active { transform: translateY(0); }
+        .quiz-option.correct { background: #dcfce7 !important; border-color: #22c55e !important; color: #14532d; }
+        .quiz-option.wrong { background: #fee2e2 !important; border-color: #ef4444 !important; color: #7f1d1d; }
+
+        /* 交互组件：按钮 */
+        .btn-primary { background: #2563eb; color: white; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2); }
+        .btn-primary:hover { background: #1d4ed8; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3); }
+        .btn-primary:active { background: #1e40af; transform: scale(0.98); }
+
+        .btn-secondary { background: white; color: #374151; border: 1px solid #d1d5db; }
+        .btn-secondary:hover { background: #f9fafb; border-color: #9ca3af; }
+        .btn-secondary:active { background: #f3f4f6; }
+
+        /* 卡片风格 */
+        .card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .card-green { background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 1px solid #a7f3d0; }
+        .card-blue { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #bfdbfe; }
+
+        /* 移动端触摸区域 */
+        .touch-nav-zone {
+            position: fixed; top: 0; bottom: 0; width: 15%; z-index: 30;
+            display: none; cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .touch-nav-zone.left { left: 0; }
+        .touch-nav-zone.right { right: 0; }
+        .touch-nav-zone .nav-hint {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 40px; height: 40px; border-radius: 50%;
+            background: rgba(255,255,255,0.8); box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.2s; font-size: 20px; color: #6b7280;
+        }
+        .touch-nav-zone.left .nav-hint { left: 10px; }
+        .touch-nav-zone.right .nav-hint { right: 10px; }
+        .touch-nav-zone:active .nav-hint { opacity: 1; }
+        .touch-nav-zone.disabled { pointer-events: none; display: none; }
+
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .touch-nav-zone { display: block; }
+            .bottom-nav-buttons { display: none !important; }
+            .code-block pre { font-size: 0.8rem; }
+            .quiz-option:hover { transform: none; box-shadow: none; }
+            h1 { font-size: 1.75rem; }
+            .container { padding-left: 1rem; padding-right: 1rem; }
+        }
+        @media (min-width: 769px) {
+            .bottom-nav-buttons { display: flex !important; }
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen text-gray-800">
+
+    <!-- 移动端触摸导航 -->
+    <div id="touchNavLeft" class="touch-nav-zone left" onclick="prevSlide()">
+        <span class="nav-hint">‹</span>
+    </div>
+    <div id="touchNavRight" class="touch-nav-zone right" onclick="nextSlide()">
+        <span class="nav-hint">›</span>
+    </div>
+
+    <!-- 顶部进度条 -->
+    <div class="fixed top-0 left-0 right-0 h-1.5 bg-gray-200 z-50">
+        <div id="progress" class="progress-bar h-full bg-blue-600" style="width: 0%"></div>
+    </div>
+
+    <!-- 悬浮导航栏 -->
+    <nav class="fixed top-3 sm:top-6 left-1/2 -translate-x-1/2 z-40 bg-white/90 backdrop-blur-md rounded-full px-5 py-2.5 flex items-center gap-4 shadow-lg border border-gray-100/50 max-w-[95vw]">
+        <span class="text-blue-600 font-bold text-sm sm:text-base tracking-tight">FullStack<span class="text-gray-400 font-normal">Guide</span></span>
+        <span class="text-gray-200 h-4 border-l border-gray-200 hidden sm:block"></span>
+        <span id="slideCounter" class="text-gray-500 text-xs sm:text-sm font-medium font-mono">1 / 11</span>
+    </nav>
+
+    <!-- 主内容区域 -->
+    <main class="container mx-auto pt-20 sm:pt-28 pb-32 max-w-3xl">
+
+        <!-- Slide 1: 封面 -->
+        <section class="slide active" data-slide="1">
+            <div class="text-center mb-10">
+                <div class="inline-flex p-5 bg-blue-50 rounded-3xl mb-6 float-animation shadow-sm">
+                    <svg class="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                    </svg>
+                </div>
+                <h1 class="text-3xl sm:text-4xl font-extrabold mb-4 text-gray-900 tracking-tight">全栈免费开发环境搭建指南</h1>
+                <p class="text-lg text-gray-500 max-w-xl mx-auto leading-relaxed">
+                    从零开始，利用 WispByte、DigitalPlat 和 Cloudflare 搭建安全、免费的 Node.js 全栈应用。
+                </p>
+            </div>
+
+            <div class="card p-6 sm:p-8 bg-white">
+                <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-6">核心架构概览</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-2">
+                    <div class="p-4 bg-gray-50 rounded-xl border border-gray-100 text-center hover:bg-white hover:shadow-md transition-all">
+                        <div class="text-2xl mb-2">🖥️</div>
+                        <div class="font-semibold text-gray-800">WispByte</div>
+                        <div class="text-xs text-gray-500 mt-1">Node.js 后端容器</div>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-xl border border-gray-100 text-center hover:bg-white hover:shadow-md transition-all">
+                        <div class="text-2xl mb-2">🌐</div>
+                        <div class="font-semibold text-gray-800">DigitalPlat</div>
+                        <div class="text-xs text-gray-500 mt-1">免费域名注册</div>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-xl border border-gray-100 text-center hover:bg-white hover:shadow-md transition-all">
+                        <div class="text-2xl mb-2">⚡</div>
+                        <div class="font-semibold text-gray-800">Cloudflare</div>
+                        <div class="text-xs text-gray-500 mt-1">DNS / CDN / Worker</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 2: WispByte 配置 -->
+        <section class="slide" data-slide="2">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-gray-900">1. 后端容器配置</h2>
+            <div class="card p-6 sm:p-8 space-y-6">
+                <p class="text-gray-600 leading-relaxed">
+                    登录 WispByte 面板，创建一个 Node.js 服务器。在编写代码前，有一个极其关键的网络设置规则。
+                </p>
+
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3">
+                    <span class="text-2xl">⚠️</span>
+                    <div>
+                        <p class="text-amber-800 font-semibold mb-1">关键规则</p>
+                        <p class="text-sm text-amber-700">
+                            服务器必须监听 <code class="bg-amber-100 px-1 rounded text-amber-900 font-bold">0.0.0.0</code> 地址，而不能是默认的 localhost 或 127.0.0.1。
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-8">
+                    <h4 class="text-sm font-bold text-gray-900 mb-4">为什么必须监听 0.0.0.0？</h4>
+                    <div id="quiz1" class="space-y-3">
+                        <div class="quiz-option p-4 bg-white rounded-xl border border-gray-200 flex items-center gap-4" data-correct="false" onclick="checkAnswer(this, 1)">
+                            <span class="w-6 h-6 flex items-center justify-center bg-gray-100 rounded-full text-xs font-bold text-gray-500">A</span>
+                            <span class="text-sm">为了提高服务器运行速度</span>
+                        </div>
+                        <div class="quiz-option p-4 bg-white rounded-xl border border-gray-200 flex items-center gap-4" data-correct="true" onclick="checkAnswer(this, 1)">
+                            <span class="w-6 h-6 flex items-center justify-center bg-gray-100 rounded-full text-xs font-bold text-gray-500">B</span>
+                            <span class="text-sm">允许容器外部（公网）访问此服务</span>
+                        </div>
+                        <div class="quiz-option p-4 bg-white rounded-xl border border-gray-200 flex items-center gap-4" data-correct="false" onclick="checkAnswer(this, 1)">
+                            <span class="w-6 h-6 flex items-center justify-center bg-gray-100 rounded-full text-xs font-bold text-gray-500">C</span>
+                            <span class="text-sm">防止端口冲突</span>
+                        </div>
+                    </div>
+                    <div id="quiz1-explanation" class="mt-4 hidden fade-in">
+                        <div class="p-4 bg-green-50 border border-green-200 rounded-xl">
+                            <p class="text-green-700 font-semibold text-sm mb-1">✓ 回答正确！</p>
+                            <p class="text-xs text-gray-600">在容器化环境中，`localhost` 仅指向容器内部。要让外部网络（如我们的 Cloudflare Worker）能连接进来，必须绑定到 `0.0.0.0`。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 3: 后端代码 -->
+        <section class="slide" data-slide="3">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-gray-900">编写后端入口文件</h2>
+            <div class="card p-6 sm:p-8">
+                <p class="text-gray-600 mb-4 text-sm">
+                    在 WispByte 的 Files 页面创建 <code class="bg-gray-100 px-1 rounded border border-gray-200">index.js</code>。注意端口号的获取方式。
+                </p>
+
+                <div class="code-block rounded-lg p-4 overflow-x-auto shadow-sm">
+                    <div class="flex items-center gap-2 mb-3 text-gray-400 text-xs font-mono border-b border-gray-200 pb-2">
+                        <span class="w-2.5 h-2.5 bg-red-400 rounded-full"></span>
+                        <span class="w-2.5 h-2.5 bg-yellow-400 rounded-full"></span>
+                        <span class="w-2.5 h-2.5 bg-green-400 rounded-full"></span>
+                        <span class="ml-auto">index.js</span>
+                    </div>
+                    <pre class="text-sm leading-relaxed"><code><span class="syntax-keyword">const</span> <span class="syntax-obj">http</span> = <span class="syntax-function">require</span>(<span class="syntax-string">'http'</span>);
+
+<span class="syntax-comment">// 1. 优先读取 WispByte 环境变量分配的端口</span>
+<span class="syntax-keyword">const</span> <span class="syntax-variable">port</span> = <span class="syntax-obj">process</span>.<span class="syntax-obj">env</span>.<span class="syntax-variable">SERVER_PORT</span> || <span class="syntax-number">9552</span>;
+
+<span class="syntax-keyword">const</span> <span class="syntax-variable">server</span> = <span class="syntax-obj">http</span>.<span class="syntax-function">createServer</span>((<span class="syntax-variable">req</span>, <span class="syntax-variable">res</span>) => {
+  <span class="syntax-obj">console</span>.<span class="syntax-function">log</span>(<span class="syntax-string">`收到请求: ${req.method} ${req.url}`</span>);
+  <span class="syntax-variable">res</span>.<span class="syntax-variable">statusCode</span> = <span class="syntax-number">200</span>;
+  <span class="syntax-variable">res</span>.<span class="syntax-function">setHeader</span>(<span class="syntax-string">'Content-Type'</span>, <span class="syntax-string">'text/plain'</span>);
+  <span class="syntax-variable">res</span>.<span class="syntax-function">end</span>(<span class="syntax-string">'Hello from Backend!\n'</span>);
+});
+
+<span class="syntax-comment">// 2. 关键：监听 0.0.0.0</span>
+<span class="syntax-variable">server</span>.<span class="syntax-function">listen</span>(<span class="syntax-variable">port</span>, <span class="syntax-string">'0.0.0.0'</span>, () => {
+  <span class="syntax-obj">console</span>.<span class="syntax-function">log</span>(<span class="syntax-string">`Server running at port ${port}`</span>);
+});</code></pre>
+                </div>
+
+                <div class="mt-6 flex items-start gap-3">
+                    <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-xs font-bold mt-0.5">!</div>
+                    <p class="text-sm text-gray-500">
+                        部署完成后，在 Console 点击 <b>Start</b>，直到看见 "Server running..." 字样。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 4: 域名注册与 DNS 移交 -->
+        <section class="slide" data-slide="4">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-gray-900">2. 域名接管 (DNS)</h2>
+            <div class="card p-6 sm:p-8">
+                <div class="space-y-6">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-lg">1</div>
+                        <div>
+                            <p class="font-semibold text-gray-800">注册 Cloudflare 站点</p>
+                            <p class="text-sm text-gray-500">添加域名 `darkstarrd.dpdns.org`，选择 Free Plan。</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-lg">2</div>
+                        <div>
+                            <p class="font-semibold text-gray-800">获取 Nameservers (NS)</p>
+                            <p class="text-sm text-gray-500">Cloudflare 会给你两个地址，例如：</p>
+                            <div class="mt-2 flex gap-2">
+                                <span class="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded border border-blue-100 font-mono">daisy.ns.cloudflare.com</span>
+                                <span class="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded border border-blue-100 font-mono">hal.ns.cloudflare.com</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-lg">3</div>
+                        <div>
+                            <p class="font-semibold text-gray-800">修改 DigitalPlat 设置</p>
+                            <p class="text-sm text-gray-500">回到域名注册商后台，将 Name Server 修改为上述两个地址。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 p-4 bg-gray-50 rounded-xl border border-dashed border-gray-300 text-center">
+                    <p class="text-sm text-gray-500">⏳ 等待生效：通常需要几分钟，收到 Cloudflare 邮件即表示成功。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 5: Cloudflare SSL 配置 -->
+        <section class="slide" data-slide="5">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-gray-900">3. Cloudflare 安全设置</h2>
+            <div class="card p-6 sm:p-8">
+                <p class="text-gray-600 mb-6">
+                    接管域名后，必须调整 SSL/TLS 模式以适配我们的 HTTP 后端。
+                </p>
+
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="p-4 border-2 border-blue-500 bg-blue-50 rounded-xl text-center cursor-default">
+                        <div class="font-bold text-blue-700 mb-1">Flexible (灵活)</div>
+                        <div class="text-xs text-blue-600">浏览器 ↔ HTTPS ↔ CF ↔ HTTP ↔ 后端</div>
+                    </div>
+                    <div class="p-4 border border-gray-200 rounded-xl text-center opacity-50">
+                        <div class="font-semibold text-gray-600 mb-1">Full / Strict</div>
+                        <div class="text-xs text-gray-500">需要后端有 SSL 证书</div>
+                    </div>
+                </div>
+
+                <h4 class="text-sm font-bold text-gray-900 mb-3">为什么不能选 Strict 模式？</h4>
+                <div id="quiz2" class="space-y-3">
+                    <div class="quiz-option p-4 bg-white rounded-xl border border-gray-200 flex items-center gap-4" data-correct="true" onclick="checkAnswer(this, 2)">
+                        <span class="w-6 h-6 flex items-center justify-center bg-gray-100 rounded-full text-xs font-bold text-gray-500">A</span>
+                        <span class="text-sm">因为 WispByte 后端仅支持 HTTP，没有 SSL 证书</span>
+                    </div>
+                    <div class="quiz-option p-4 bg-white rounded-xl border border-gray-200 flex items-center gap-4" data-correct="false" onclick="checkAnswer(this, 2)">
+                        <span class="w-6 h-6 flex items-center justify-center bg-gray-100 rounded-full text-xs font-bold text-gray-500">B</span>
+                        <span class="text-sm">Strict 模式是收费功能</span>
+                    </div>
+                </div>
+                <div id="quiz2-explanation" class="mt-4 hidden fade-in">
+                    <div class="p-4 bg-green-50 border border-green-200 rounded-xl">
+                        <p class="text-green-700 font-semibold text-sm mb-1">✓ 回答正确！</p>
+                        <p class="text-xs text-gray-600">
+                            Strict 模式要求 Cloudflare 到后端的连接也是加密的。由于我们的后端是纯 HTTP，开启 Strict 会导致 Cloudflare 报错 (Error 525/526)。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 6: 架构规划与 DNS -->
+        <section class="slide" data-slide="6">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-gray-900">4. 域名架构与解析</h2>
+            <div class="card p-6 sm:p-8">
+                <p class="text-gray-600 mb-6 text-sm">
+                    为了让系统更健壮，我们采用“单域名，多前缀”策略。请在 Cloudflare <b>DNS -> Records</b> 添加以下记录：
+                </p>
+
+                <div class="overflow-x-auto rounded-xl border border-gray-200 mb-6">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-gray-50 text-gray-600 font-semibold border-b border-gray-200">
+                            <tr>
+                                <th class="p-3">类型</th>
+                                <th class="p-3">名称 (Name)</th>
+                                <th class="p-3">指向 (Content)</th>
+                                <th class="p-3">代理 (Proxy)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <tr class="bg-white">
+                                <td class="p-3 font-mono text-blue-600">A</td>
+                                <td class="p-3 font-mono font-bold">origin</td>
+                                <td class="p-3 font-mono text-gray-500">217.154.212.66</td>
+                                <td class="p-3">
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-gray-100 text-gray-600 text-xs border border-gray-200">
+                                        ☁️ DNS Only
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr class="bg-gray-50/50">
+                                <td class="p-3 font-mono text-purple-600">CNAME</td>
+                                <td class="p-3 font-mono font-bold">www</td>
+                                <td class="p-3 text-xs text-gray-400">Pages 项目地址</td>
+                                <td class="p-3">
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-orange-50 text-orange-600 text-xs border border-orange-100">
+                                        ☁️ Proxied
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <p class="text-blue-800 font-semibold text-sm mb-1">💡 为什么 "origin" 要关闭代理（灰色云朵）？</p>
+                    <p class="text-xs text-blue-700 leading-relaxed">
+                        Cloudflare 代理默认只支持标准端口（80/443）。我们的后端在非标端口 <b>9552</b>，如果开启代理，Cloudflare 无法转发流量。因此必须直连，让后续的 Worker 直接通过 IP:Port 访问。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 7: Worker 中转层 -->
+        <section class="slide" data-slide="7">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-gray-900">5. Worker 中转层开发</h2>
+            <div class="card p-6 sm:p-8">
+                <p class="text-gray-600 mb-4 text-sm">
+                    由于前端是 HTTPS，直接请求 HTTP:9552 会被浏览器拦截（混合内容错误）。我们需要 Cloudflare Worker 作为中间人。
+                </p>
+
+                <div class="code-block rounded-lg p-4 overflow-x-auto shadow-sm mb-6">
+                    <div class="flex items-center gap-2 mb-3 text-gray-400 text-xs font-mono border-b border-gray-200 pb-2">
+                        <span class="text-gray-500">worker.js</span>
+                    </div>
+                    <pre class="text-sm leading-relaxed"><code><span class="syntax-keyword">export</span> <span class="syntax-keyword">default</span> {
+  <span class="syntax-keyword">async</span> <span class="syntax-function">fetch</span>(<span class="syntax-variable">request</span>, <span class="syntax-variable">env</span>, <span class="syntax-variable">ctx</span>) {
+    <span class="syntax-comment">// 指向刚才配置的 "DNS Only" 原始后端</span>
+    <span class="syntax-keyword">const</span> <span class="syntax-variable">backendUrl</span> = <span class="syntax-string">'http://origin.darkstarrd.dpdns.org:9552'</span>;
+
+    <span class="syntax-keyword">try</span> {
+      <span class="syntax-comment">// Cloudflare 服务器内部发起请求 (允许 HTTP)</span>
+      <span class="syntax-keyword">const</span> <span class="syntax-variable">response</span> = <span class="syntax-keyword">await</span> <span class="syntax-function">fetch</span>(<span class="syntax-variable">backendUrl</span>, {
+        <span class="syntax-variable">method</span>: <span class="syntax-variable">request</span>.<span class="syntax-variable">method</span>,
+        <span class="syntax-variable">headers</span>: <span class="syntax-variable">request</span>.<span class="syntax-variable">headers</span>
+      });
+
+      <span class="syntax-comment">// 构造新响应，添加 CORS 头以允许前端访问</span>
+      <span class="syntax-keyword">const</span> <span class="syntax-variable">newResponse</span> = <span class="syntax-keyword">new</span> <span class="syntax-obj">Response</span>(<span class="syntax-variable">response</span>.<span class="syntax-variable">body</span>, <span class="syntax-variable">response</span>);
+      <span class="syntax-variable">newResponse</span>.<span class="syntax-variable">headers</span>.<span class="syntax-function">set</span>(<span class="syntax-string">"Access-Control-Allow-Origin"</span>, <span class="syntax-string">"*"</span>);
+
+      <span class="syntax-keyword">return</span> <span class="syntax-variable">newResponse</span>;
+
+    } <span class="syntax-keyword">catch</span> (<span class="syntax-variable">e</span>) {
+      <span class="syntax-keyword">return</span> <span class="syntax-keyword">new</span> <span class="syntax-obj">Response</span>(<span class="syntax-string">`Error: ${e.message}`</span>, { <span class="syntax-variable">status</span>: <span class="syntax-number">502</span> });
+    }
+  },
+};</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 8: 绑定 Worker 域名 -->
+        <section class="slide" data-slide="8">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-gray-900">绑定 Worker 自定义域名</h2>
+            <div class="card p-6 sm:p-8">
+                <p class="text-gray-600 mb-6">
+                    为了让前端优雅地调用接口，我们需要给 Worker 绑定一个子域名 <code class="bg-gray-100 px-1 rounded text-gray-800 font-mono text-sm">api</code>。
+                </p>
+
+                <div class="space-y-4">
+                    <div class="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
+                        <span class="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold mt-0.5">1</span>
+                        <div class="text-sm text-gray-700">进入 <b>Workers & Pages</b> -> 选择你的 Worker 项目 -> <b>Settings</b>。</div>
+                    </div>
+                    <div class="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
+                        <span class="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold mt-0.5">2</span>
+                        <div class="text-sm text-gray-700">点击 <b>Triggers</b> -> <b>Custom Domains</b> -> <b>Add Custom Domain</b>。</div>
+                    </div>
+                    <div class="flex items-start gap-4 p-4 bg-gray-50 rounded-xl">
+                        <span class="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold mt-0.5">3</span>
+                        <div class="text-sm text-gray-700">输入 <code>api.darkstarrd.dpdns.org</code> 并保存。</div>
+                    </div>
+                </div>
+
+                <div class="mt-8 text-center">
+                    <p class="text-gray-500 text-sm mb-2">配置完成后，你的 API 地址即为：</p>
+                    <p class="font-mono text-blue-600 font-semibold bg-blue-50 inline-block px-4 py-2 rounded-lg">
+                        https://api.darkstarrd.dpdns.org
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 9: 前端集成 -->
+        <section class="slide" data-slide="9">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-gray-900">6. 前端调用</h2>
+            <div class="card p-6 sm:p-8">
+                <p class="text-gray-600 mb-6 text-sm">
+                    现在，在你的 Cloudflare Pages 前端代码中，你可以安全地发起 HTTPS 请求。
+                </p>
+
+                <div class="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
+                    <div class="p-3 bg-gray-50 border-b border-gray-200 text-xs text-gray-500 font-medium">数据流向</div>
+                    <div class="p-4 flex flex-col sm:flex-row items-center gap-2 text-sm text-center sm:text-left justify-between">
+                        <div class="flex-1">
+                            <span class="block font-bold text-gray-800">用户浏览器</span>
+                            <span class="text-xs text-green-600">HTTPS (www)</span>
+                        </div>
+                        <span class="text-gray-300">➜</span>
+                        <div class="flex-1">
+                            <span class="block font-bold text-blue-600">Worker (api)</span>
+                            <span class="text-xs text-gray-500">HTTPS 中转</span>
+                        </div>
+                        <span class="text-gray-300">➜</span>
+                        <div class="flex-1">
+                            <span class="block font-bold text-gray-800">WispByte (origin)</span>
+                            <span class="text-xs text-orange-500">HTTP:9552</span>
+                        </div>
+                    </div>
+                </div>
+
+                <h4 class="text-sm font-bold text-gray-900 mb-3">测验：前端应该 Fetch 哪个地址？</h4>
+                <div id="quiz3" class="space-y-3">
+                    <div class="quiz-option p-4 bg-white rounded-xl border border-gray-200 flex items-center gap-4" data-correct="false" onclick="checkAnswer(this, 3)">
+                        <span class="w-6 h-6 flex items-center justify-center bg-gray-100 rounded-full text-xs font-bold text-gray-500">A</span>
+                        <div class="flex flex-col text-left">
+                            <span class="text-sm font-mono text-gray-700">http://origin.darkstarrd...:9552</span>
+                            <span class="text-xs text-gray-400">直接连接后端</span>
+                        </div>
+                    </div>
+                    <div class="quiz-option p-4 bg-white rounded-xl border border-gray-200 flex items-center gap-4" data-correct="true" onclick="checkAnswer(this, 3)">
+                        <span class="w-6 h-6 flex items-center justify-center bg-gray-100 rounded-full text-xs font-bold text-gray-500">B</span>
+                        <div class="flex flex-col text-left">
+                            <span class="text-sm font-mono text-gray-700">https://api.darkstarrd...</span>
+                            <span class="text-xs text-gray-400">连接 Worker 中转层</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="quiz3-explanation" class="mt-4 hidden fade-in">
+                    <div class="p-4 bg-green-50 border border-green-200 rounded-xl">
+                        <p class="text-green-700 font-semibold text-sm mb-1">✓ 正确！</p>
+                        <p class="text-xs text-gray-600">
+                            直接连接后端会失败（HTTP混合内容报错 + 端口未开放代理）。必须连接 Worker 生成的 HTTPS 接口。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 10: 维护与保号 -->
+        <section class="slide" data-slide="10">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-gray-900">📅 维护与保号 (重要!)</h2>
+            <div class="card p-6 sm:p-8">
+                <div class="grid gap-6">
+                    <!-- 域名 -->
+                    <div class="flex gap-4">
+                        <div class="flex-shrink-0 w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center text-xl">📆</div>
+                        <div>
+                            <h4 class="font-bold text-gray-800">域名续期 (DigitalPlat)</h4>
+                            <p class="text-sm text-gray-600 mt-1">规则：剩余有效期 <span class="text-red-500 font-bold">小于 180 天</span> 时才可免费续期。</p>
+                            <p class="text-xs text-gray-400 mt-2">建议设置手机日历提醒：2026年6月后检查。</p>
+                        </div>
+                    </div>
+
+                    <!-- 主机 -->
+                    <div class="flex gap-4">
+                        <div class="flex-shrink-0 w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center text-xl">🤖</div>
+                        <div>
+                            <h4 class="font-bold text-gray-800">主机保活 (WispByte)</h4>
+                            <p class="text-sm text-gray-600 mt-1">建议定期访问你的 API 接口产生流量，避免被判定为僵尸账户。代码请务必备份到 GitHub。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 11: 完成页 -->
+        <section class="slide" data-slide="11">
+            <div class="text-center mt-10">
+                <div class="inline-block p-6 bg-green-100 rounded-full mb-6 fade-in" style="animation-delay: 0.2s">
+                    <span class="text-6xl">🏆</span>
+                </div>
+                <h2 class="text-3xl font-bold mb-4 text-gray-900">恭喜！全栈环境搭建完成</h2>
+                <p class="text-gray-500 mb-8 max-w-md mx-auto">
+                    你已经成功打通了 WispByte 后端、Cloudflare Worker 中转和 Pages 前端的完整链路。
+                </p>
+
+                <div class="card p-6 max-w-md mx-auto mb-8 bg-white text-left">
+                    <h4 class="text-sm font-bold text-gray-400 uppercase mb-4">技术要点回顾</h4>
+                    <ul class="space-y-3 text-sm text-gray-700">
+                        <li class="flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                            后端监听 0.0.0.0 以允许外部访问
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                            DNS A 记录关闭代理以支持非标端口
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                            使用 Worker 解决 HTTPS 访问 HTTP 的问题
+                        </li>
+                    </ul>
+                </div>
+
+                <button onclick="restartTutorial()" class="btn-primary px-8 py-3 rounded-xl font-semibold text-lg transition-transform hover:scale-105 active:scale-95 shadow-lg shadow-blue-500/30">
+                    🔄 重新复习
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 桌面端底部导航按钮 -->
+    <div class="bottom-nav-buttons fixed bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4 z-40">
+        <button id="prevBtn" onclick="prevSlide()" class="btn-secondary px-6 py-3 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm">
+            <span>←</span> <span>上一页</span>
+        </button>
+        <button id="nextBtn" onclick="nextSlide()" class="btn-primary px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl flex items-center gap-2">
+            <span>下一页</span> <span>→</span>
+        </button>
+    </div>
+
+    <!-- 逻辑脚本 -->
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 11;
+
+        // 初始化
+        function updateSlide() {
+            // 切换 Slide 显示
+            document.querySelectorAll('.slide').forEach(slide => {
+                slide.classList.remove('active');
+            });
+            const activeSlide = document.querySelector(`[data-slide="${currentSlide}"]`);
+            activeSlide.classList.add('active');
+
+            // 滚动到顶部
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // 更新进度条
+            const progress = (currentSlide / totalSlides) * 100;
+            document.getElementById('progress').style.width = `${progress}%`;
+
+            // 更新计数器
+            document.getElementById('slideCounter').textContent = `${currentSlide} / ${totalSlides}`;
+
+            // 更新按钮状态
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+
+            prevBtn.disabled = currentSlide === 1;
+
+            if (currentSlide === totalSlides) {
+                nextBtn.innerHTML = '完成 ✓';
+                nextBtn.onclick = null; // 最后一页禁用下一步，或者改为其他逻辑
+                nextBtn.style.display = 'none'; // 最后一页隐藏下一步按钮
+            } else {
+                nextBtn.innerHTML = '下一页 <span>→</span>';
+                nextBtn.onclick = nextSlide;
+                nextBtn.style.display = 'flex';
+            }
+
+            // 更新触摸区域状态
+            document.getElementById('touchNavLeft').classList.toggle('disabled', currentSlide === 1);
+            document.getElementById('touchNavRight').classList.toggle('disabled', currentSlide === totalSlides);
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        function restartTutorial() {
+            currentSlide = 1;
+            // 重置测验
+            document.querySelectorAll('.quiz-option').forEach(opt => {
+                opt.classList.remove('correct', 'wrong');
+            });
+            document.querySelectorAll('[id$="-explanation"]').forEach(exp => {
+                exp.classList.add('hidden');
+            });
+            updateSlide();
+        }
+
+        // 测验逻辑
+        function checkAnswer(element, quizNum) {
+            const parent = element.parentElement;
+            // 如果已经回答过（有正确或错误的标记），则不再响应
+            if (parent.querySelector('.correct') || parent.querySelector('.wrong')) return;
+
+            const isCorrect = element.dataset.correct === 'true';
+
+            // 标记当前点击的选项
+            if (isCorrect) {
+                element.classList.add('correct');
+            } else {
+                element.classList.add('wrong');
+                // 如果答错了，自动高亮正确答案
+                parent.querySelectorAll('.quiz-option').forEach(opt => {
+                    if (opt.dataset.correct === 'true') opt.classList.add('correct');
+                });
+            }
+
+            // 显示解释
+            const explanation = document.getElementById(`quiz${quizNum}-explanation`);
+            if (explanation) {
+                explanation.classList.remove('hidden');
+                // 动态修改解释标题
+                const title = explanation.querySelector('.font-semibold');
+                if (title) {
+                    title.textContent = isCorrect ? '✓ 回答正确！' : '✕ 回答错误';
+                    title.className = isCorrect ? 'text-green-700 font-semibold text-sm mb-1' : 'text-red-700 font-semibold text-sm mb-1';
+                }
+                const box = explanation.querySelector('div');
+                if (box) {
+                    box.className = isCorrect
+                        ? 'p-4 bg-green-50 border border-green-200 rounded-xl'
+                        : 'p-4 bg-red-50 border border-red-200 rounded-xl';
+                }
+            }
+        }
+
+        // 键盘导航
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                prevSlide();
+            }
+        });
+
+        // 初始化执行
+        updateSlide();
+    </script>
+</body>
+</html>

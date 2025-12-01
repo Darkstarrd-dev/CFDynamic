@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1200" font-family="'Microsoft YaHei', 'PingFang SC', sans-serif" width="100%" style="">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.1"/>
+    </filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+  
+  <rect width="900" height="1200" fill="#fafafa"/>
+  
+  <rect x="0" y="0" width="900" height="50" fill="#3b82f6"/>
+  <text x="450" y="32" text-anchor="middle" fill="white" font-size="20" font-weight="bold">🖱️ 流程图2：鼠标拖动图片</text>
+  
+  <g transform="translate(420, 100)">
+    <ellipse cx="0" cy="0" rx="140" ry="35" fill="#dbeafe" stroke="#60a5fa" stroke-width="2" filter="url(#shadow)"/>
+    <text x="0" y="-8" text-anchor="middle" fill="#1e40af" font-size="14" font-weight="bold">👆 用户在 Canvas 上</text>
+    <text x="0" y="12" text-anchor="middle" fill="#1e40af" font-size="13">按下鼠标左键</text>
+  </g>
+  
+  <line x1="420" y1="135" x2="420" y2="175" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+  
+  <g transform="translate(420, 240)">
+    <rect x="-180" y="-50" width="360" height="100" rx="20" fill="#fce7f3" stroke="#f472b6" stroke-width="2" filter="url(#shadow)"/>
+    <text x="0" y="-25" text-anchor="middle" fill="#be185d" font-size="14" font-weight="bold">🎨 viewer.js — mousedown 事件</text>
+    <text x="0" y="0" text-anchor="middle" fill="#9d174d" font-size="12">记录拖拽状态和起始位置</text>
+    <text x="0" y="22" text-anchor="middle" fill="#db2777" font-size="12" font-style="italic">isDragging = true</text><text x="0" y="40" text-anchor="middle" fill="#db2777" font-size="12" font-style="italic">startX = e.clientX, startY = e.clientY</text>
+  </g>
+  
+  <g transform="translate(700, 195)">
+    <rect x="0" y="0" width="140" height="80" rx="8" fill="#fef3c7" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="5,3"/>
+    <text x="70" y="22" text-anchor="middle" fill="#92400e" font-size="11" font-weight="bold">📝 局部变量</text>
+    <text x="70" y="40" text-anchor="middle" fill="#a16207" font-size="10">isDragging: boolean</text>
+    <text x="70" y="55" text-anchor="middle" fill="#a16207" font-size="10">startX: number</text>
+    <text x="70" y="70" text-anchor="middle" fill="#a16207" font-size="10">startY: number</text>
+  </g>
+  <line x1="600" y1="235" x2="700" y2="235" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="5,3"/>
+  
+  <line x1="420" y1="290" x2="420" y2="340" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+  
+  <g transform="translate(420, 390)">
+    <ellipse cx="0" cy="0" rx="130" ry="35" fill="#dbeafe" stroke="#60a5fa" stroke-width="2" filter="url(#shadow)"/>
+    <text x="0" y="-8" text-anchor="middle" fill="#1e40af" font-size="14" font-weight="bold">👆 用户移动鼠标</text>
+    <text x="0" y="12" text-anchor="middle" fill="#1e40af" font-size="13">（按住状态下）</text>
+  </g>
+  
+  <line x1="420" y1="425" x2="420" y2="475" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+  
+  <g transform="translate(420, 545)">
+    <rect x="-180" y="-55" width="360" height="110" rx="12" fill="#fce7f3" stroke="#f472b6" stroke-width="2" filter="url(#shadow)"/>
+    <text x="0" y="-30" text-anchor="middle" fill="#be185d" font-size="14" font-weight="bold">🎨 viewer.js — mousemove 事件</text>
+    <text x="0" y="-8" text-anchor="middle" fill="#9d174d" font-size="12">检查 isDragging === true</text>
+    <text x="0" y="15" text-anchor="middle" fill="#db2777" font-size="12" font-style="italic">计算偏移量:</text>
+    <text x="0" y="33" text-anchor="middle" fill="#db2777" font-size="11" font-style="italic">deltaX = e.clientX - startX</text>
+    <text x="0" y="48" text-anchor="middle" fill="#db2777" font-size="11" font-style="italic">deltaY = e.clientY - startY</text>
+  </g>
+  
+  <g transform="translate(700, 480)">
+    <rect x="0" y="0" width="130" height="75" rx="8" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.5" stroke-dasharray="5,3"/>
+    <text x="65" y="20" text-anchor="middle" fill="#dc2626" font-size="11" font-weight="bold">🔄 循环执行</text>
+    <text x="65" y="38" text-anchor="middle" fill="#b91c1c" font-size="10">步骤 4-7</text>
+    <text x="65" y="53" text-anchor="middle" fill="#b91c1c" font-size="10">持续触发直到</text>
+    <text x="65" y="68" text-anchor="middle" fill="#b91c1c" font-size="10">mouseup 事件</text>
+  </g>
+  <path d="M 700 520 Q 660 520 660 680 Q 660 850 700 850" fill="none" stroke="#fca5a5" stroke-width="1.5" stroke-dasharray="5,3"/>
+  
+  <line x1="420" y1="600" x2="420" y2="650" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+  
+  <g transform="translate(420, 720)">
+    <rect x="-180" y="-55" width="360" height="110" rx="12" fill="#dbeafe" stroke="#60a5fa" stroke-width="2" filter="url(#shadow)"/>
+    <text x="0" y="-30" text-anchor="middle" fill="#1e40af" font-size="14" font-weight="bold">💾 更新 state.view</text>
+    <text x="0" y="-5" text-anchor="middle" fill="#1e3a8a" font-size="12">state.set('view.offsetX', 原值 + deltaX)</text>
+    <text x="0" y="15" text-anchor="middle" fill="#1e3a8a" font-size="12">state.set('view.offsetY', 原值 + deltaY)</text><text x="0" y="40" text-anchor="middle" fill="#3b82f6" font-size="11" font-style="italic">更新起始位置: startX = e.clientX</text>
+  </g>
+  
+  <g transform="translate(60, 680)">
+    <rect x="0" y="0" width="150" height="75" rx="8" fill="#dbeafe" stroke="#60a5fa" stroke-width="1.5"/>
+    <text x="75" y="20" text-anchor="middle" fill="#1e40af" font-size="11" font-weight="bold">💾 state.view 结构</text>
+    <text x="75" y="38" text-anchor="middle" fill="#1e3a8a" font-size="10">offsetX: 水平偏移</text>
+    <text x="75" y="53" text-anchor="middle" fill="#1e3a8a" font-size="10">offsetY: 垂直偏移</text>
+    <text x="75" y="68" text-anchor="middle" fill="#1e3a8a" font-size="10">scale / rotation</text>
+  </g><line x1="210" y1="720" x2="240" y2="720" stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="5,3"/>
+  
+  <line x1="420" y1="775" x2="420" y2="815" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="435" y="800" fill="#64748b" font-size="11">自动触发</text>
+  
+  <g transform="translate(420, 875)">
+    <rect x="-170" y="-45" width="340" height="90" rx="12" fill="#f3e8ff" stroke="#c084fc" stroke-width="2" filter="url(#shadow)"/>
+    <text x="0" y="-20" text-anchor="middle" fill="#7c3aed" font-size="14" font-weight="bold">📡 events.emit('state:changed')</text>
+    <text x="0" y="5" text-anchor="middle" fill="#6b21a8" font-size="12">状态变化，广播事件</text>
+    <text x="0" y="28" text-anchor="middle" fill="#8b5cf6" font-size="11" font-style="italic">携带数据: { key: 'view.offsetX', value }</text>
+  </g>
+  
+  <line x1="420" y1="930" x2="420" y2="970" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+  
+  <g transform="translate(420, 1035)">
+    <rect x="-180" y="-50" width="360" height="100" rx="12" fill="#fce7f3" stroke="#f472b6" stroke-width="2" filter="url(#shadow)"/>
+    <text x="0" y="-25" text-anchor="middle" fill="#be185d" font-size="14" font-weight="bold">🎨 viewer.js — draw()</text>
+    <text x="0" y="0" text-anchor="middle" fill="#9d174d" font-size="12">监听到 state:changed 或直接调用</text>
+    <text x="0" y="22" text-anchor="middle" fill="#db2777" font-size="12" font-style="italic">ctx.clearRect() 清空画布</text>
+    <text x="0" y="40" text-anchor="middle" fill="#db2777" font-size="12" font-style="italic">ctx.drawImage() 在新位置绘制图片</text>
+  </g>
+  
+  <g transform="translate(60, 1000)">
+    <rect x="0" y="0" width="170" height="65" rx="8" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+    <text x="85" y="20" text-anchor="middle" fill="#166534" font-size="11" font-weight="bold">🛑 mouseup 事件</text>
+    <text x="85" y="38" text-anchor="middle" fill="#15803d" font-size="10">isDragging = false</text>
+    <text x="85" y="53" text-anchor="middle" fill="#15803d" font-size="10">停止响应 mousemove</text>
+  </g>
+  <line x1="230" y1="1035" x2="240" y2="1035" stroke="#86efac" stroke-width="1.5" stroke-dasharray="5,3"/>
+  
+  <line x1="420" y1="1085" x2="420" y2="1125" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)"/>
+  
+  <g transform="translate(420, 1160)">
+    <ellipse cx="0" cy="0" rx="140" ry="35" fill="#d1fae5" stroke="#34d399" stroke-width="3" filter="url(#shadow)"/>
+    <text x="0" y="-5" text-anchor="middle" fill="#065f46" font-size="15" font-weight="bold">✅ 完成</text>
+    <text x="0" y="15" text-anchor="middle" fill="#047857" font-size="13">图片跟随鼠标移动</text>
+  </g>
+</svg>

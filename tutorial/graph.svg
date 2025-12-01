@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 850" font-family="'Microsoft YaHei', 'PingFang SC', sans-serif" width="100%">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.1"/>
+    </filter>
+  </defs>
+  
+  <rect width="1100" height="850" fill="#f8fafc"/>
+  
+  <rect x="0" y="0" width="1100" height="50" fill="#1e293b"/>
+  <text x="550" y="32" text-anchor="middle" fill="white" font-size="22" font-weight="bold">📋 Image Viewer 项目总览
+  </text>
+  
+  <g id="constants">
+    <rect x="20" y="70" width="340" height="230" rx="12" fill="#fef3c7" stroke="#f59e0b" stroke-width="2" filter="url(#shadow)"/>
+    <rect x="20" y="70" width="340" height="36" rx="12" fill="#f59e0b"/>
+    <text x="40" y="95" fill="white" font-size="15" font-weight="bold">📦 常量配置 (constants.js)</text>
+    <text x="35" y="130" fill="#92400e" font-size="13" font-weight="bold">SUPPORTED_FORMATS</text>
+    <text x="35" y="150" fill="#78350f" font-size="11">['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg']</text>
+    <text x="35" y="175" fill="#92400e" font-size="13" font-weight="bold">VIEW_LIMITS</text>
+    <text x="35" y="195" fill="#78350f" font-size="11">minScale: 0.1 | maxScale: 10</text>
+    <text x="35" y="220" fill="#92400e" font-size="13" font-weight="bold">ZOOM_STEP</text>
+    <text x="160" y="220" fill="#78350f" font-size="11">1.2 (每次缩放倍率)</text>
+    <text x="35" y="245" fill="#92400e" font-size="13" font-weight="bold">ROTATION_STEP</text>
+    <text x="175" y="245" fill="#78350f" font-size="11">90 (每次旋转角度)</text>
+    <text x="35" y="270" fill="#92400e" font-size="13" font-weight="bold">KEYS</text>
+    <text x="35" y="290" fill="#78350f" font-size="11">← → A D + - = R 0 (快捷键映射)</text>
+  </g>
+  
+  <g id="events">
+    <rect x="380" y="70" width="340" height="230" rx="12" fill="#f3e8ff" stroke="#a855f7" stroke-width="2" filter="url(#shadow)"/>
+    <rect x="380" y="70" width="340" height="36" rx="12" fill="#a855f7"/>
+    <text x="400" y="95" fill="white" font-size="15" font-weight="bold">📡 事件总线 (events.js)</text>
+    <text x="395" y="130" fill="#6b21a8" font-size="12" font-weight="bold">状态事件</text>
+    <text x="395" y="150" fill="#581c87" font-size="11">• state:changed — 状态变化时触发</text>
+    <text x="395" y="175" fill="#6b21a8" font-size="12" font-weight="bold">数据事件</text>
+    <text x="395" y="195" fill="#581c87" font-size="11">• file:loaded — 文件加载完成</text>
+    <text x="395" y="212" fill="#581c87" font-size="11">• image:loaded — 图片加载完成</text>
+    <text x="395" y="237" fill="#6b21a8" font-size="12" font-weight="bold">动作事件 (toolbar → app)</text>
+    <text x="395" y="257" fill="#581c87" font-size="11">• action:open-file — 打开文件</text>
+    <text x="395" y="274" fill="#581c87" font-size="11">• action:open-folder — 打开文件夹</text>
+    <text x="395" y="291" fill="#581c87" font-size="11">• action:prev/next-image — 上/下一张</text>
+  </g>
+  
+  <g id="state">
+    <rect x="740" y="70" width="340" height="230" rx="12" fill="#dbeafe" stroke="#3b82f6" stroke-width="2" filter="url(#shadow)"/>
+    <rect x="740" y="70" width="340" height="36" rx="12" fill="#3b82f6"/>
+    <text x="760" y="95" fill="white" font-size="15" font-weight="bold">💾 状态管理 (state.js)</text>
+    <text x="755" y="125" fill="#1e40af" font-size="11" font-family="monospace">{</text>
+    <text x="765" y="145" fill="#1e40af" font-size="11" font-family="monospace">files: [</text>
+    <text x="780" y="162" fill="#1e3a8a" font-size="10" font-family="monospace">{ file, name, size, type }</text>
+    <text x="765" y="179" fill="#1e40af" font-size="11" font-family="monospace">],</text>
+    <text x="765" y="199" fill="#1e40af" font-size="11" font-family="monospace">currentIndex: -1,</text>
+    <text x="765" y="219" fill="#1e40af" font-size="11" font-family="monospace">view: {</text>
+    <text x="780" y="236" fill="#1e3a8a" font-size="10" font-family="monospace">scale, rotation, offsetX, offsetY</text>
+    <text x="765" y="253" fill="#1e40af" font-size="11" font-family="monospace">},</text>
+    <text x="765" y="273" fill="#1e40af" font-size="11" font-family="monospace">ui: { loading, error }</text>
+    <text x="755" y="293" fill="#1e40af" font-size="11" font-family="monospace">}</text></g>
+  
+  <g id="services">
+    <rect x="20" y="320" width="520" height="200" rx="12" fill="#d1fae5" stroke="#10b981" stroke-width="2" filter="url(#shadow)"/>
+    <rect x="20" y="320" width="520" height="36" rx="12" fill="#10b981"/>
+    <text x="40" y="345" fill="white" font-size="15" font-weight="bold">⚙️ 服务层 (Services)</text>
+    
+    <rect x="35" y="370" width="235" height="135" rx="8" fill="#ecfdf5" stroke="#059669" stroke-width="1"/>
+    <text x="50" y="392" fill="#065f46" font-size="13" font-weight="bold">fileService</text>
+    <line x1="45" y1="400" x2="260" y2="400" stroke="#059669" stroke-width="0.5"/>
+    <text x="50" y="420" fill="#064e3b" font-size="11">• openFiles() — 选择图片文件</text>
+    <text x="50" y="440" fill="#064e3b" font-size="11">• openFolder() — 选择文件夹</text>
+    <text x="50" y="460" fill="#064e3b" font-size="11">• filterImages() — 过滤图片格式</text>
+    <text x="50" y="480" fill="#064e3b" font-size="11">• getFileInfo() — 获取文件信息</text>
+    
+    <rect x="290" y="370" width="235" height="135" rx="8" fill="#ecfdf5" stroke="#059669" stroke-width="1"/>
+    <text x="305" y="392" fill="#065f46" font-size="13" font-weight="bold">imageService</text>
+    <line x1="300" y1="400" x2="515" y2="400" stroke="#059669" stroke-width="0.5"/>
+    <text x="305" y="420" fill="#064e3b" font-size="11">• loadImage(index) — 加载指定图片</text>
+    <text x="305" y="440" fill="#064e3b" font-size="11">• nextImage() — 下一张</text>
+    <text x="305" y="460" fill="#064e3b" font-size="11">• prevImage() — 上一张</text>
+    <text x="305" y="480" fill="#064e3b" font-size="11">• getCurrentInfo() — 当前图片信息</text></g>
+  
+  <g id="components">
+    <rect x="560" y="320" width="520" height="200" rx="12" fill="#fce7f3" stroke="#ec4899" stroke-width="2" filter="url(#shadow)"/>
+    <rect x="560" y="320" width="520" height="36" rx="12" fill="#ec4899"/>
+    <text x="580" y="345" fill="white" font-size="15" font-weight="bold">🎨 组件层 (Components)</text>
+    
+    <rect x="575" y="370" width="155" height="135" rx="8" fill="#fdf2f8" stroke="#db2777" stroke-width="1"/>
+    <text x="590" y="392" fill="#9d174d" font-size="12" font-weight="bold">toolbar.js</text>
+    <line x1="585" y1="400" x2="720" y2="400" stroke="#db2777" stroke-width="0.5"/>
+    <text x="590" y="418" fill="#831843" font-size="10">📂 打开文件按钮</text>
+    <text x="590" y="435" fill="#831843" font-size="10">📁 打开文件夹按钮</text>
+    <text x="590" y="452" fill="#831843" font-size="10">⬅️ ➡️ 上/下一张按钮</text>
+    <text x="590" y="469" fill="#831843" font-size="10">🔄 旋转按钮</text>
+    <text x="590" y="486" fill="#831843" font-size="10">🔍 缩放按钮</text>
+    
+    <rect x="745" y="370" width="155" height="135" rx="8" fill="#fdf2f8" stroke="#db2777" stroke-width="1"/>
+    <text x="760" y="392" fill="#9d174d" font-size="12" font-weight="bold">viewer.js</text>
+    <line x1="755" y1="400" x2="890" y2="400" stroke="#db2777" stroke-width="0.5"/>
+    <text x="760" y="418" fill="#831843" font-size="10">🖼️ Canvas 绘制图片</text>
+    <text x="760" y="435" fill="#831843" font-size="10">🖱️ 鼠标拖拽移动</text>
+    <text x="760" y="452" fill="#831843" font-size="10">🔄 滚轮缩放</text>
+    <text x="760" y="469" fill="#831843" font-size="10">📐 旋转变换</text>
+    <text x="760" y="486" fill="#831843" font-size="10">↩️ 重置视图</text>
+    
+    <rect x="915" y="370" width="150" height="135" rx="8" fill="#fdf2f8" stroke="#db2777" stroke-width="1"/>
+    <text x="930" y="392" fill="#9d174d" font-size="12" font-weight="bold">statusbar.js</text>
+    <line x1="925" y1="400" x2="1055" y2="400" stroke="#db2777" stroke-width="0.5"/>
+    <text x="930" y="418" fill="#831843" font-size="10">📄 文件名显示</text>
+    <text x="930" y="435" fill="#831843" font-size="10">🔢 索引 (1/10)</text>
+    <text x="930" y="452" fill="#831843" font-size="10">📏 尺寸信息</text>
+    <line x1="925" y1="462" x2="1055" y2="462" stroke="#db2777" stroke-width="0.5"/>
+    <text x="930" y="480" fill="#9d174d" font-size="12" font-weight="bold">keyboard.js</text>
+    <text x="930" y="498" fill="#831843" font-size="10">⌨️ 快捷键监听</text>
+  </g>
+  
+  <g id="app-entry">
+    <rect x="20" y="540" width="1060" height="130" rx="12" fill="#fef2f2" stroke="#ef4444" stroke-width="2" filter="url(#shadow)"/>
+    <rect x="20" y="540" width="1060" height="36" rx="12" fill="#ef4444"/>
+    <text x="40" y="565" fill="white" font-size="15" font-weight="bold">🚀 入口文件 (app.js) — 初始化与事件编排中心</text>
+    <text x="40" y="600" fill="#991b1b" font-size="12" font-weight="bold">初始化顺序</text>
+    <text x="40" y="620" fill="#7f1d1d" font-size="11">1. toolbar.init() → 2. statusbar.init() → 3. viewer.init() → 4. keyboard.init() → 5. 注册事件监听</text>
+    <text x="40" y="650" fill="#991b1b" font-size="12" font-weight="bold">事件编排 (连接 toolbar 动作 → 服务调用)</text>
+    <text x="40" y="668" fill="#7f1d1d" font-size="10">action:open-file → fileService.openFiles() | action:open-folder → fileService.openFolder() | action:prev/next → imageService.prev/nextImage()</text>
+  </g>
+  
+  <g id="keyboard-map">
+    <rect x="20" y="690" width="1060" height="140" rx="12" fill="#f0fdf4" stroke="#22c55e" stroke-width="2" filter="url(#shadow)"/>
+    <rect x="20" y="690" width="1060" height="36" rx="12" fill="#22c55e"/>
+    <text x="40" y="715" fill="white" font-size="15" font-weight="bold">⌨️ 快捷键映射表</text>
+    
+    <text x="60" y="750" fill="#166534" font-size="12" font-weight="bold">按键</text>
+    <text x="180" y="750" fill="#166534" font-size="12" font-weight="bold">功能</text>
+    <text x="380" y="750" fill="#166534" font-size="12" font-weight="bold">按键</text>
+    <text x="500" y="750" fill="#166534" font-size="12" font-weight="bold">功能</text>
+    <text x="700" y="750" fill="#166534" font-size="12" font-weight="bold">按键</text>
+    <text x="820" y="750" fill="#166534" font-size="12" font-weight="bold">功能</text>
+    <line x1="40" y1="760" x2="1060" y2="760" stroke="#86efac" stroke-width="1"/>
+    
+    <text x="60" y="785" fill="#15803d" font-size="12">← 或 A</text>
+    <text x="180" y="785" fill="#14532d" font-size="12">上一张图片</text>
+    <text x="60" y="810" fill="#15803d" font-size="12">→ 或 D</text>
+    <text x="180" y="810" fill="#14532d" font-size="12">下一张图片</text>
+    
+    <text x="380" y="785" fill="#15803d" font-size="12">+ 或 =</text>
+    <text x="500" y="785" fill="#14532d" font-size="12">放大图片</text>
+    <text x="380" y="810" fill="#15803d" font-size="12">-</text>
+    <text x="500" y="810" fill="#14532d" font-size="12">缩小图片</text>
+    
+    <text x="700" y="785" fill="#15803d" font-size="12">R</text>
+    <text x="820" y="785" fill="#14532d" font-size="12">顺时针旋转90°</text>
+    <text x="700" y="810" fill="#15803d" font-size="12">0</text>
+    <text x="820" y="810" fill="#14532d" font-size="12">重置视图</text>
+  </g>
+</svg>

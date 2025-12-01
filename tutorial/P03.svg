@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1450" font-family="Arial, sans-serif" width="100%">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="2" dy="2" stdDeviation="2" flood-opacity="0.15"/>
+    </filter>
+    <marker id="arrowGray" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#64748b"/>
+    </marker><marker id="arrowPink" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#ec4899"/>
+    </marker>
+    <marker id="arrowPurple" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#a855f7"/>
+    </marker></defs>
+  
+  <rect width="900" height="1450" fill="#f8fafc"/>
+  
+  <rect x="0" y="0" width="900" height="50" fill="#10b981"/>
+  <text x="450" y="32" text-anchor="middle" fill="white" font-size="18" font-weight="bold">流程图3：翻页流程（按钮 + 键盘双路径）</text>
+  
+  <rect x="130" y="70" width="80" height="26" rx="13" fill="#ec4899"/>
+  <text x="170" y="88" text-anchor="middle" fill="white" font-size="12" font-weight="bold">路径 A</text>
+  
+  <rect x="640" y="70" width="80" height="26" rx="13" fill="#a855f7"/>
+  <text x="680" y="88" text-anchor="middle" fill="white" font-size="12" font-weight="bold">路径 B</text>
+  
+  <ellipse cx="200" cy="140" rx="115" ry="30" fill="#fce7f3" stroke="#f472b6" stroke-width="2" filter="url(#shadow)"/>
+  <text x="200" y="136" text-anchor="middle" fill="#be185d" font-size="12" font-weight="bold">用户点击</text>
+  <text x="200" y="152" text-anchor="middle" fill="#be185d" font-size="11">「下一张」按钮</text>
+  
+  <ellipse cx="700" cy="140" rx="115" ry="30" fill="#f3e8ff" stroke="#c084fc" stroke-width="2" filter="url(#shadow)"/>
+  <text x="700" y="136" text-anchor="middle" fill="#7c3aed" font-size="12" font-weight="bold">用户按下</text>
+  <text x="700" y="152" text-anchor="middle" fill="#7c3aed" font-size="11">→ 或 D 键</text>
+  
+  <line x1="200" y1="170" x2="200" y2="200" stroke="#ec4899" stroke-width="2" marker-end="url(#arrowPink)"/>
+  
+  <line x1="700" y1="170" x2="700" y2="200" stroke="#a855f7" stroke-width="2" marker-end="url(#arrowPurple)"/>
+  
+  <rect x="60" y="210" width="280" height="85" rx="10" fill="#fce7f3" stroke="#f472b6" stroke-width="2" filter="url(#shadow)"/>
+  <text x="200" y="235" text-anchor="middle" fill="#be185d" font-size="13" font-weight="bold">toolbar.js</text>
+  <text x="200" y="255" text-anchor="middle" fill="#9d174d" font-size="11">按钮点击事件触发</text>
+  <text x="200" y="280" text-anchor="middle" fill="#db2777" font-size="10" font-style="italic">events.emit('action:next-image')</text>
+  
+  <rect x="560" y="210" width="280" height="85" rx="10" fill="#f3e8ff" stroke="#c084fc" stroke-width="2" filter="url(#shadow)"/>
+  <text x="700" y="235" text-anchor="middle" fill="#7c3aed" font-size="13" font-weight="bold">keyboard.js</text>
+  <text x="700" y="255" text-anchor="middle" fill="#6b21a8" font-size="11">监听 keydown 事件</text>
+  <text x="700" y="280" text-anchor="middle" fill="#8b5cf6" font-size="10" font-style="italic">匹配 KEYS.NEXT 配置</text>
+  
+  <rect x="750" y="310" width="120" height="50" rx="6" fill="#fef3c7" stroke="#fbbf24" stroke-width="1"/>
+  <text x="810" y="328" text-anchor="middle" fill="#92400e" font-size="9" font-weight="bold">constants.js</text>
+  <text x="810" y="342" text-anchor="middle" fill="#a16207" font-size="8">KEYS.NEXT:</text>
+  <text x="810" y="354" text-anchor="middle" fill="#a16207" font-size="8">['ArrowRight','KeyD']</text>
+  <line x1="750" y1="335" x2="720" y2="295" stroke="#fbbf24" stroke-width="1" stroke-dasharray="4,2"/>
+  
+  <line x1="200" y1="295" x2="200" y2="330" stroke="#ec4899" stroke-width="2" marker-end="url(#arrowPink)"/>
+  
+  <line x1="700" y1="295" x2="700" y2="330" stroke="#a855f7" stroke-width="2" marker-end="url(#arrowPurple)"/>
+  
+  <rect x="60" y="340" width="280" height="80" rx="10" fill="#fef2f2" stroke="#fca5a5" stroke-width="2" filter="url(#shadow)"/>
+  <text x="200" y="365" text-anchor="middle" fill="#dc2626" font-size="13" font-weight="bold">app.js</text>
+  <text x="200" y="385" text-anchor="middle" fill="#b91c1c" font-size="11">监听 'action:next-image'</text>
+  <text x="200" y="408" text-anchor="middle" fill="#ef4444" font-size="10" font-style="italic">调用 imageService.nextImage()</text>
+  
+  <rect x="560" y="340" width="280" height="80" rx="10" fill="#f3e8ff" stroke="#c084fc" stroke-width="2" filter="url(#shadow)"/>
+  <text x="700" y="365" text-anchor="middle" fill="#7c3aed" font-size="13" font-weight="bold">keyboard.js</text>
+  <text x="700" y="385" text-anchor="middle" fill="#6b21a8" font-size="11">直接调用服务方法</text>
+  <text x="700" y="408" text-anchor="middle" fill="#8b5cf6" font-size="10" font-style="italic">imageService.nextImage()</text>
+  
+  <line x1="200" y1="420" x2="200" y2="460" stroke="#ec4899" stroke-width="2"/>
+  <line x1="700" y1="420" x2="700" y2="460" stroke="#a855f7" stroke-width="2"/>
+  <line x1="200" y1="460" x2="700" y2="460" stroke="#64748b" stroke-width="2"/>
+  <line x1="450" y1="460" x2="450" y2="495" stroke="#64748b" stroke-width="2" marker-end="url(#arrowGray)"/>
+  
+  <rect x="400" y="440" width="100" height="22" rx="11" fill="#64748b"/>
+  <text x="450" y="455" text-anchor="middle" fill="white" font-size="10" font-weight="bold">路径汇合</text>
+  
+  <rect x="270" y="505" width="360" height="95" rx="10" fill="#d1fae5" stroke="#34d399" stroke-width="2" filter="url(#shadow)"/>
+  <text x="450" y="530" text-anchor="middle" fill="#065f46" font-size="13" font-weight="bold">imageService.nextImage()</text><text x="450" y="550" text-anchor="middle" fill="#047857" font-size="11">读取当前状态</text>
+  <text x="450" y="572" text-anchor="middle" fill="#10b981" font-size="10" font-style="italic">currentIndex = state.get('currentIndex')</text><text x="450" y="590" text-anchor="middle" fill="#10b981" font-size="10" font-style="italic">totalCount = state.get('files').length</text>
+  
+  <rect x="60" y="520" width="140" height="60" rx="6" fill="#dbeafe" stroke="#60a5fa" stroke-width="1"/>
+  <text x="130" y="540" text-anchor="middle" fill="#1e40af" font-size="10" font-weight="bold">读取 state</text>
+  <text x="130" y="555" text-anchor="middle" fill="#1e3a8a" font-size="9">currentIndex: 0</text>
+  <text x="130" y="570" text-anchor="middle" fill="#1e3a8a" font-size="9">files.length: 10</text><line x1="200" y1="550" x2="270" y2="550" stroke="#60a5fa" stroke-width="1" stroke-dasharray="4,2"/>
+  
+  <line x1="450" y1="600" x2="450" y2="635" stroke="#64748b" stroke-width="2" marker-end="url(#arrowGray)"/>
+  
+  <rect x="270" y="645" width="360" height="85" rx="10" fill="#d1fae5" stroke="#34d399" stroke-width="2" filter="url(#shadow)"/>
+  <text x="450" y="670" text-anchor="middle" fill="#065f46" font-size="13" font-weight="bold">计算新索引</text>
+  <text x="450" y="692" text-anchor="middle" fill="#047857" font-size="11">newIndex = (currentIndex + 1) % totalCount</text>
+  <text x="450" y="712" text-anchor="middle" fill="#6b7280" font-size="10">循环逻辑：最后一张 → 第一张</text>
+  
+  <line x1="450" y1="730" x2="450" y2="765" stroke="#64748b" stroke-width="2" marker-end="url(#arrowGray)"/>
+  
+  <rect x="270" y="775" width="360" height="75" rx="10" fill="#d1fae5" stroke="#34d399" stroke-width="2" filter="url(#shadow)"/>
+  <text x="450" y="800" text-anchor="middle" fill="#065f46" font-size="13" font-weight="bold">imageService.loadImage(newIndex)</text>
+  <text x="450" y="820" text-anchor="middle" fill="#047857" font-size="11">加载新图片文件</text>
+  <text x="450" y="840" text-anchor="middle" fill="#10b981" font-size="10" font-style="italic">读取 state.files[newIndex]</text>
+  
+  <line x1="450" y1="850" x2="450" y2="885" stroke="#64748b" stroke-width="2" marker-end="url(#arrowGray)"/>
+  
+  <rect x="270" y="895" width="360" height="90" rx="10" fill="#dbeafe" stroke="#60a5fa" stroke-width="2" filter="url(#shadow)"/>
+  <text x="450" y="920" text-anchor="middle" fill="#1e40af" font-size="13" font-weight="bold">更新 state</text>
+  <text x="450" y="942" text-anchor="middle" fill="#1e3a8a" font-size="11">state.set('currentIndex', newIndex)</text>
+  <text x="450" y="962" text-anchor="middle" fill="#1e3a8a" font-size="11">state.set('currentImage', imageData)</text>
+  <text x="450" y="978" text-anchor="middle" fill="#3b82f6" font-size="10">重置 view.offsetX/Y, scale 等</text>
+  
+  <line x1="450" y1="985" x2="450" y2="1020" stroke="#64748b" stroke-width="2" marker-end="url(#arrowGray)"/>
+  <text x="465" y="1008" fill="#64748b" font-size="9">自动触发</text>
+  
+  <rect x="280" y="1030" width="340" height="80" rx="10" fill="#f3e8ff" stroke="#c084fc" stroke-width="2" filter="url(#shadow)"/>
+  <text x="450" y="1055" text-anchor="middle" fill="#7c3aed" font-size="13" font-weight="bold">events.emit('image:loaded')</text>
+  <text x="450" y="1075" text-anchor="middle" fill="#6b21a8" font-size="11">广播图片加载完成事件</text>
+  <text x="450" y="1098" text-anchor="middle" fill="#8b5cf6" font-size="10" font-style="italic">携带: { image, width, height, name }</text>
+  
+  <line x1="450" y1="1110" x2="450" y2="1140" stroke="#64748b" stroke-width="2"/>
+  <line x1="300" y1="1140" x2="600" y2="1140" stroke="#64748b" stroke-width="2"/>
+  <line x1="300" y1="1140" x2="300" y2="1170" stroke="#64748b" stroke-width="2" marker-end="url(#arrowGray)"/>
+  <line x1="600" y1="1140" x2="600" y2="1170" stroke="#64748b" stroke-width="2" marker-end="url(#arrowGray)"/>
+  
+  <rect x="190" y="1180" width="220" height="60" rx="10" fill="#fce7f3" stroke="#f472b6" stroke-width="2" filter="url(#shadow)"/>
+  <text x="300" y="1205" text-anchor="middle" fill="#be185d" font-size="12" font-weight="bold">viewer.js</text>
+  <text x="300" y="1225" text-anchor="middle" fill="#9d174d" font-size="10">draw() 绘制新图片</text>
+  
+  <rect x="490" y="1180" width="220" height="60" rx="10" fill="#fce7f3" stroke="#f472b6" stroke-width="2" filter="url(#shadow)"/>
+  <text x="600" y="1205" text-anchor="middle" fill="#be185d" font-size="12" font-weight="bold">statusbar.js</text>
+  <text x="600" y="1225" text-anchor="middle" fill="#9d174d" font-size="10">更新 "2/10" 显示</text>
+  
+  <line x1="300" y1="1240" x2="300" y2="1270" stroke="#64748b" stroke-width="2"/>
+  <line x1="600" y1="1240" x2="600" y2="1270" stroke="#64748b" stroke-width="2"/>
+  <line x1="300" y1="1270" x2="600" y2="1270" stroke="#64748b" stroke-width="2"/>
+  <line x1="450" y1="1270" x2="450" y2="1300" stroke="#64748b" stroke-width="2" marker-end="url(#arrowGray)"/>
+  
+  <ellipse cx="450" cy="1340" rx="120" ry="30" fill="#d1fae5" stroke="#34d399" stroke-width="3" filter="url(#shadow)"/>
+  <text x="450" y="1345" text-anchor="middle" fill="#065f46" font-size="14" font-weight="bold">翻页完成</text></svg>

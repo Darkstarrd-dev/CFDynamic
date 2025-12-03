@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git 从零到实战：本地工作流与冲突处理</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        code, pre { font-family: 'Fira Code', monospace; }
+
+        .code-block { 
+            background: #f8f9fa; 
+            border: 1px solid #e0e0e0; 
+            text-align: left;
+        }
+        .code-block pre {
+            margin: 0;
+            padding: 0;
+            text-align: left;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .code-block code {
+            display: block;
+            text-align: left;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            padding-left: 0;
+            margin-left: 0;
+        }
+
+        .syntax-keyword { color: #0066cc; }
+        .syntax-string { color: #22863a; }
+        .syntax-function { color: #6f42c1; }
+        .syntax-comment { color: #6a737d; }
+        .syntax-variable { color: #e36209; }
+        .syntax-number { color: #005cc5; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        @keyframes write-sync {
+            0% { opacity: 0.3; }
+            50% { opacity: 1; }
+            100% { opacity: 0.3; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .float-animation { animation: float 3s ease-in-out infinite; }
+        .fade-in { animation: fadeIn 0.5s ease forwards; }
+        .sync-dot { animation: write-sync 2s ease-in-out infinite; }
+        .progress-bar { transition: width 0.5s ease; }
+
+        .slide { display: none; opacity: 0; transition: opacity 0.4s ease; }
+        .slide.active { display: block; opacity: 1; }
+
+        .quiz-option { transition: all 0.3s ease; cursor: pointer; }
+        .quiz-option:hover { transform: translateX(4px); border-color: #2563eb; background: #eff6ff; }
+        .quiz-option.correct { background: #dcfce7 !important; border-color: #22c55e !important; }
+        .quiz-option.wrong { background: #fee2e2 !important; border-color: #ef4444 !important; }
+
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-primary:active { background: #1e40af; transform: scale(0.98); }
+        .btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+        .btn-secondary:hover { background: #e5e7eb; }
+
+        .tab-active { background: #2563eb; color: white; }
+        .tab-inactive { background: #f3f4f6; color: #6b7280; }
+        .tab-inactive:hover { background: #e5e7eb; }
+
+        .card { background: white; border: 1px solid #e57e7eb; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .card-green { background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 1px solid #a7f3d0; }
+
+        .touch-nav-zone {
+            position: fixed; top: 0; bottom: 0; width: 12%; z-index: 30;
+            display: none; cursor: pointer;
+        }
+        .touch-nav-zone.left { left: 0; background: linear-gradient(to right, rgba(0,0,0,0.03), transparent); }
+        .touch-nav-zone.right { right: 0; background: linear-gradient(to left, rgba(0,0,0,0.03), transparent); }
+        .touch-nav-zone .nav-hint {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            opacity: 0.3; font-size: 24px; color: #6b7280; transition: opacity 0.2s;
+        }
+        .touch-nav-zone.left .nav-hint { left: 8px; }
+        .touch-nav-zone.right .nav-hint { right: 8px; }
+        .touch-nav-zone:active .nav-hint { opacity: 0.8; }
+        .touch-nav-zone.disabled { pointer-events: none; }
+        .touch-nav-zone.disabled .nav-hint { opacity: 0.1; }
+
+        @media (max-width: 768px) {
+            .touch-nav-zone { display: flex; align-items: center; }
+            .bottom-nav-buttons { display: none !important; }
+            .code-block pre, .code-block code {
+                white-space: pre-wrap; word-wrap: break-word; word-break: break-all;
+            }
+            .quiz-option:hover { transform: none; }
+            .quiz-option:active { background: #eff6ff; border-color: #2563eb; }
+        }
+        @media (min-width: 769px) {
+            .bottom-nav-buttons { display: flex !important; }
+        }
+        @media (pointer: coarse) {
+            .quiz-option, .code-tab, .btn-primary, .btn-secondary { min-height: 44px; }
+        }
+        html, body { overflow-x: hidden; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen text-gray-800">
+    <!-- 移动端触摸导航 -->
+    <div id="touchNavLeft" class="touch-nav-zone left" onclick="prevSlide()">
+        <span class="nav-hint">‹</span>
+    </div>
+    <div id="touchNavRight" class="touch-nav-zone right" onclick="nextSlide()">
+        <span class="nav-hint">›</span>
+    </div>
+
+    <!-- 进度条 -->
+    <div class="fixed top-0 left-0 right-0 h-1 bg-gray-200 z-50">
+        <div id="progress" class="progress-bar h-full bg-blue-600" style="width: 0%"></div>
+    </div>
+
+    <!-- 导航栏 -->
+    <nav class="fixed top-2 sm:top-4 left-1/2 -translate-x-1/2 z-40 bg-white/95 backdrop-blur-lg rounded-full px-4 sm:px-6 py-2 sm:py-3 flex items-center gap-2 sm:gap-4 shadow-md border border-gray-200 max-w-[90vw]">
+        <span class="text-blue-600 font-semibold text-sm sm:text-base truncate">Git 本地与冲突速成</span>
+        <span class="text-gray-300 hidden sm:inline">|</span>
+        <span id="slideCounter" class="text-gray-500 text-sm sm:text-base whitespace-nowrap">1 / 14</span>
+    </nav>
+
+    <!-- 主内容 -->
+    <main class="container mx-auto px-3 sm:px-4 pt-16 sm:pt-24 pb-28 sm:pb-32 max-w-4xl">
+
+        <!-- 1 介绍 -->
+        <section class="slide active" data-slide="1">
+            <div class="text-center mb-8 sm:mb-12">
+                <div class="inline-block p-4 bg-green-100 rounded-2xl mb-6 float-animation">
+                    <svg class="w-12 h-12 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M5 3h4v18H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M15 3h4a2 2 0 0 1 2 2v4h-6V3Z" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M15 11h6v4a2 2 0 0 1-2 2h-4v-6Z" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M11 9h2v6h-2z" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 text-gray-900">Git 从零到实战</h1>
+                <p class="text-lg sm:text-xl text-gray-500 mb-6">围绕 PowerShell + Zed 的本地工作流与冲突处理</p>
+            </div>
+            <div class="card p-6 sm:p-8">
+                <h2 class="text-2xl font-semibold mb-4 text-center text-gray-800">🎯 本教程你将学到</h2>
+                <div class="grid md:grid-cols-2 gap-4 mb-6">
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                        <p class="text-blue-700 font-semibold mb-1">基础与编辑器集成</p>
+                        <p class="text-sm text-gray-600">完成 Git 基础配置，并让 Zed 成为 Git 的默认编辑器。</p>
+                    </div>
+                    <div class="bg-green-50 border border-green-200 rounded-xl p-4">
+                        <p class="text-green-700 font-semibold mb-1">从无到有操作流</p>
+                        <p class="text-sm text-gray-600">从 init 到 commit，一步步建立你的第一个 Git 历史。</p>
+                    </div>
+                    <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                        <p class="text-amber-700 font-semibold mb-1">冲突与修复</p>
+                        <p class="text-sm text-gray-600">亲手制造并解决 merge / rebase 冲突，理解冲突标记。</p>
+                    </div>
+                    <div class="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                        <p class="text-purple-700 font-semibold mb-1">远程与日常命令</p>
+                        <p class="text-sm text-gray-600">预览 GitHub 协作流程，并记住一组万能排查命令。</p>
+                    </div>
+                </div>
+
+                <!-- 环境图形化展示 -->
+                <div class="mb-6">
+                    <p class="font-semibold text-gray-800 mb-3">你的练习环境组合：</p>
+                    <div class="flex flex-col sm:flex-row items-stretch gap-4">
+                        <div class="flex-1 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border border-blue-200 p-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold">OS</div>
+                                <span class="text-sm font-semibold text-blue-700">Windows + PowerShell</span>
+                            </div>
+                            <p class="text-xs text-gray-600">所有命令示例以 PowerShell 为准。</p>
+                        </div>
+                        <div class="flex-1 bg-gradient-to-r from-green-50 to-green-100 rounded-xl border border-green-200 p-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <div class="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white text-sm font-bold">IDE</div>
+                                <span class="text-sm font-semibold text-green-700">Zed 编辑器</span>
+                            </div>
+                            <p class="text-xs text-gray-600">作为默认编辑器，参与 commit / rebase / 冲突解决。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <p class="text-blue-700 font-semibold mb-2">操作提示</p>
+                    <p class="text-sm text-gray-600">
+                        · 桌面端：使用键盘 <kbd class="px-1 border rounded bg-white text-xs">←</kbd> / <kbd class="px-1 border rounded bg-white text-xs">→</kbd> 或空格翻页<br>
+                        · 移动端：点击左右半屏进行翻页
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2 环境与前置 -->
+        <section class="slide" data-slide="2">
+            <div class="card p-6 sm:p-8">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-900">0. 环境与前置知识</h2>
+                <p class="text-sm text-gray-600 mb-4">本教程默认你使用如下环境，如果不同，可以按思路迁移到自己的环境。</p>
+
+                <div class="grid sm:grid-cols-2 gap-4 mb-6">
+                    <div class="bg-white border border-gray-200 rounded-xl p-4">
+                        <p class="text-xs font-semibold text-gray-500 mb-2 uppercase">本地环境</p>
+                        <ul class="text-sm text-gray-700 space-y-2">
+                            <li>• 操作系统：Windows</li>
+                            <li>• Shell：PowerShell</li>
+                            <li>• Git：命令行版</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white border border-gray-200 rounded-xl p-4">
+                        <p class="text-xs font-semibold text-gray-500 mb-2 uppercase">编辑器</p>
+                        <ul class="text-sm text-gray-700 space-y-2">
+                            <li>• Zed 作为主要代码编辑器</li>
+                            <li>• 通过 CLI 调用：<code class="bg-gray-100 px-1 rounded text-xs">zed</code></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 架构图：Git 调用 Zed -->
+                <div class="mb-6">
+                    <p class="font-semibold text-gray-800 mb-3">Git 与 Zed 如何协作？</p>
+                    <div class="max-w-xl mx-auto">
+                        <div class="bg-blue-50 rounded-2xl border-2 border-blue-200 p-4 mb-3">
+                            <div class="text-center mb-3">
+                                <span class="inline-flex items-center gap-2 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+                                    <span>🧩</span> Git 命令行
+                                </span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3 text-xs text-gray-700">
+                                <div class="bg-white rounded-lg p-2 border text-center">git commit</div>
+                                <div class="bg-white rounded-lg p-2 border text-center">git rebase -i</div>
+                                <div class="bg-white rounded-lg p-2 border text-center">冲突编辑</div>
+                                <div class="bg-white rounded-lg p-2 border text-center">临时信息编辑</div>
+                            </div>
+                        </div>
+                        <div class="flex justify-center my-2">
+                            <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                            </svg>
+                        </div>
+                        <div class="bg-green-50 rounded-2xl border-2 border-green-200 p-4">
+                            <div class="text-center mb-2">
+                                <span class="inline-flex items-center gap-2 bg-green-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+                                    <span>📝</span> Zed 编辑器
+                                </span>
+                            </div>
+                            <p class="text-xs text-gray-700 text-center">
+                                由 Git 自动唤起，用于编辑 commit message、冲突文件等，关闭窗口后 Git 继续执行。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                    <p class="text-amber-700 font-semibold mb-1">前置知识（轻要求）</p>
+                    <p class="text-sm text-gray-700">
+                        · 能在 PowerShell 中执行命令<br>
+                        · 知道如何在 Zed 中打开 / 编辑 / 保存文件
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3 Git 基本配置与编辑器 -->
+        <section class="slide" data-slide="3">
+            <div class="card p-6 sm:p-8">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-900">1. Git 基本配置与编辑器设置</h2>
+
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">1.1 初始 Git 配置</h3>
+                <p class="text-sm text-gray-600 mb-3">为所有仓库配置统一的用户名与邮箱。</p>
+
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-3">
+                    <div class="flex items-center gap-2 mb-3 text-gray-500 text-sm">
+                        <span class="w-3 h-3 bg-red-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-yellow-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-green-400 rounded-full"></span>
+                        <span class="ml-2">powershell</span>
+                    </div>
+                    <pre class="text-sm"><code><span class="syntax-comment"># 全局用户信息</span>
+<span class="syntax-keyword">git</span> config --global user.name <span class="syntax-string">"你的名字"</span>
+<span class="syntax-keyword">git</span> config --global user.email <span class="syntax-string">"你的邮箱"</span></code></pre>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-4 mb-6">
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-gray-700">
+                        <p class="text-blue-700 font-semibold mb-1">--global 的含义</p>
+                        <p>对「当前用户」下的所有仓库生效，写入全局配置文件。</p>
+                    </div>
+                    <div class="bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-gray-700">
+                        <p class="text-green-700 font-semibold mb-1">提交信息用途</p>
+                        <p>每个 commit 都会带上 name + email，用于标识提交者 (GitHub 等会读取)。</p>
+                    </div>
+                </div>
+
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">1.2 将 Zed 设为 Git 默认编辑器</h3>
+                <p class="text-sm text-gray-600 mb-3">让所有需要编辑器的 Git 操作都自动调用 Zed。</p>
+
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-3">
+                    <div class="flex items-center gap-2 mb-3 text-gray-500 text-sm">
+                        <span class="w-3 h-3 bg-red-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-yellow-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-green-400 rounded-full"></span>
+                        <span class="ml-2">powershell</span>
+                    </div>
+                    <pre class="text-sm"><code><span class="syntax-keyword">git</span> config --global core.editor <span class="syntax-string">"zed --wait"</span></code></pre>
+                </div>
+
+                <!-- 对比展示 core.editor -->
+                <div class="grid md:grid-cols-2 gap-6 mb-6">
+                    <div class="relative p-5 bg-red-50 rounded-xl border-2 border-red-200">
+                        <div class="absolute -top-3 left-4 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">⚠️ 未加 --wait</div>
+                        <p class="text-xs text-gray-700">
+                            Git 以为编辑器「瞬间就关了」，会直接继续执行，可能得到空的 commit message 或异常行为。
+                        </p>
+                    </div>
+                    <div class="relative p-5 bg-green-50 rounded-xl border-2 border-green-200">
+                        <div class="absolute -top-3 left-4 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">✅ 使用 zed --wait</div>
+                        <p class="text-xs text-gray-700">
+                            Git 会等待 Zed 窗口真正关闭，再读取你填写的内容继续执行，行为正确可控。
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+                    <p class="text-blue-700 font-semibold mb-1">Zed 命令在 PATH 中</p>
+                    <p class="text-sm text-gray-700">
+                        若 PowerShell 中执行 <code class="bg-white px-1 rounded text-xs">zed</code> 报错，
+                        需要按 Zed 官方文档把 Zed CLI 加入 PATH，否则 Git 找不到编辑器。
+                    </p>
+                </div>
+
+                <div class="bg-green-50 border border-green-200 rounded-xl p-4">
+                    <p class="text-green-700 font-semibold mb-2">在哪些场景会弹出 Zed？</p>
+                    <ul class="text-sm text-gray-700 space-y-1">
+                        <li>• <code class="bg-white px-1 rounded text-xs">git commit</code>（不带 <code class="bg-white px-1 rounded text-xs">-m</code>）</li>
+                        <li>• <code class="bg-white px-1 rounded text-xs">git rebase</code> 过程中编辑提交信息</li>
+                        <li>• <code class="bg-white px-1 rounded text-xs">git rebase -i</code> 等交互式命令</li>
+                        <li>• 有冲突需要手动编辑文件时，自己用 Zed 打开冲突文件</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4 PowerShell echo/编码问题 提示性 -->
+        <section class="slide" data-slide="4">
+            <div class="card p-6 sm:p-8">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-900">2. PowerShell 重定向与编码问题</h2>
+                <p class="text-sm text-gray-600 mb-4">
+                    你遇到过使用 <code class="bg-gray-100 px-1 rounded text-xs">echo "xxx" &gt;&gt; file</code> 写出的文件在 Zed 中乱码的问题——这通常是编码而不是 Git 的问题。
+                </p>
+
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+                    <p class="text-amber-700 font-semibold mb-1">现阶段的建议</p>
+                    <p class="text-sm text-gray-700">
+                        在后续 Git 练习中，<strong>尽量用 Zed 编辑文件</strong>，少用 PowerShell 的重定向来生成文本文件，
+                        这样可以避开编码陷阱，把精力放在理解 Git 行为上。
+                    </p>
+                </div>
+
+                <!-- 简单趋势图：问题频率随使用 Zed 增多而下降 -->
+                <p class="font-semibold text-gray-800 mb-2 text-sm">直觉图：越多用 Zed，编码问题越少</p>
+                <div class="relative bg-gray-50 rounded-xl p-4 border border-gray-200">
+                    <div class="absolute left-0 top-6 bottom-10 w-10 flex flex-col justify-between text-[10px] text-gray-500">
+                        <span>多</span>
+                        <span>中</span>
+                        <span>少</span>
+                    </div>
+                    <div class="ml-10">
+                        <div class="relative h-32 border-l-2 border-b-2 border-gray-300">
+                            <svg class="absolute inset-0 w-full h-full" viewBox="0 0 400 160" preserveAspectRatio="none">
+                                <defs>
+                                    <linearGradient id="enc-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" style="stop-color:#ef4444" />
+                                        <stop offset="100%" style="stop-color:#22c55e" />
+                                    </linearGradient>
+                                </defs>
+                                <path d="M 0 20 Q 150 60, 260 110 T 400 135" stroke="url(#enc-gradient)" stroke-width="3" fill="none" />
+                            </svg>
+                            <div class="absolute top-[10%] left-[3%]">
+                                <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                                <span class="text-[10px] text-red-600">频繁 echo &gt;&gt;</span>
+                            </div>
+                            <div class="absolute bottom-[10%] right-[5%]">
+                                <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                                <span class="text-[10px] text-green-600">主要用 Zed</span>
+                            </div>
+                        </div>
+                        <div class="flex justify-between mt-2 text-[10px] text-gray-500">
+                            <span>刚上手</span>
+                            <span>熟悉 Git + Zed 后</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5 从无到有：init + status + 提交流程 -->
+        <section class="slide" data-slide="5">
+            <div class="card p-6 sm:p-8">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-900">3. 从无到有：第一个 Git 提交流程</h2>
+
+                <!-- 流程图 -->
+                <p class="font-semibold text-gray-800 mb-3">整体步骤时间线</p>
+                <div class="flex flex-col sm:flex-row items-stretch gap-4 mb-6">
+                    <div class="flex-1 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border-2 border-blue-300 p-3">
+                        <div class="flex items-center gap-2 mb-1">
+                            <div class="w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center">
+                                <span class="text-white text-xs font-bold">1</span>
+                            </div>
+                            <span class="text-sm font-semibold text-blue-800">git init</span>
+                        </div>
+                        <p class="text-xs text-gray-700">当前目录变成一个 Git 仓库。</p>
+                    </div>
+                    <div class="flex items-center justify-center">
+                        <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="flex-1 bg-gradient-to-r from-green-50 to-green-100 rounded-xl border-2 border-green-300 p-3">
+                        <div class="flex items-center gap-2 mb-1">
+                            <div class="w-7 h-7 bg-green-600 rounded-full flex items-center justify-center">
+                                <span class="text-white text-xs font-bold">2</span>
+                            </div>
+                            <span class="text-sm font-semibold text-green-800">git add + commit</span>
+                        </div>
+                        <p class="text-xs text-gray-700">把文件加入历史，形成一个稳定快照。</p>
+                    </div>
+                </div>
+
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">3.1 初始化仓库</h3>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-3">
+                    <pre class="text-sm"><code><span class="syntax-comment"># 在项目目录中</span>
+<span class="syntax-keyword">git</span> init</code></pre>
+                </div>
+                <p class="text-sm text-gray-700 mb-4">
+                    作用：在当前目录创建 <code class="bg-gray-100 px-1 rounded text-xs">.git</code> 目录，Git 从此开始追踪这里的历史。
+                </p>
+
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">3.2 查看当前状态</h3>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-3">
+                    <pre class="text-sm"><code><span class="syntax-keyword">git</span> status</code></pre>
+                </div>
+                <p class="text-sm text-gray-700 mb-4">
+                    随时回答：「有哪些文件未跟踪 / 已修改 / 已暂存？是否在 merge / rebase 状态？」
+                </p>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <p class="text-blue-700 font-semibold mb-1">建议习惯</p>
+                    <p class="text-sm text-gray-700">
+                        每次改动前后，都快速敲一个 <code class="bg-white px-1 rounded text-xs">git status</code>，保持对仓库状态的「肌肉记忆」。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 6 创建文件 + commit 两种方式 -->
+        <section class="slide" data-slide="6">
+            <div class="card p-6 sm:p-8">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-900">3.3 创建文件并完成第一次提交</h2>
+
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">步骤 1：用 Zed 创建 / 修改文件</h3>
+                <p class="text-sm text-gray-700 mb-3">
+                    在项目目录中，用 Zed 新建 <code class="bg-gray-100 px-1 rounded text-xs">hello.txt</code>，写入：
+                </p>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-4">
+                    <pre class="text-sm"><code>Welcome to git world!</code></pre>
+                </div>
+
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">步骤 2：查看状态</h3>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-3">
+                    <pre class="text-sm"><code><span class="syntax-keyword">git</span> status</code></pre>
+                </div>
+                <p class="text-sm text-gray-700 mb-4">
+                    你会看到 <code class="bg-gray-100 px-1 rounded text-xs">hello.txt</code> 出现在 <span class="text-red-500">Untracked files</span> 区域。
+                </p>
+
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">步骤 3：加入暂存区（stage）</h3>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-3">
+                    <pre class="text-sm"><code><span class="syntax-keyword">git</span> add <span class="syntax-string">hello.txt</span></code></pre>
+                </div>
+
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">步骤 4：提交（两种方式）</h3>
+                <div class="grid md:grid-cols-2 gap-6 mb-4">
+                    <div class="bg-white border border-gray-200 rounded-xl p-4 text-sm">
+                        <p class="font-semibold text-gray-800 mb-2">方式 A：命令行直接写消息</p>
+                        <div class="code-block rounded-lg p-3 overflow-x-auto mb-2">
+                            <pre class="text-xs"><code><span class="syntax-keyword">git</span> commit -m <span class="syntax-string">"feat: add hello.txt"</span></code></pre>
+                        </div>
+                        <p class="text-xs text-gray-600">适合简单、已经想好消息的提交。</p>
+                    </div>
+                    <div class="bg-white border border-gray-200 rounded-xl p-4 text-sm">
+                        <p class="font-semibold text-gray-800 mb-2">方式 B：用 Zed 编写消息</p>
+                        <div class="code-block rounded-lg p-3 overflow-x-auto mb-2">
+                            <pre class="text-xs"><code><span class="syntax-keyword">git</span> commit</code></pre>
+                        </div>
+                        <p class="text-xs text-gray-600 mb-1">Git 会打开 Zed，在里面输入：</p>
+                        <div class="code-block rounded-lg p-3 overflow-x-auto mb-2">
+                            <pre class="text-xs"><code>feat: add hello.txt</code></pre>
+                        </div>
+                        <p class="text-xs text-gray-600">保存并关闭该文件后，Git 才会真正完成提交。</p>
+                    </div>
+                </div>
+
+                <!-- 测验：理解 add / commit 顺序 -->
+                <h3 class="text-lg font-semibold mb-3 text-gray-800">小测验：关于 add 与 commit</h3>
+                <div id="quiz1" class="space-y-3">
+                    <div class="quiz-option p-3 bg-white rounded-xl border border-gray-200 flex items-center gap-3" data-correct="false" onclick="checkAnswer(this, 1)">
+                        <span class="w-7 h-7 flex items-center justify-center bg-gray-100 rounded-full text-xs font-medium">A</span>
+                        <span class="text-sm text-gray-800">可以直接 <code class="bg-gray-100 px-1 rounded text-xs">git commit</code>，Git 会自动把所有修改加入暂存区。</span>
+                    </div>
+                    <div class="quiz-option p-3 bg-white rounded-xl border border-gray-200 flex items-center gap-3" data-correct="true" onclick="checkAnswer(this, 1)">
+                        <span class="w-7 h-7 flex items-center justify-center bg-gray-100 rounded-full text-xs font-medium">B</span>
+                        <span class="text-sm text-gray-800">通常需要先 <code class="bg-gray-100 px-1 rounded text-xs">git add</code> 再 <code class="bg-gray-100 px-1 rounded text-xs">git commit</code>，决定哪些修改进入本次提交。</span>
+                    </div>
+                </div>
+                <div id="quiz1-explanation" class="mt-4 hidden">
+                    <div class="p-4 bg-green-50 border border-green-200 rounded-xl">
+                        <p class="text-green-700 font-semibold text-sm mb-1">✓ 正确！</p>
+                        <p class="text-sm text-gray-700">
+                            标准流程是「编辑文件 → git add（选中改动）→ git commit（写说明）」。<br>
+                            有 <code class="bg-white px-1 rounded text-xs">git commit -a</code> 之类的快捷方式，但推荐先牢固掌握基础两步。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 7 分支基础与创建 -->
+        <section class="slide" data-slide="7">
+            <div class="card p-6 sm:p-8">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-900">4. 分支基础：查看与创建</h2>
+
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">4.1 查看现有分支</h3>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-3">
+                    <pre class="text-sm"><code><span class="syntax-keyword">git</span> branch</code></pre>
+                </div>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-4">
+                    <pre class="text-sm"><code>* main
+  conflict-feature
+  conflict-main
+  feature/conflict-test</code></pre>
+                </div>
+                <p class="text-sm text-gray-700 mb-4">
+                    星号 <code class="bg-gray-100 px-1 rounded text-xs">*</code> 表示当前所在分支（HEAD 指向的位置）。
+                </p>
+
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">4.2 创建并切换分支</h3>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-3">
+                    <pre class="text-sm"><code><span class="syntax-comment"># 一步到位：创建并切换</span>
+<span class="syntax-keyword">git</span> checkout -b <span class="syntax-string">conflict-feature</span>
+
+<span class="syntax-comment"># 等价的两步写法</span>
+<span class="syntax-keyword">git</span> branch <span class="syntax-string">conflict-feature</span>
+<span class="syntax-keyword">git</span> checkout <span class="syntax-string">conflict-feature</span></code></pre>
+                </div>
+
+                <!-- 水平阶段：main 与 feature 分叉 -->
+                <p class="font-semibold text-gray-800 mb-2 text-sm">分支结构直观图</p>
+                <div class="flex flex-col sm:flex-row items-stretch gap-4">
+                    <div class="flex-1 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border-2 border-blue-300 p-3">
+                        <div class="flex items-center gap-2 mb-1">
+                            <div class="w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center">
+                                <span class="text-white text-xs font-bold">main</span>
+                            </div>
+                            <span class="text-sm font-semibold text-blue-800">主线分支</span>
+                        </div>
+                        <div class="bg-white rounded-lg p-2 text-xs text-gray-600">
+                            在你开始之前，所有提交都在 main 上。
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-center">
+                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h7m0 0L9 3m2 3L9 9m4-3h7M4 18h7m0 0l-2-3m2 3-2 3m4-3h7"/>
+                        </svg>
+                    </div>
+                    <div class="flex-1 bg-gradient-to-r from-green-50 to-green-100 rounded-xl border-2 border-green-300 p-3">
+                        <div class="flex items-center gap-2 mb-1">
+                            <div class="w-7 h-7 bg-green-600 rounded-full flex items-center justify-center">
+                                <span class="text-white text-xs font-bold">feat</span>
+                            </div>
+                            <span class="text-sm font-semibold text-green-800">conflict-feature</span>
+                        </div>
+                        <div class="bg-white rounded-lg p-2 text-xs text-gray-600">
+                            作为实验场地，你会在这里改动同一个文件，制造冲突。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 8 制造冲突：main 与 feature 修改同一行 -->
+        <section class="slide" data-slide="8">
+            <div class="card p-6 sm:p-8">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-900">4.3 制造冲突前置条件</h2>
+                <p class="text-sm text-gray-700 mb-3">我们通过在两个分支上修改同一个文件的同一行，来为后续 merge 冲突做准备。</p>
+
+                <!-- 垂直时间线：操作顺序 -->
+                <div class="mb-6">
+                    <div class="flex items-start gap-4 mb-3">
+                        <div class="flex flex-col items-center">
+                            <div class="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center shadow-md">
+                                <span class="text-white text-sm font-bold">1</span>
+                            </div>
+                            <div class="w-0.5 h-8 bg-gray-300"></div>
+                        </div>
+                        <div class="flex-1 bg-blue-50 rounded-xl p-3 border border-blue-200">
+                            <span class="text-sm font-semibold text-blue-700">在 main 上修改 hello.txt</span>
+                            <p class="text-xs text-gray-700 mt-1 mb-1">切回 main，并改写欢迎语：</p>
+                            <div class="code-block rounded-lg p-3 overflow-x-auto mb-1">
+                                <pre class="text-xs"><code><span class="syntax-keyword">git</span> checkout <span class="syntax-string">main</span></code></pre>
+                            </div>
+                            <div class="code-block rounded-lg p-3 overflow-x-auto mb-1">
+                                <pre class="text-xs"><code>Welcome to git world from MAIN side!</code></pre>
+                            </div>
+                            <div class="code-block rounded-lg p-3 overflow-x-auto">
+                                <pre class="text-xs"><code><span class="syntax-keyword">git</span> add <span class="syntax-string">hello.txt</span>
+<span class="syntax-keyword">git</span> commit -m <span class="syntax-string">"main: change hello.txt from main side"</span></code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-4">
+                        <div class="flex flex-col items-center">
+                            <div class="w-9 h-9 bg-green-500 rounded-full flex items-center justify-center shadow-md">
+                                <span class="text-white text-sm font-bold">2</span>
+                            </div>
+                        </div>
+                        <div class="flex-1 bg-green-50 rounded-xl p-3 border border-green-200">
+                            <span class="text-sm font-semibold text-green-700">在 conflict-feature 上修改 hello.txt</span>
+                            <p class="text-xs text-gray-700 mt-1 mb-1">切到 feature 分支，对同一行写入不一样的内容：</p>
+                            <div class="code-block rounded-lg p-3 overflow-x-auto mb-1">
+                                <pre class="text-xs"><code><span class="syntax-keyword">git</span> checkout <span class="syntax-string">conflict-feature</span></code></pre>
+                            </div>
+                            <div class="code-block rounded-lg p-3 overflow-x-auto mb-1">
+                                <pre class="text-xs"><code>Welcome to git world from FEATURE side!</code></pre>
+                            </div>
+                            <div class="code-block rounded-lg p-3 overflow-x-auto">
+                                <pre class="text-xs"><code><span class="syntax-keyword">git</span> add <span class="syntax-string">hello.txt</span>
+<span class="syntax-keyword">git</span> commit -m <span class="syntax-string">"feature: change hello.txt from feature side"</span></code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                    <p class="text-amber-700 font-semibold mb-1">冲突出现的关键条件</p>
+                    <p class="text-sm text-gray-700">
+                        两个分支都修改了同一文件的<strong>同一部分</strong>（例如同一行），且修改内容不同。<br>
+                        这时 Git 无法替你判断「应该保留哪一个」，就会提示冲突。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 9 merge 冲突 + 冲突标记可视化 -->
+        <section class="slide" data-slide="9">
+            <div class="card p-6 sm:p-8">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-900">4.4 合并分支并解决冲突（merge）</h2>
+
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">4.4.1 从 main 执行 merge</h3>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-3">
+                    <pre class="text-sm"><code><span class="syntax-keyword">git</span> checkout <span class="syntax-string">main</span>
+<span class="syntax-keyword">git</span> merge <span class="syntax-string">conflict-feature</span></code></pre>
+                </div>
+                <p class="text-sm text-gray-700 mb-4">
+                    出现冲突时，<code class="bg-gray-100 px-1 rounded text-xs">git status</code> 会显示 <span class="text-red-500">both modified</span>，表示该文件在两个分支都被修改了。
+                </p>
+
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">4.4.2 冲突标记长什么样？</h3>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-3">
+                    <pre class="text-sm"><code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+Welcome to git world from MAIN side!
+=======
+Welcome to git world from FEATURE side!
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; conflict-feature</code></pre>
+                </div>
+
+                <!-- 冲突标记的结构示意 -->
+                <div class="grid md:grid-cols-2 gap-6 mb-4">
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm">
+                        <p class="font-semibold text-blue-700 mb-1">HEAD 区块</p>
+                        <p class="text-xs text-gray-700 mb-1">
+                            <code class="bg-white px-1 rounded text-[11px]">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</code> 到中间分隔线：
+                        </p>
+                        <p class="text-xs text-gray-700">→ 当前分支（如 main）中的内容。</p>
+                    </div>
+                    <div class="bg-green-50 border border-green-200 rounded-xl p-4 text-sm">
+                        <p class="font-semibold text-green-700 mb-1">被合入分支区块</p>
+                        <p class="text-xs text-gray-700 mb-1">
+                            中间分隔线到 <code class="bg-white px-1 rounded text-[11px]">&gt;&gt;&gt;&gt;&gt;&gt;&gt; conflict-feature</code>：
+                        </p>
+                        <p class="text-xs text-gray-700">→ 即将 merge 进来的分支上的内容。</p>
+                    </div>
+                </div>
+
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">4.4.3 正确解决姿势</h3>
+                <ol class="list-decimal list-inside text-sm text-gray-700 space-y-1 mb-3">
+                    <li>用 Zed 打开有冲突的文件（例如 <code class="bg-gray-100 px-1 rounded text-xs">hello.txt</code>）。</li>
+                    <li>人工决定最终文本（保留 main / feature 或手工合并）。</li>
+                    <li><strong>删除所有</strong> 冲突标记行：<code class="bg-gray-100 px-1 rounded text-xs">&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> / <code class="bg-gray-100 px-1 rounded text-xs">=======</code> / <code class="bg-gray-100 px-1 rounded text-xs">&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code>。</li>
+                    <li>保存文件。</li>
+                </ol>
+
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">4.4.4 标记解决完成并提交</h3>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-3">
+                    <pre class="text-sm"><code><span class="syntax-keyword">git</span> add <span class="syntax-string">hello.txt</span>
+<span class="syntax-keyword">git</span> commit</code></pre>
+                </div>
+                <p class="text-sm text-gray-700 mb-2">
+                    这次的 commit 是一个 <strong>merge commit</strong>（有两个父节点），Zed 会弹出让你填写合并说明。
+                </p>
+
+                <!-- 测验：冲突标记是否允许提交 -->
+                <h3 class="text-lg font-semibold mb-3 text-gray-800">小测验：冲突标记该怎么处理？</h3>
+                <div id="quiz2" class="space-y-3">
+                    <div class="quiz-option p-3 bg-white rounded-xl border border-gray-200 flex items-center gap-3" data-correct="false" onclick="checkAnswer(this, 2)">
+                        <span class="w-7 h-7 flex items-center justify-center bg-gray-100 rounded-full text-xs font-medium">A</span>
+                        <span class="text-sm text-gray-800">可以保留一部分冲突标记，只要最终内容看得懂就行。</span>
+                    </div>
+                    <div class="quiz-option p-3 bg-white rounded-xl border border-gray-200 flex items-center gap-3" data-correct="true" onclick="checkAnswer(this, 2)">
+                        <span class="w-7 h-7 flex items-center justify-center bg-gray-100 rounded-full text-xs font-medium">B</span>
+                        <span class="text-sm text-gray-800">必须删掉所有冲突标记，只保留你要的最终文本。</span>
+                    </div>
+                </div>
+                <div id="quiz2-explanation" class="mt-4 hidden">
+                    <div class="p-4 bg-green-50 border border-green-200 rounded-xl">
+                        <p class="text-green-700 font-semibold text-sm mb-1">✓ 正确！</p>
+                        <p class="text-sm text-gray-700">
+                            冲突标记只在解决过程中有用，一旦决定最终内容，就应该像从未发生过冲突那样，文件中只保留正常文本。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 10 错误已提交冲突标记的修复 -->
+        <section class="slide" data-slide="10">
+            <div class="card p-6 sm:p-8">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-900">5. 冲突标记被误提交后的「补救」</h2>
+                <p class="text-sm text-gray-700 mb-3">
+                    你遇到过一种情况：冲突标记已经被提交进历史，但 <code class="bg-gray-100 px-1 rounded text-xs">git status</code> 显示 working tree clean。
+                </p>
+
+                <!-- 对比卡：错误 vs 修正 -->
+                <div class="grid md:grid-cols-2 gap-6 mb-6">
+                    <div class="relative p-5 bg-red-50 rounded-xl border-2 border-red-200">
+                        <div class="absolute -top-3 left-4 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">❌ 错误提交</div>
+                        <p class="text-xs text-gray-700 mb-2">
+                            文件里仍保留：
+                        </p>
+                        <div class="code-block rounded-lg p-3 overflow-x-auto mb-2">
+                            <pre class="text-xs"><code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+...
+=======
+...
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; conflict-feature</code></pre>
+                        </div>
+                        <p class="text-xs text-gray-700">但 Git 已经认为这次 merge 已完成。</p>
+                    </div>
+                    <div class="relative p-5 bg-green-50 rounded-xl border-2 border-green-200">
+                        <div class="absolute -top-3 left-4 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">✅ 修正提交</div>
+                        <p class="text-xs text-gray-700 mb-2">
+                            再次编辑文件，删除所有冲突标记，保留期望文本，然后：
+                        </p>
+                        <div class="code-block rounded-lg p-3 overflow-x-auto mb-2">
+                            <pre class="text-xs"><code><span class="syntax-keyword">git</span> add <span class="syntax-string">hello.txt</span>
+<span class="syntax-keyword">git</span> commit</code></pre>
+                        </div>
+                        <p class="text-xs text-gray-700 mb-1">
+                            在 Zed 中填写类似：
+                        </p>
+                        <div class="code-block rounded-lg p-3 overflow-x-auto">
+                            <pre class="text-xs"><code>fix: clean up conflict markers in hello.txt</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <p class="text-blue-700 font-semibold mb-1">实战建议</p>
+                    <p class="text-sm text-gray-700">
+                        对于已经推送到远程、甚至被别人基于其继续开发的提交，用「修正提交」的方式，比强行改写历史（reset / rebase）更安全、简单。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 11 git diff 体系 -->
+        <section class="slide" data-slide="11">
+            <div class="card p-6 sm:p-8">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-900">6. 用 git diff 看清每一次改动</h2>
+
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">6.1 查看工作区未暂存的修改</h3>
+                <ol class="list-decimal list-inside text-sm text-gray-700 space-y-1 mb-3">
+                    <li>在 <code class="bg-gray-100 px-1 rounded text-xs">hello.txt</code> 末尾追加一行，例如：<code class="bg-gray-100 px-1 rounded text-xs">Have fun learning Git!</code></li>
+                    <li>执行：</li>
+                </ol>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-3">
+                    <pre class="text-sm"><code><span class="syntax-keyword">git</span> diff</code></pre>
+                </div>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-4">
+                    <pre class="text-sm"><code>+Have fun learning Git!</code></pre>
+                </div>
+                <p class="text-sm text-gray-700 mb-4">
+                    这里比较的是「工作区」和「暂存区」之间的差异：还没 add 的改动会显示出来。
+                </p>
+
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">6.2 查看暂存区与上一提交的差异</h3>
+                <ol class="list-decimal list-inside text-sm text-gray-700 space-y-1 mb-3">
+                    <li>先把修改加入暂存区：</li>
+                </ol>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-2">
+                    <pre class="text-sm"><code><span class="syntax-keyword">git</span> add <span class="syntax-string">hello.txt</span></code></pre>
+                </div>
+                <p class="text-sm text-gray-700 mb-1">然后执行：</p>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-3">
+                    <pre class="text-sm"><code><span class="syntax-keyword">git</span> diff --cached
+<span class="syntax-comment"># 或</span>
+<span class="syntax-keyword">git</span> diff --staged</code></pre>
+                </div>
+
+                <!-- 小总结卡片 -->
+                <div class="card-green p-4 rounded-xl mb-4">
+                    <p class="text-green-800 text-sm mb-1"><strong>记忆口诀：三方对比</strong></p>
+                    <ul class="text-xs text-green-900 space-y-1">
+                        <li>• <code class="bg-white px-1 rounded text-[11px]">git diff</code> = 工作区 vs 暂存区</li>
+                        <li>• <code class="bg-white px-1 rounded text-[11px]">git diff --cached</code> = 暂存区 vs 最近一次提交（HEAD）</li>
+                        <li>• <code class="bg-white px-1 rounded text-[11px]">git status</code> = 概览状态（红 / 绿 列表）</li>
+                    </ul>
+                </div>
+
+                <!-- 测验：哪个命令看暂存区？ -->
+                <h3 class="text-lg font-semibold mb-3 text-gray-800">小测验：哪个命令看「即将提交的内容」？</h3>
+                <div id="quiz3" class="space-y-3">
+                    <div class="quiz-option p-3 bg-white rounded-xl border border-gray-200 flex items-center gap-3" data-correct="false" onclick="checkAnswer(this, 3)">
+                        <span class="w-7 h-7 flex items-center justify-center bg-gray-100 rounded-full text-xs font-medium">A</span>
+                        <span class="text-sm text-gray-800"><code class="bg-gray-100 px-1 rounded text-xs">git diff</code></span>
+                    </div>
+                    <div class="quiz-option p-3 bg-white rounded-xl border border-gray-200 flex items-center gap-3" data-correct="true" onclick="checkAnswer(this, 3)">
+                        <span class="w-7 h-7 flex items-center justify-center bg-gray-100 rounded-full text-xs font-medium">B</span>
+                        <span class="text-sm text-gray-800"><code class="bg-gray-100 px-1 rounded text-xs">git diff --cached</code> 或 <code class="bg-gray-100 px-1 rounded text-xs">git diff --staged</code></span>
+                    </div>
+                </div>
+                <div id="quiz3-explanation" class="mt-4 hidden">
+                    <div class="p-4 bg-green-50 border border-green-200 rounded-xl">
+                        <p class="text-green-700 font-semibold text-sm mb-1">✓ 正确！</p>
+                        <p class="text-sm text-gray-700">
+                            「即将提交的内容」就是暂存区相对于最近一次提交的差异，用 <code class="bg-white px-1 rounded text-xs">git diff --cached</code> 最直观。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 12 log + HEAD / 父提交 -->
+        <section class="slide" data-slide="12">
+            <div class="card p-6 sm:p-8">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-900">7. 提交历史与 HEAD：看见 Git 的「时间线」</h2>
+
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">7.1 图形化 log</h3>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-3">
+                    <pre class="text-sm"><code><span class="syntax-keyword">git</span> log --oneline --graph --decorate --all -10</code></pre>
+                </div>
+                <ul class="text-sm text-gray-700 space-y-1 mb-4">
+                    <li>• <code class="bg-gray-100 px-1 rounded text-xs">--oneline</code>：每个提交一行，概览更清楚</li>
+                    <li>• <code class="bg-gray-100 px-1 rounded text-xs">--graph</code>：左边用小树枝画出分支结构</li>
+                    <li>• <code class="bg-gray-100 px-1 rounded text-xs">--decorate</code>：显示分支名、标签名、HEAD 等指示</li>
+                    <li>• <code class="bg-gray-100 px-1 rounded text-xs">--all</code>：看所有分支</li>
+                    <li>• <code class="bg-gray-100 px-1 rounded text-xs">-10</code>：限制为最近 10 条，避免刷太多</li>
+                </ul>
+
+                <!-- 简易结构图：HEAD 与分支指向 -->
+                <p class="font-semibold text-gray-800 mb-2 text-sm">HEAD 与分支的指向关系</p>
+                <div class="max-w-md mx-auto mb-4">
+                    <div class="bg-blue-50 rounded-2xl border-2 border-blue-200 p-4">
+                        <div class="flex flex-col gap-3 text-xs text-gray-700">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold">H</div>
+                                <span><strong>HEAD</strong> 指向当前分支（比如 main）。</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">B</div>
+                                <span>分支名（main / feature）则是指向某一个具体提交。</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">C</div>
+                                <span>提交（commit）链接成一条链，每个有一个父节点（merge commit 有两个）。</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">7.2 HEAD 与父提交 (^ / ~)</h3>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-3">
+                    <pre class="text-sm"><code><span class="syntax-keyword">git</span> rev-parse HEAD
+<span class="syntax-keyword">git</span> rev-parse HEAD^
+<span class="syntax-keyword">git</span> rev-parse HEAD~2</code></pre>
+                </div>
+                <ul class="text-sm text-gray-700 space-y-1 mb-4">
+                    <li>• <code class="bg-gray-100 px-1 rounded text-xs">HEAD</code>：当前所在提交对象</li>
+                    <li>• <code class="bg-gray-100 px-1 rounded text-xs">HEAD^</code>：当前提交的父提交</li>
+                    <li>• <code class="bg-gray-100 px-1 rounded text-xs">HEAD~2</code>：连续向上走两次父关系（≈ <code class="bg-gray-100 px-1 rounded text-xs">HEAD^^</code>）</li>
+                </ul>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <p class="text-blue-700 font-semibold mb-1">为什么要理解这些？</p>
+                    <p class="text-sm text-gray-700">
+                        它们是很多「进阶操作」的基础：例如 <code class="bg-white px-1 rounded text-xs">git reset</code> 回到旧提交、
+                        <code class="bg-white px-1 rounded text-xs">git rebase</code> 重写历史等。现在先有印象，后面 rebase 会再次用到。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 13 rebase 流程 + 与 merge 对比 -->
+        <section class="slide" data-slide="13">
+            <div class="card p-6 sm:p-8">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-900">8. 体验 rebase：线性历史与冲突</h2>
+
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">8.1 在 main 上再做一次修改</h3>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-3">
+                    <pre class="text-sm"><code><span class="syntax-keyword">git</span> checkout <span class="syntax-string">main</span></code></pre>
+                </div>
+                <p class="text-sm text-gray-700 mb-2">在 <code class="bg-gray-100 px-1 rounded text-xs">hello.txt</code> 中改写为：</p>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-2">
+                    <pre class="text-sm"><code>Welcome to git world from MAIN rebase test!</code></pre>
+                </div>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-3">
+                    <pre class="text-sm"><code><span class="syntax-keyword">git</span> add <span class="syntax-string">hello.txt</span>
+<span class="syntax-keyword">git</span> commit -m <span class="syntax-string">"main: rebase test change welcome line"</span></code></pre>
+                </div>
+
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">8.2 在 conflict-feature 上执行 rebase</h3>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-3">
+                    <pre class="text-sm"><code><span class="syntax-keyword">git</span> checkout <span class="syntax-string">conflict-feature</span>
+<span class="syntax-keyword">git</span> rebase <span class="syntax-string">main</span></code></pre>
+                </div>
+                <p class="text-sm text-gray-700 mb-3">
+                    Git 会尝试把 conflict-feature 上的提交「搬运」到最新的 main 之后。若同一行有不同修改，会再次出现冲突。
+                </p>
+
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">8.3 解决 rebase 冲突</h3>
+                <ol class="list-decimal list-inside text-sm text-gray-700 space-y-1 mb-3">
+                    <li>打开有冲突的文件，看到类似的冲突标记。</li>
+                    <li>手工编辑为期望内容，并删除所有标记行。</li>
+                    <li>标记该文件冲突已解决：</li>
+                </ol>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-2">
+                    <pre class="text-sm"><code><span class="syntax-keyword">git</span> add <span class="syntax-string">hello.txt</span></code></pre>
+                </div>
+                <p class="text-sm text-gray-700 mb-1">然后继续 rebase 流程：</p>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-3">
+                    <pre class="text-sm"><code><span class="syntax-keyword">git</span> rebase --continue</code></pre>
+                </div>
+
+                <!-- merge vs rebase 对比 -->
+                <p class="font-semibold text-gray-800 mb-2 text-sm">8.4 merge 与 rebase 的对比</p>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="relative p-5 bg-blue-50 rounded-xl border-2 border-blue-200">
+                        <div class="absolute -top-3 left-4 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">merge</div>
+                        <ul class="text-xs text-gray-700 space-y-1 mt-2">
+                            <li>• 产生一个新的 merge commit（通常有两个父提交）。</li>
+                            <li>• 历史中保留分叉与合并的形状。</li>
+                            <li>• 对公共分支（main）更安全，避免改写已共享的历史。</li>
+                        </ul>
+                    </div>
+                    <div class="relative p-5 bg-green-50 rounded-xl border-2 border-green-200">
+                        <div class="absolute -top-3 left-4 bg-green-600 text-white text-xs font-bold px-3 py-1 rounded-full">rebase</div>
+                        <ul class="text-xs text-gray-700 space-y-1 mt-2">
+                            <li>• 把 feature 分支上的提交「搬运」到指定基底之后。</li>
+                            <li>• 得到更线性的历史，看起来更干净。</li>
+                            <li>• 适合自己本地、尚未推送的分支。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 14 远程仓库 + 日常命令总结 -->
+        <section class="slide" data-slide="14">
+            <div class="card p-6 sm:p-8">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-900">9–10. 远程预览与日常命令总结</h2>
+
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">9.1 添加远程仓库 origin</h3>
+                <p class="text-sm text-gray-700 mb-2">
+                    在 GitHub 创建空仓库（不勾选 README），得到地址后，在本地执行：
+                </p>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-3">
+                    <pre class="text-sm"><code><span class="syntax-comment"># SSH 示例</span>
+<span class="syntax-keyword">git</span> remote add origin <span class="syntax-string">git@github.com:yourname/your-repo.git</span>
+
+<span class="syntax-comment"># HTTPS 示例</span>
+<span class="syntax-keyword">git</span> remote add origin <span class="syntax-string">https://github.com/yourname/your-repo.git</span></code></pre>
+                </div>
+
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">9.2 推送本地分支到远程</h3>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-3">
+                    <pre class="text-sm"><code><span class="syntax-keyword">git</span> push -u origin <span class="syntax-string">conflict-main</span></code></pre>
+                </div>
+                <p class="text-sm text-gray-700 mb-4">
+                    <code class="bg-gray-100 px-1 rounded text-xs">-u</code> 会把当前本地分支与远程分支关联起来，以后可以直接 <code class="bg-gray-100 px-1 rounded text-xs">git push</code> / <code class="bg-gray-100 px-1 rounded text-xs">git pull</code>。
+                </p>
+
+                <h3 class="text-lg font-semibold mb-2 text-gray-800">10. 推荐的日常排查组合</h3>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-3">
+                    <pre class="text-sm"><code><span class="syntax-keyword">git</span> status
+<span class="syntax-keyword">git</span> log --oneline --graph --decorate --all -10
+<span class="syntax-keyword">git</span> diff
+<span class="syntax-keyword">git</span> diff --cached</code></pre>
+                </div>
+
+                <!-- 知识传递/总结图 -->
+                <p class="font-semibold text-gray-800 mb-2 text-sm">这些命令帮你回答四个关键问题：</p>
+                <div class="max-w-2xl mx-auto mb-4">
+                    <div class="bg-blue-50 rounded-2xl border-2 border-blue-200 p-4 mb-3">
+                        <span class="font-semibold text-blue-700 text-sm">状态 & 结构</span>
+                        <div class="bg-white rounded-xl p-3 mt-2 text-xs text-gray-700 space-y-1">
+                            <p>• 我现在在哪个分支？（<code class="bg-gray-100 px-1 rounded text-[11px]">git status</code>）</p>
+                            <p>• 最近的提交历史与分支结构？（<code class="bg-gray-100 px-1 rounded text-[11px]">git log --graph ...</code>）</p>
+                        </div>
+                    </div>
+                    <div class="bg-green-50 rounded-2xl border-2 border-green-200 p-4 mb-3">
+                        <span class="font-semibold text-green-700 text-sm">改动 & 暂存</span>
+                        <div class="bg-white rounded-xl p-3 mt-2 text-xs text-gray-700 space-y-1">
+                            <p>• 工作区有哪些未暂存改动？（<code class="bg-gray-100 px-1 rounded text-[11px]">git diff</code>）</p>
+                            <p>• 暂存区准备提交哪些改动？（<code class="bg-gray-100 px-1 rounded text-[11px]">git diff --cached</code>）</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-green p-4 rounded-xl mb-4">
+                    <p class="text-green-900 text-sm">
+                        到这里，你已经体验了：<strong>本地基础工作流 + 分支 + merge 冲突 + rebase 冲突 + diff 检查 + 远程预览</strong>。
+                        后续你可以在真实项目中，照着这套流程练习并慢慢加入更多高级命令。
+                    </p>
+                </div>
+
+                <div class="text-center">
+                    <button onclick="restartTutorial()" class="btn-secondary px-4 py-2 rounded-lg text-sm font-medium">
+                        重新从第 1 页开始复习
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 底部导航按钮（桌面端） -->
+    <div class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bottom-nav-buttons">
+        <div class="bg-white/95 backdrop-blur-lg rounded-full shadow-md border border-gray-200 px-3 py-2 flex items-center gap-3">
+            <button id="prevBtn" onclick="prevSlide()" class="btn-secondary px-3 py-2 rounded-full text-sm font-medium disabled:opacity-40" disabled>上一页</button>
+            <button id="nextBtn" onclick="nextSlide()" class="btn-primary px-4 py-2 rounded-full text-sm font-medium flex items-center gap-1">
+                下一页 <span>→</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 14;
+
+        function updateSlide() {
+            document.querySelectorAll('.slide').forEach(slide => slide.classList.remove('active'));
+            const active = document.querySelector(`[data-slide="${currentSlide}"]`);
+            if (active) active.classList.add('active');
+
+            const progress = (currentSlide / totalSlides) * 100;
+            document.getElementById('progress').style.width = `${progress}%`;
+            document.getElementById('slideCounter').textContent = `${currentSlide} / ${totalSlides}`;
+
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            if (prevBtn) prevBtn.disabled = currentSlide === 1;
+            if (nextBtn) {
+                nextBtn.innerHTML = currentSlide === totalSlides ? '完成 ✓' : '下一页 <span>→</span>';
+            }
+
+            const leftZone = document.getElementById('touchNavLeft');
+            const rightZone = document.getElementById('touchNavRight');
+            if (leftZone) leftZone.classList.toggle('disabled', currentSlide === 1);
+            if (rightZone) rightZone.classList.toggle('disabled', currentSlide === totalSlides);
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                currentSlide++;
+                updateSlide();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                currentSlide--;
+                updateSlide();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function restartTutorial() {
+            currentSlide = 1;
+            document.querySelectorAll('.quiz-option').forEach(opt => opt.classList.remove('correct', 'wrong'));
+            document.querySelectorAll('[id$="-explanation"]').forEach(exp => exp.classList.add('hidden'));
+            updateSlide();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function checkAnswer(element, quizNum) {
+            const parent = element.parentElement;
+            if (parent.querySelector('.correct') || parent.querySelector('.wrong')) return;
+            parent.querySelectorAll('.quiz-option').forEach(opt => {
+                if (opt.dataset.correct === 'true') opt.classList.add('correct');
+                else if (opt === element) opt.classList.add('wrong');
+            });
+            const explanation = document.getElementById(`quiz${quizNum}-explanation`);
+            if (explanation) explanation.classList.remove('hidden');
+        }
+
+        function showCodeTab(tab) {
+            document.querySelectorAll('.code-tab').forEach(t => {
+                t.classList.remove('tab-active');
+                t.classList.add('tab-inactive');
+            });
+            if (event && event.target) {
+                event.target.classList.remove('tab-inactive');
+                event.target.classList.add('tab-active');
+            }
+            document.querySelectorAll('.code-content').forEach(c => c.classList.add('hidden'));
+            const target = document.getElementById(`code-${tab}`);
+            if (target) target.classList.remove('hidden');
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+            else if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
+        });
+
+        updateSlide();
+    </script>
+</body>
+</html>

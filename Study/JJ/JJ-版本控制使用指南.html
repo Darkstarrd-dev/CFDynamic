@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JJ 版本控制使用指南</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        code, pre { font-family: 'Fira Code', monospace; }
+
+        .code-block { 
+            background: #f8f9fa; 
+            border: 1px solid #e0e0e0; 
+            text-align: left;
+        }
+        .code-block pre {
+            margin: 0;
+            padding: 0;
+            text-align: left;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .code-block code {
+            display: block;
+            text-align: left;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            padding-left: 0;
+            margin-left: 0;
+        }
+        .syntax-keyword { color: #0066cc; }
+        .syntax-string { color: #22863a; }
+        .syntax-function { color: #6f42c1; }
+        .syntax-comment { color: #6a737d; }
+        .syntax-variable { color: #e36209; }
+        .syntax-number { color: #005cc5; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .float-animation { animation: float 3s ease-in-out infinite; }
+        .fade-in { animation: fadeIn 0.5s ease forwards; }
+        .progress-bar { transition: width 0.5s ease; }
+
+        .slide { display: none; opacity: 0; transition: opacity 0.4s ease; }
+        .slide.active { display: block; opacity: 1; }
+
+        .quiz-option { transition: all 0.3s ease; cursor: pointer; }
+        .quiz-option:hover { transform: translateX(4px); border-color: #2563eb; background: #eff6ff; }
+        .quiz-option.correct { background: #dcfce7 !important; border-color: #22c55e !important; }
+        .quiz-option.wrong { background: #fee2e2 !important; border-color: #ef4444 !important; }
+
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-primary:active { background: #1e40af; transform: scale(0.98); }
+        .btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+        .btn-secondary:hover { background: #e5e7eb; }
+
+        .tab-active { background: #2563eb; color: white; }
+        .tab-inactive { background: #f3f4f6; color: #6b7280; }
+        .tab-inactive:hover { background: #e5e7eb; }
+
+        .card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .card-green { background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 1px solid #a7f3d0; }
+
+        .touch-nav-zone {
+            position: fixed; top: 0; bottom: 0; width: 12%; z-index: 30;
+            display: none; cursor: pointer;
+        }
+        .touch-nav-zone.left { left: 0; background: linear-gradient(to right, rgba(0,0,0,0.03), transparent); }
+        .touch-nav-zone.right { right: 0; background: linear-gradient(to left, rgba(0,0,0,0.03), transparent); }
+        .touch-nav-zone .nav-hint {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            opacity: 0.3; font-size: 24px; color: #6b7280; transition: opacity 0.2s;
+        }
+        .touch-nav-zone.left .nav-hint { left: 8px; }
+        .touch-nav-zone.right .nav-hint { right: 8px; }
+        .touch-nav-zone:active .nav-hint { opacity: 0.8; }
+        .touch-nav-zone.disabled { pointer-events: none; }
+        .touch-nav-zone.disabled .nav-hint { opacity: 0.1; }
+
+        @media (max-width: 768px) {
+            .touch-nav-zone { display: flex; align-items: center; }
+            .bottom-nav-buttons { display: none !important; }
+            .code-block pre, .code-block code {
+                white-space: pre-wrap; word-wrap: break-word; word-break: break-all;
+            }
+            .quiz-option:hover { transform: none; }
+            .quiz-option:active { background: #eff6ff; border-color: #2563eb; }
+        }
+        @media (min-width: 769px) {
+            .bottom-nav-buttons { display: flex !important; }
+        }
+        @media (pointer: coarse) {
+            .quiz-option, .code-tab, .btn-primary, .btn-secondary { min-height: 44px; }
+        }
+        html, body { overflow-x: hidden; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen text-gray-800">
+    <!-- 移动端触摸导航 -->
+    <div id="touchNavLeft" class="touch-nav-zone left" onclick="prevSlide()">
+        <span class="nav-hint">‹</span>
+    </div>
+    <div id="touchNavRight" class="touch-nav-zone right" onclick="nextSlide()">
+        <span class="nav-hint">›</span>
+    </div>
+
+    <!-- 进度条 -->
+    <div class="fixed top-0 left-0 right-0 h-1 bg-gray-200 z-50">
+        <div id="progress" class="progress-bar h-full bg-blue-600" style="width: 0%"></div>
+    </div>
+  
+    <!-- 导航栏 -->
+    <nav class="fixed top-2 sm:top-4 left-1/2 -translate-x-1/2 z-40 bg-white/95 backdrop-blur-lg rounded-full px-4 sm:px-6 py-2 sm:py-3 flex items-center gap-2 sm:gap-4 shadow-md border border-gray-200 max-w-[90vw]">
+        <span class="text-blue-600 font-semibold text-sm sm:text-base truncate">JJ 指南</span>
+        <span class="text-gray-300 hidden sm:inline">|</span>
+        <span id="slideCounter" class="text-gray-500 text-sm sm:text-base whitespace-nowrap">1 / 12</span>
+    </nav>
+
+    <!-- 主内容 -->
+    <main class="container mx-auto px-3 sm:px-4 pt-16 sm:pt-24 pb-28 sm:pb-32 max-w-4xl">
+        
+        <!-- 第1页：介绍页 -->
+        <section class="slide active" data-slide="1">
+            <div class="text-center mb-8 sm:mb-12">
+                <div class="inline-block p-3 sm:p-4 bg-green-100 rounded-2xl mb-4 sm:mb-6 float-animation">
+                    <svg class="w-16 h-16 sm:w-20 sm:h-20 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 3v6h6"/>
+                    </svg>
+                </div>
+                <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-gray-900">JJ 版本控制</h1>
+                <p class="text-lg sm:text-xl text-gray-500 mb-6 sm:mb-8">更简洁的 Git 替代方案</p>
+            </div>
+            <div class="card p-5 sm:p-8">
+                <h2 class="text-2xl font-semibold mb-6 text-center text-gray-800">🎯 你将学会</h2>
+                <div class="grid sm:grid-cols-2 gap-4">
+                    <div class="flex items-start gap-3 p-4 bg-blue-50 rounded-xl">
+                        <span class="text-2xl">📦</span>
+                        <div>
+                            <p class="font-semibold text-gray-800">初始化与基础操作</p>
+                            <p class="text-sm text-gray-600">创建项目、描述修订、查看状态</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 p-4 bg-green-50 rounded-xl">
+                        <span class="text-2xl">🔄</span>
+                        <div>
+                            <p class="font-semibold text-gray-800">迭代开发流程</p>
+                            <p class="text-sm text-gray-600">new、describe、abandon</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 p-4 bg-amber-50 rounded-xl">
+                        <span class="text-2xl">📤</span>
+                        <div>
+                            <p class="font-semibold text-gray-800">推送到远程</p>
+                            <p class="text-sm text-gray-600">squash、bookmark、push</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 p-4 bg-purple-50 rounded-xl">
+                        <span class="text-2xl">🌿</span>
+                        <div>
+                            <p class="font-semibold text-gray-800">分叉开发</p>
+                            <p class="text-sm text-gray-600">多分支并行、rebase 合并</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <p class="text-blue-700 font-semibold mb-2">💡 JJ vs Git</p>
+                <p class="text-sm text-gray-600">JJ（Jujutsu）是一个现代版本控制系统，兼容 Git 仓库，但操作更直观。没有暂存区概念，每次修改自动追踪。</p>
+            </div>
+        </section>
+
+        <!-- 第2页：初始化项目 -->
+        <section class="slide" data-slide="2">
+            <div class="text-center mb-6">
+                <span class="inline-block px-4 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium mb-3">第 1 步</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">初始化项目</h2>
+            </div>
+            
+            <div class="card p-5 sm:p-6 mb-6">
+                <p class="text-gray-600 mb-4">在现有目录下初始化 JJ 仓库（兼容 Git）：</p>
+                <div class="code-block rounded-lg p-4 overflow-x-auto">
+                    <div class="flex items-center gap-2 mb-3 text-gray-500 text-sm">
+                        <span class="w-3 h-3 bg-red-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-yellow-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-green-400 rounded-full"></span>
+                        <span class="ml-2">Terminal</span>
+                    </div>
+                    <pre class="text-sm"><code>jj git init</code></pre>
+                </div>
+            </div>
+
+            <div class="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
+                <p class="text-green-700 font-semibold mb-2">✅ 执行后会发生什么</p>
+                <ul class="text-sm text-gray-700 space-y-1">
+                    <li>• 创建 <code class="bg-green-100 px-1 rounded">.jj/</code> 目录（类似 <code>.git/</code>）</li>
+                    <li>• 自动创建第一个"空修订"作为工作起点</li>
+                    <li>• 可以与现有 Git 仓库共存</li>
+                </ul>
+            </div>
+
+            <!-- 流程图：初始化后的状态 -->
+            <div class="card p-5">
+                <p class="text-sm font-medium text-gray-500 mb-4 text-center">初始化后的状态</p>
+                <div class="flex flex-col items-center">
+                    <div class="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
+                        <span class="text-white font-bold text-sm">root</span>
+                    </div>
+                    <div class="w-0.5 h-6 bg-gray-300"></div>
+                    <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center shadow-lg ring-4 ring-green-200">
+                        <span class="text-white font-bold text-sm">@</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">@ = 当前工作修订</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第3页：添加文件并描述 -->
+        <section class="slide" data-slide="3">
+            <div class="text-center mb-6">
+                <span class="inline-block px-4 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium mb-3">第 2 步</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">添加文件并描述</h2>
+            </div>
+
+            <div class="card p-5 sm:p-6 mb-6">
+                <p class="text-gray-600 mb-4">修改文件后，查看状态并描述本次修订：</p>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-4">
+                    <div class="flex items-center gap-2 mb-3 text-gray-500 text-sm">
+                        <span class="w-3 h-3 bg-red-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-yellow-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-green-400 rounded-full"></span>
+                        <span class="ml-2">Terminal</span>
+                    </div>
+                    <pre class="text-sm"><code><span class="syntax-comment"># 查看当前状态</span>
+jj st
+
+<span class="syntax-comment"># 描述本次修订</span>
+jj describe -m <span class="syntax-string">"初始化项目"</span></code></pre>
+                </div>
+            </div>
+
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+                <p class="text-amber-700 font-semibold">⚠️ 与 Git 的重要区别</p>
+                <p class="text-sm text-gray-700 mt-1">JJ 没有"暂存区"概念！所有文件修改会自动被追踪，无需 <code>git add</code>。</p>
+            </div>
+
+            <!-- 对比图 -->
+            <div class="grid md:grid-cols-2 gap-4">
+                <div class="relative p-5 bg-red-50 rounded-xl border-2 border-red-200">
+                    <div class="absolute -top-3 left-4 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">Git 方式</div>
+                    <div class="code-block rounded-lg p-3 mt-2 text-sm">
+                        <pre><code>git add .
+git commit -m "msg"</code></pre>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">需要两步操作</p>
+                </div>
+                <div class="relative p-5 bg-green-50 rounded-xl border-2 border-green-200">
+                    <div class="absolute -top-3 left-4 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">JJ 方式</div>
+                    <div class="code-block rounded-lg p-3 mt-2 text-sm">
+                        <pre><code>jj describe -m "msg"</code></pre>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">一步完成</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第4页：进入下一步 -->
+        <section class="slide" data-slide="4">
+            <div class="text-center mb-6">
+                <span class="inline-block px-4 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium mb-3">第 3 步</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">固定当前状态，进入下一步</h2>
+            </div>
+
+            <div class="card p-5 sm:p-6 mb-6">
+                <p class="text-gray-600 mb-4"><code class="bg-gray-100 px-2 py-1 rounded">jj new</code> 是 JJ 的核心命令：固定当前修订，创建新的工作修订。</p>
+                
+                <div class="flex gap-2 mb-4">
+                    <button class="code-tab tab-active px-4 py-2 rounded-lg text-sm font-medium" onclick="showCodeTab('way1')">方式一</button>
+                    <button class="code-tab tab-inactive px-4 py-2 rounded-lg text-sm font-medium" onclick="showCodeTab('way2')">方式二</button>
+                </div>
+                
+                <div id="code-way1" class="code-content code-block rounded-lg p-4 overflow-x-auto">
+                    <div class="flex items-center gap-2 mb-3 text-gray-500 text-sm">
+                        <span class="w-3 h-3 bg-red-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-yellow-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-green-400 rounded-full"></span>
+                        <span class="ml-2">方式一：一步完成</span>
+                    </div>
+                    <pre class="text-sm"><code><span class="syntax-comment"># 进入下一步时直接设定描述</span>
+jj new -m <span class="syntax-string">"添加登录功能"</span></code></pre>
+                </div>
+                
+                <div id="code-way2" class="code-content code-block rounded-lg p-4 overflow-x-auto hidden">
+                    <div class="flex items-center gap-2 mb-3 text-gray-500 text-sm">
+                        <span class="w-3 h-3 bg-red-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-yellow-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-green-400 rounded-full"></span>
+                        <span class="ml-2">方式二：先进入，后描述</span>
+                    </div>
+                    <pre class="text-sm"><code><span class="syntax-comment"># 先进入下一步</span>
+jj new
+
+<span class="syntax-comment"># 修改文件...</span>
+
+<span class="syntax-comment"># 之后再描述</span>
+jj describe -m <span class="syntax-string">"添加登录功能"</span></code></pre>
+                </div>
+            </div>
+
+            <!-- 状态变化图 -->
+            <div class="card p-5">
+                <p class="text-sm font-medium text-gray-500 mb-4 text-center">执行 <code>jj new</code> 后的状态变化</p>
+                <div class="flex items-center justify-center gap-4 sm:gap-8">
+                    <!-- 之前 -->
+                    <div class="flex flex-col items-center">
+                        <p class="text-xs text-gray-500 mb-2">之前</p>
+                        <div class="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
+                            <span class="text-white text-xs">root</span>
+                        </div>
+                        <div class="w-0.5 h-4 bg-gray-300"></div>
+                        <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center ring-4 ring-green-200">
+                            <span class="text-white text-xs font-bold">@</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 箭头 -->
+                    <div class="flex items-center">
+                        <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                        </svg>
+                    </div>
+                    
+                    <!-- 之后 -->
+                    <div class="flex flex-col items-center">
+                        <p class="text-xs text-gray-500 mb-2">之后</p>
+                        <div class="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
+                            <span class="text-white text-xs">root</span>
+                        </div>
+                        <div class="w-0.5 h-4 bg-gray-300"></div>
+                        <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                            <span class="text-white text-xs">固定</span>
+                        </div>
+                        <div class="w-0.5 h-4 bg-gray-300"></div>
+                        <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center ring-4 ring-green-200">
+                            <span class="text-white text-xs font-bold">@</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第5页：迭代开发 -->
+        <section class="slide" data-slide="5">
+            <div class="text-center mb-6">
+                <span class="inline-block px-4 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium mb-3">第 4 步</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">重复迭代开发</h2>
+            </div>
+
+            <div class="card p-5 sm:p-6 mb-6">
+                <p class="text-gray-600 mb-4">持续的开发流程非常简单：</p>
+                <div class="code-block rounded-lg p-4 overflow-x-auto">
+                    <div class="flex items-center gap-2 mb-3 text-gray-500 text-sm">
+                        <span class="w-3 h-3 bg-red-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-yellow-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-green-400 rounded-full"></span>
+                        <span class="ml-2">Terminal</span>
+                    </div>
+                    <pre class="text-sm"><code><span class="syntax-comment"># 修改文件...</span>
+jj describe -m <span class="syntax-string">"修复 bug"</span>
+jj new -m <span class="syntax-string">"优化性能"</span>
+
+<span class="syntax-comment"># 修改文件...</span>
+<span class="syntax-comment"># 查看变更内容</span>
+jj diff</code></pre>
+                </div>
+            </div>
+
+            <!-- 开发循环图 -->
+            <div class="card p-5">
+                <p class="text-sm font-medium text-gray-500 mb-4 text-center">开发循环</p>
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <div class="flex flex-col items-center">
+                        <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center border-2 border-blue-300">
+                            <span class="text-2xl">✏️</span>
+                        </div>
+                        <p class="text-sm mt-2 text-gray-600">1. 修改文件</p>
+                    </div>
+                    <svg class="w-6 h-6 text-gray-400 rotate-90 sm:rotate-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                    </svg>
+                    <div class="flex flex-col items-center">
+                        <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center border-2 border-green-300">
+                            <span class="text-2xl">📝</span>
+                        </div>
+                        <p class="text-sm mt-2 text-gray-600">2. describe</p>
+                    </div>
+                    <svg class="w-6 h-6 text-gray-400 rotate-90 sm:rotate-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                    </svg>
+                    <div class="flex flex-col items-center">
+                        <div class="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center border-2 border-amber-300">
+                            <span class="text-2xl">➡️</span>
+                        </div>
+                        <p class="text-sm mt-2 text-gray-600">3. new</p>
+                    </div>
+                </div>
+                <div class="flex justify-center mt-4">
+                    <svg class="w-32 h-8 text-gray-300" viewBox="0 0 128 32">
+                        <path d="M 120 16 C 120 28, 8 28, 8 16" stroke="currentColor" stroke-width="2" fill="none" stroke-dasharray="4"/>
+                        <path d="M 8 16 L 12 12 M 8 16 L 12 20" stroke="currentColor" stroke-width="2" fill="none"/>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第6页：回退操作 -->
+        <section class="slide" data-slide="6">
+            <div class="text-center mb-6">
+                <span class="inline-block px-4 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium mb-3">第 5 步</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">不满意时，回到上一步</h2>
+            </div>
+
+            <div class="card p-5 sm:p-6 mb-6">
+                <p class="text-gray-600 mb-4">如果当前修改不满意，可以抛弃当前修订：</p>
+                <div class="code-block rounded-lg p-4 overflow-x-auto">
+                    <div class="flex items-center gap-2 mb-3 text-gray-500 text-sm">
+                        <span class="w-3 h-3 bg-red-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-yellow-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-green-400 rounded-full"></span>
+                        <span class="ml-2">Terminal</span>
+                    </div>
+                    <pre class="text-sm"><code><span class="syntax-comment"># 抛弃当前修订，回到上一步</span>
+jj abandon</code></pre>
+                </div>
+            </div>
+
+            <!-- 状态变化图 -->
+            <div class="card p-5">
+                <p class="text-sm font-medium text-gray-500 mb-4 text-center">执行 <code>jj abandon</code> 的效果</p>
+                <div class="flex items-center justify-center gap-4 sm:gap-8">
+                    <!-- 之前 -->
+                    <div class="flex flex-col items-center">
+                        <p class="text-xs text-gray-500 mb-2">之前</p>
+                        <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                            <span class="text-white text-xs">A</span>
+                        </div>
+                        <div class="w-0.5 h-4 bg-gray-300"></div>
+                        <div class="w-12 h-12 bg-red-400 rounded-full flex items-center justify-center ring-4 ring-red-200">
+                            <span class="text-white text-xs font-bold">@</span>
+                        </div>
+                        <p class="text-xs text-red-500 mt-1">不满意</p>
+                    </div>
+                    
+                    <!-- 箭头 -->
+                    <div class="flex items-center">
+                        <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                        </svg>
+                    </div>
+                    
+                    <!-- 之后 -->
+                    <div class="flex flex-col items-center">
+                        <p class="text-xs text-gray-500 mb-2">之后</p>
+                        <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center ring-4 ring-green-200">
+                            <span class="text-white text-xs font-bold">@</span>
+                        </div>
+                        <p class="text-xs text-green-500 mt-1">回到 A</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <p class="text-blue-700 font-semibold mb-2">💡 安全操作</p>
+                <p class="text-sm text-gray-600">abandon 只会抛弃当前修订，之前的修订都会保留。可以放心使用！</p>
+            </div>
+        </section>
+
+        <!-- 第7页：推送到远程 -->
+        <section class="slide" data-slide="7">
+            <div class="text-center mb-6">
+                <span class="inline-block px-4 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium mb-3">第 6 步</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">推送到远程</h2>
+            </div>
+
+            <div class="card p-5 sm:p-6 mb-6">
+                <p class="text-gray-600 mb-4">先用 <code class="bg-gray-100 px-2 py-1 rounded">jj log</code> 查看历史：</p>
+                <div class="code-block rounded-lg p-4 overflow-x-auto">
+                    <div class="flex items-center gap-2 mb-3 text-gray-500 text-sm">
+                        <span class="w-3 h-3 bg-red-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-yellow-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-green-400 rounded-full"></span>
+                        <span class="ml-2">jj log 输出示例</span>
+                    </div>
+                    <pre class="text-sm"><code><span class="syntax-variable">@</span> wvp789  <span class="syntax-comment">(当前空修订)</span>
+<span class="syntax-variable">○</span> def456  优化性能
+<span class="syntax-variable">○</span> abc123  添加功能
+<span class="syntax-variable">○</span> main    初始提交</code></pre>
+                </div>
+            </div>
+
+            <!-- 历史可视化 -->
+            <div class="card p-5 mb-6">
+                <p class="text-sm font-medium text-gray-500 mb-4 text-center">历史结构</p>
+                <div class="flex flex-col items-center">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center ring-4 ring-green-200">
+                            <span class="text-white text-xs font-bold">@</span>
+                        </div>
+                        <span class="text-sm text-gray-500">wvp789 (空)</span>
+                    </div>
+                    <div class="w-0.5 h-4 bg-gray-300"></div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                            <span class="text-white text-xs">def</span>
+                        </div>
+                        <span class="text-sm text-gray-600">优化性能</span>
+                    </div>
+                    <div class="w-0.5 h-4 bg-gray-300"></div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                            <span class="text-white text-xs">abc</span>
+                        </div>
+                        <span class="text-sm text-gray-600">添加功能</span>
+                    </div>
+                    <div class="w-0.5 h-4 bg-gray-300"></div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gray-400 rounded-full flex items-center justify-center">
+                            <span class="text-white text-xs">main</span>
+                        </div>
+                        <span class="text-sm text-gray-600">初始提交</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <p class="text-amber-700 font-semibold">⚠️ 推送前需要做什么？</p>
+                <p class="text-sm text-gray-700 mt-1">通常需要用 <code class="bg-amber-100 px-1 rounded">jj squash</code> 压缩历史，然后设置 bookmark，最后 push。</p>
+            </div>
+        </section>
+
+        <!-- 第8页：两种推送方式 -->
+        <section class="slide" data-slide="8">
+            <div class="text-center mb-6">
+                <span class="inline-block px-4 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium mb-3">推送方式</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">压缩历史后推送</h2>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4 mb-6">
+                <!-- 方式一 -->
+                <div class="card p-5">
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">1</span>
+                        <span class="font-semibold text-gray-800">简单方式</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">压缩所有历史为当前状态（本地历史丢失）</p>
+                    <div class="code-block rounded-lg p-3 overflow-x-auto">
+                        <pre class="text-xs"><code><span class="syntax-comment"># 压缩所有历史</span>
+jj squash
+
+<span class="syntax-comment"># 设置提交信息</span>
+jj describe -m <span class="syntax-string">"完成功能开发"</span>
+
+<span class="syntax-comment"># 设置书签并推送</span>
+jj bookmark set main
+jj git push</code></pre>
+                    </div>
+                </div>
+
+                <!-- 方式二 -->
+                <div class="card p-5">
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm">2</span>
+                        <span class="font-semibold text-gray-800">保留历史方式</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-3">新建分支推送（本地历史保留）</p>
+                    <div class="code-block rounded-lg p-3 overflow-x-auto">
+                        <pre class="text-xs"><code><span class="syntax-comment"># 新建一个修订</span>
+jj new
+
+<span class="syntax-comment"># 压缩指定范围</span>
+jj squash --from abc123::def456
+
+<span class="syntax-comment"># 设置并推送</span>
+jj describe -m <span class="syntax-string">"完成功能开发"</span>
+jj bookmark set main
+jj git push</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <p class="text-blue-700 font-semibold mb-2">💡 <code>::</code> 语法说明</p>
+                <p class="text-sm text-gray-600"><code>abc123::def456</code> 表示从 abc123 到 def456 的所有修订（包含两端）。</p>
+            </div>
+        </section>
+
+        <!-- 第9页：Bookmark 概念 -->
+        <section class="slide" data-slide="9">
+            <div class="text-center mb-6">
+                <span class="inline-block px-4 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium mb-3">核心概念</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Bookmark 书签管理</h2>
+            </div>
+
+            <div class="card p-5 sm:p-6 mb-6">
+                <p class="text-gray-600 mb-4">Bookmark 是 JJ 中的"书签"，<strong>只是给修订起名字的标签</strong>，方便记住和跳转位置。</p>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-gray-200">
+                                <th class="text-left py-2 px-3 text-gray-600">命令</th>
+                                <th class="text-left py-2 px-3 text-gray-600">作用</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-gray-100">
+                                <td class="py-2 px-3"><code class="bg-gray-100 px-1 rounded text-xs">jj bookmark create xxx</code></td>
+                                <td class="py-2 px-3 text-gray-600">给当前位置起名字</td>
+                            </tr>
+                            <tr class="border-b border-gray-100">
+                                <td class="py-2 px-3"><code class="bg-gray-100 px-1 rounded text-xs">jj bookmark set xxx</code></td>
+                                <td class="py-2 px-3 text-gray-600">移动书签到当前位置</td>
+                            </tr>
+                            <tr class="border-b border-gray-100">
+                                <td class="py-2 px-3"><code class="bg-gray-100 px-1 rounded text-xs">jj bookmark list</code></td>
+                                <td class="py-2 px-3 text-gray-600">查看所有书签</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 px-3"><code class="bg-gray-100 px-1 rounded text-xs">jj edit &lt;bookmark&gt;</code></td>
+                                <td class="py-2 px-3 text-gray-600">跳转到书签位置</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Bookmark 可视化 -->
+            <div class="card p-5">
+                <p class="text-sm font-medium text-gray-500 mb-4 text-center">Bookmark 只是标签</p>
+                <div class="flex flex-col items-center">
+                    <div class="relative flex items-center gap-3">
+                        <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                            <span class="text-white text-xs">abc</span>
+                        </div>
+                        <div class="absolute -right-16 top-1/2 -translate-y-1/2">
+                            <span class="bg-purple-500 text-white text-xs px-2 py-1 rounded-full">🏷️ main</span>
+                        </div>
+                    </div>
+                    <div class="w-0.5 h-4 bg-gray-300"></div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center ring-4 ring-green-200">
+                            <span class="text-white text-xs font-bold">@</span>
+                        </div>
+                    </div>
+                </div>
+                <p class="text-xs text-center text-gray-500 mt-4">bookmark 不会创建分叉，只是指向某个修订的标签</p>
+            </div>
+
+            <div class="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <p class="text-amber-700 font-semibold">⚠️ 重点理解</p>
+                <p class="text-sm text-gray-700 mt-1">Bookmark 不会创建分叉！分叉是通过 <code class="bg-amber-100 px-1 rounded">jj new --after &lt;ID&gt;</code> 决定的。</p>
+            </div>
+        </section>
+
+        <!-- 第10页：分叉开发 -->
+        <section class="slide" data-slide="10">
+            <div class="text-center mb-6">
+                <span class="inline-block px-4 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium mb-3">高级用法</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">分叉开发（多分支并行）</h2>
+            </div>
+
+            <div class="card p-5 sm:p-6 mb-6">
+                <p class="text-gray-600 mb-4">场景：从 A 点分叉，主干开发 B→D→F，分支开发 C→E→G</p>
+                
+                <!-- 分叉图形化 -->
+                <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                    <div class="flex justify-center">
+                        <svg class="w-full max-w-md" viewBox="0 0 300 180">
+                            <!-- A 节点 -->
+                            <circle cx="150" cy="20" r="15" fill="#6b7280"/>
+                            <text x="150" y="25" text-anchor="middle" fill="white" font-size="12" font-weight="bold">A</text>
+                            <!-- 主干线 -->
+                            <line x1="135" y1="30" x2="80" y2="60" stroke="#3b82f6" stroke-width="2"/>
+                            <circle cx="70" cy="70" r="15" fill="#3b82f6"/>
+                            <text x="70" y="75" text-anchor="middle" fill="white" font-size="12" font-weight="bold">B</text>
+                            <line x1="70" y1="85" x2="70" y2="105" stroke="#3b82f6" stroke-width="2"/>
+                            <circle cx="70" cy="120" r="15" fill="#3b82f6"/>
+                            <text x="70" y="125" text-anchor="middle" fill="white" font-size="12" font-weight="bold">D</text>
+                            <line x1="70" y1="135" x2="70" y2="155" stroke="#3b82f6" stroke-width="2"/>
+                            <circle cx="70" cy="165" r="12" fill="#3b82f6" stroke="#93c5fd" stroke-width="3"/>
+                            <text x="70" y="170" text-anchor="middle" fill="white" font-size="10" font-weight="bold">F</text>
+                            <!-- 主干标签 -->
+                            <text x="30" y="125" fill="#3b82f6" font-size="10">主干</text>
+                            <!-- 分支线 -->
+                            <line x1="165" y1="30" x2="220" y2="60" stroke="#22c55e" stroke-width="2"/>
+                            <circle cx="230" cy="70" r="15" fill="#22c55e"/>
+                            <text x="230" y="75" text-anchor="middle" fill="white" font-size="12" font-weight="bold">C</text>
+                            <line x1="230" y1="85" x2="230" y2="105" stroke="#22c55e" stroke-width="2"/>
+                            <circle cx="230" cy="120" r="15" fill="#22c55e"/>
+                            <text x="230" y="125" text-anchor="middle" fill="white" font-size="12" font-weight="bold">E</text>
+                            <line x1="230" y1="135" x2="230" y2="155" stroke="#22c55e" stroke-width="2"/>
+                            <circle cx="230" cy="165" r="12" fill="#22c55e" stroke="#86efac" stroke-width="3"/>
+                            <text x="230" y="170" text-anchor="middle" fill="white" font-size="10" font-weight="bold">G</text>
+                            <!-- 分支标签 -->
+                            <text x="255" y="125" fill="#22c55e" font-size="10">分支</text>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <p class="text-blue-700 font-semibold mb-2">💡 关键命令</p>
+                <p class="text-sm text-gray-600"><code class="bg-blue-100 px-1 rounded">jj new --after &lt;ID&gt;</code> 是创建分叉的关键！它会在指定位置之后创建新修订。</p>
+            </div>
+        </section>
+
+        <!-- 第11页：分叉操作流程 -->
+        <section class="slide" data-slide="11">
+            <div class="text-center mb-6">
+                <span class="inline-block px-4 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium mb-3">分叉操作</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">分叉开发完整流程</h2>
+            </div>
+
+            <!-- 时间线 -->
+            <div class="space-y-4">
+                <!-- 步骤1 -->
+                <div class="flex items-start gap-4">
+                    <div class="flex flex-col items-center">
+                        <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center shadow-md">
+                            <span class="text-white font-bold">1</span>
+                        </div>
+                        <div class="w-0.5 h-full bg-gray-300 mt-2"></div>
+                    </div>
+                    <div class="flex-1 card p-4">
+                        <span class="text-sm font-semibold text-blue-700">主干开发</span>
+                        <div class="code-block rounded-lg p-3 mt-2 overflow-x-auto">
+                            <pre class="text-xs"><code><span class="syntax-comment"># 在 A 点创建书签</span>
+jj bookmark create split-point
+
+<span class="syntax-comment"># 继续主干开发</span>
+jj new -m <span class="syntax-string">"B"</span>
+jj new -m <span class="syntax-string">"D"</span>
+jj new -m <span class="syntax-string">"F"</span>
+jj bookmark create main-dev</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 步骤2 -->
+                <div class="flex items-start gap-4">
+                    <div class="flex flex-col items-center">
+                        <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center shadow-md">
+                            <span class="text-white font-bold">2</span>
+                        </div>
+                        <div class="w-0.5 h-full bg-gray-300 mt-2"></div>
+                    </div>
+                    <div class="flex-1 card p-4">
+                        <span class="text-sm font-semibold text-green-700">回到 A，开始分支</span>
+                        <div class="code-block rounded-lg p-3 mt-2 overflow-x-auto">
+                            <pre class="text-xs"><code><span class="syntax-comment"># 从 A 的位置开始新分支</span>
+jj new --after split-point -m <span class="syntax-string">"C"</span>
+jj new -m <span class="syntax-string">"E"</span>
+jj new -m <span class="syntax-string">"G"</span>
+jj bookmark create feature-dev</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 步骤3 -->
+                <div class="flex items-start gap-4">
+                    <div class="flex flex-col items-center">
+                        <div class="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center shadow-md">
+                            <span class="text-white font-bold">3</span>
+                        </div>
+                    </div>
+                    <div class="flex-1 card p-4">
+                        <span class="text-sm font-semibold text-purple-700">在分支间切换</span>
+                        <div class="code-block rounded-lg p-3 mt-2 overflow-x-auto">
+                            <pre class="text-xs"><code>jj edit main-dev     <span class="syntax-comment"># 跳到 F</span>
+jj edit feature-dev  <span class="syntax-comment"># 跳到 G</span></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第12页：命令速查表 -->
+        <section class="slide" data-slide="12">
+            <div class="text-center mb-6">
+                <span class="inline-block px-4 py-1 bg-amber-100 text-amber-700 rounded-full text-sm font-medium mb-3">速查表</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">常用命令速查</h2>
+            </div>
+
+            <div class="card p-5 sm:p-6 overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b-2 border-gray-200">
+                            <th class="text-left py-3 px-2 text-gray-600">命令</th>
+                            <th class="text-left py-3 px-2 text-gray-600">作用</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b border-gray-100 bg-blue-50">
+                            <td colspan="2" class="py-2 px-2 font-semibold text-blue-700">📋 基础操作</td>
+                        </tr>
+                        <tr class="border-b border-gray-100">
+                            <td class="py-2 px-2"><code class="bg-gray-100 px-1 rounded text-xs">jj st</code></td>
+                            <td class="py-2 px-2 text-gray-600">查看当前状态</td>
+                        </tr>
+                        <tr class="border-b border-gray-100">
+                            <td class="py-2 px-2"><code class="bg-gray-100 px-1 rounded text-xs">jj diff</code></td>
+                            <td class="py-2 px-2 text-gray-600">查看变更内容</td>
+                        </tr>
+                        <tr class="border-b border-gray-100">
+                            <td class="py-2 px-2"><code class="bg-gray-100 px-1 rounded text-xs">jj log</code></td>
+                            <td class="py-2 px-2 text-gray-600">查看历史</td>
+                        </tr>
+                        <tr class="border-b border-gray-100">
+                            <td class="py-2 px-2"><code class="bg-gray-100 px-1 rounded text-xs">jj describe -m "..."</code></td>
+                            <td class="py-2 px-2 text-gray-600">描述当前修订</td>
+                        </tr>
+                        <tr class="border-b border-gray-100 bg-green-50">
+                            <td colspan="2" class="py-2 px-2 font-semibold text-green-700">🔄 流程控制</td>
+                        </tr>
+                        <tr class="border-b border-gray-100">
+                            <td class="py-2 px-2"><code class="bg-gray-100 px-1 rounded text-xs">jj new</code></td>
+                            <td class="py-2 px-2 text-gray-600">进入下一步</td>
+                        </tr>
+                        <tr class="border-b border-gray-100">
+                            <td class="py-2 px-2"><code class="bg-gray-100 px-1 rounded text-xs">jj new --after &lt;ID&gt;</code></td>
+                            <td class="py-2 px-2 text-gray-600">从指定位置创建分叉</td>
+                        </tr>
+                        <tr class="border-b border-gray-100">
+                            <td class="py-2 px-2"><code class="bg-gray-100 px-1 rounded text-xs">jj edit &lt;ID&gt;</code></td>
+                            <td class="py-2 px-2 text-gray-600">跳转到指定位置</td>
+                        </tr>
+                        <tr class="border-b border-gray-100">
+                            <td class="py-2 px-2"><code class="bg-gray-100 px-1 rounded text-xs">jj abandon</code></td>
+                            <td class="py-2 px-2 text-gray-600">抛弃当前修订</td>
+                        </tr>
+                        <tr class="border-b border-gray-100 bg-purple-50">
+                            <td colspan="2" class="py-2 px-2 font-semibold text-purple-700">📤 推送相关</td>
+                        </tr>
+                        <tr class="border-b border-gray-100">
+                            <td class="py-2 px-2"><code class="bg-gray-100 px-1 rounded text-xs">jj squash</code></td>
+                            <td class="py-2 px-2 text-gray-600">压缩历史</td>
+                        </tr>
+                        <tr class="border-b border-gray-100">
+                            <td class="py-2 px-2"><code class="bg-gray-100 px-1 rounded text-xs">jj rebase -s &lt;源&gt; -d &lt;目标&gt;</code></td>
+                            <td class="py-2 px-2 text-gray-600">移动修订到新位置</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2 px-2"><code class="bg-gray-100 px-1 rounded text-xs">jj git push</code></td>
+                            <td class="py-2 px-2 text-gray-600">推送到远程</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-6 card-green p-5 rounded-xl text-center">
+                <p class="text-green-800 font-semibold text-lg mb-2">🎉 恭喜完成学习！</p>
+                <p class="text-sm text-gray-600">你已经掌握了 JJ 的核心用法，现在开始实践吧！</p>
+                <button onclick="restartTutorial()" class="mt-4 btn-primary px-6 py-2 rounded-lg font-medium">
+                    🔄 重新学习
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- 底部导航 -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 p-3 sm:p-4 z-40">
+        <div class="container mx-auto max-w-4xl flex justify-between items-center">
+            <button id="prevBtn" onclick="prevSlide()" class="bottom-nav-buttons btn-secondary px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                <span>←</span> 上一页
+            </button>
+            <div class="text-gray-400 text-sm">
+                使用 <kbd class="px-2 py-1 bg-gray-100 rounded text-xs">←</kbd> <kbd class="px-2 py-1 bg-gray-100 rounded text-xs">→</kbd> 导航
+            </div>
+            <button id="nextBtn" onclick="nextSlide()" class="bottom-nav-buttons btn-primary px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-medium flex items-center gap-2">
+                下一页 <span>→</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 12;
+
+        function updateSlide() {
+            document.querySelectorAll('.slide').forEach(slide => slide.classList.remove('active'));
+            document.querySelector(`[data-slide="${currentSlide}"]`).classList.add('active');
+          
+            const progress = (currentSlide / totalSlides) * 100;
+            document.getElementById('progress').style.width = `${progress}%`;
+            document.getElementById('slideCounter').textContent = `${currentSlide} / ${totalSlides}`;
+            document.getElementById('prevBtn').disabled = currentSlide === 1;
+            document.getElementById('nextBtn').innerHTML = currentSlide === totalSlides ? '完成 ✓' : '下一页 <span>→</span>';
+            document.getElementById('touchNavLeft').classList.toggle('disabled', currentSlide === 1);
+            document.getElementById('touchNavRight').classList.toggle('disabled', currentSlide === totalSlides);
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) { 
+                currentSlide++; 
+                updateSlide(); 
+                window.scrollTo({ top: 0, behavior: 'smooth' }); 
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) { 
+                currentSlide--; 
+                updateSlide(); 
+                window.scrollTo({ top: 0, behavior: 'smooth' }); 
+            }
+        }
+
+        function restartTutorial() {
+            currentSlide = 1;
+            document.querySelectorAll('.quiz-option').forEach(opt => opt.classList.remove('correct', 'wrong'));
+            document.querySelectorAll('[id$="-explanation"]').forEach(exp => exp.classList.add('hidden'));
+            updateSlide();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function checkAnswer(element, quizNum) {
+            const parent = element.parentElement;
+            if (parent.querySelector('.correct') || parent.querySelector('.wrong')) return;
+            parent.querySelectorAll('.quiz-option').forEach(opt => {
+                if (opt.dataset.correct === 'true') opt.classList.add('correct');
+                else if (opt === element) opt.classList.add('wrong');
+            });
+            const explanation = document.getElementById(`quiz${quizNum}-explanation`);
+            if (explanation) explanation.classList.remove('hidden');
+        }
+
+        function showCodeTab(tab) {
+            document.querySelectorAll('.code-tab').forEach(t => { 
+                t.classList.remove('tab-active'); 
+                t.classList.add('tab-inactive'); 
+            });
+            event.target.classList.remove('tab-inactive'); 
+            event.target.classList.add('tab-active');
+            document.querySelectorAll('.code-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById(`code-${tab}`).classList.remove('hidden');
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') { 
+                e.preventDefault(); 
+                nextSlide(); 
+            }
+            else if (e.key === 'ArrowLeft') { 
+                e.preventDefault(); 
+                prevSlide(); 
+            }
+        });
+
+        updateSlide();
+    </script>
+</body>
+</html>

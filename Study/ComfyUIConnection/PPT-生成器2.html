@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PPT 生成器</title>
+    <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .toolbar {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .btn-secondary:hover {
+            background: #dee2e6;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(17, 153, 142, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .editor-container {
+            display: flex;
+            height: 500px;
+        }
+
+        .editor-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor-section:first-child {
+            border-right: 1px solid #e9ecef;
+        }
+
+        .section-header {
+            background: #f8f9fa;
+            padding: 12px 20px;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-header span {
+            font-size: 12px;
+            color: #6c757d;
+            font-weight: normal;
+        }
+
+        textarea {
+            flex: 1;
+            border: none;
+            padding: 20px;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+        }
+
+        textarea:focus {
+            background: #fefefe;
+        }
+
+        .preview-section {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            overflow: auto;
+        }
+
+        .preview-section pre {
+            padding: 20px;
+            margin: 0;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .status-bar {
+            background: #f8f9fa;
+            padding: 12px 20px;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: #6c757d;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #6c757d;
+        }
+
+        .status-dot.valid {
+            background: #28a745;
+        }
+
+        .status-dot.invalid {
+            background: #dc3545;
+        }
+
+        .status-dot.processing {
+            background: #ffc107;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+
+        .toast.error {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+        }
+
+        .toast.info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .modal p {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .template-list {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .template-item {
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .template-item:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+        }
+
+        .template-item h4 {
+            font-size: 14px;
+            margin-bottom: 4px;
+            color: #333;
+        }
+
+        .template-item p {
+            font-size: 12px;
+            color: #666;
+            margin: 0;
+        }
+
+        .help-section {
+            background: #f0f4ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .help-section h4 {
+            font-size: 14px;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .help-section ul {
+            font-size: 12px;
+            color: #555;
+            padding-left: 20px;
+        }
+
+        .help-section li {
+            margin-bottom: 4px;
+        }
+
+        @media (max-width: 768px) {
+            .editor-container {
+                flex-direction: column;
+                height: auto;
+            }
+            
+            .editor-section {
+                min-height: 300px;
+            }
+            
+            .editor-section:first-child {
+                border-right: none;
+                border-bottom: 1px solid #e9ecef;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 PPT 生成器</h1>
+            <p>粘贴 JSON 结构数据，一键生成 PowerPoint 演示文稿</p>
+        </div>
+
+        <div class="main-card">
+            <div class="toolbar">
+                <button class="btn btn-primary" onclick="generatePPT()">
+                    <span>🚀</span> 生成 PPT
+                </button>
+                <button class="btn btn-secondary" onclick="validateJSON()">
+                    <span>✅</span> 验证 JSON
+                </button>
+                <button class="btn btn-secondary" onclick="formatJSON()">
+                    <span>📝</span> 格式化
+                </button>
+                <button class="btn btn-secondary" onclick="showTemplates()">
+                    <span>📋</span> 示例模板
+                </button>
+                <button class="btn btn-secondary" onclick="clearEditor()">
+                    <span>🗑️</span> 清空
+                </button>
+            </div>
+
+            <div class="editor-container">
+                <div class="editor-section">
+                    <div class="section-header">
+                        JSON 输入
+                        <span id="charCount">0 字符</span>
+                    </div>
+                    <textarea 
+                        id="jsonInput" 
+                        placeholder='在此粘贴 JSON 数据...
+
+示例格式:
+{
+  "presentation": {
+    "title": "演示文稿标题",
+    "slides": [...]
+  }
+}'
+                        oninput="updatePreview()"
+                    ></textarea>
+                </div>
+                <div class="editor-section preview-section">
+                    <div class="section-header" style="background: #252526; color: #d4d4d4; border-bottom-color: #3c3c3c;">
+                        解析预览
+                        <span id="slideCount">0 页幻灯片</span>
+                    </div>
+                    <pre id="preview">等待输入 JSON 数据...</pre>
+                </div>
+            </div>
+
+            <div class="status-bar">
+                <div class="status-indicator">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">准备就绪</span>
+                </div>
+                <div>
+                    <span id="lastAction">PptxGenJS v3.12.0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="help-section" style="margin-top: 20px; background: rgba(255,255,255,0.95); border-radius: 12px; padding: 20px;">
+            <h4>📖 支持的元素类型</h4>
+            <ul>
+                <li><strong>text</strong> - 文本框（支持字体、大小、颜色、对齐方式）</li>
+                <li><strong>image</strong> - 图片（支持 URL 和 Base64）</li>
+                <li><strong>table</strong> - 表格（支持表头、合并单元格）</li>
+                <li><strong>shape</strong> - 形状（矩形、圆形、箭头等）</li>
+                <li><strong>chart</strong> - 图表（柱状图、折线图、饼图）</li>
+                <li><strong>list</strong> - 列表（项目符号、编号列表）</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Toast 通知 -->
+    <div class="toast" id="toast"></div>
+
+    <!-- 模板选择弹窗 -->
+    <div class="modal-overlay" id="templateModal">
+        <div class="modal">
+            <h3>📋 选择示例模板</h3>
+            <div class="template-list">
+                <div class="template-item" onclick="loadTemplate('simple')">
+                    <h4>简单文本模板</h4>
+                    <p>包含标题和文本内容的基础模板</p>
+                </div>
+                <div class="template-item" onclick="loadTemplate('table')">
+                    <h4>数据表格模板</h4>
+                    <p>包含表格和数据展示的模板</p>
+                </div>
+                <div class="template-item" onclick="loadTemplate('full')">
+                    <h4>完整演示模板</h4>
+                    <p>多页幻灯片，包含多种元素类型</p>
+                </div>
+                <div class="template-item" onclick="loadTemplate('chart')">
+                    <h4>图表展示模板</h4>
+                    <p>包含各类图表的数据可视化模板</p>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" onclick="closeModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== 模板数据 =====
+        const templates = {
+            simple: {
+                presentation: {
+                    title: "简单演示文稿",
+                    author: "PPT生成器",
+                    theme: {
+                        primary_color: "#1a73e8",
+                        font_family: "Microsoft YaHei"
+                    },
+                    slides: [
+                        {
+                            slide_id: 1,
+                            slide_type: "title_slide",
+                            background: { type: "color", value: "#ffffff" },
+                            elements: [
+                                {
+                                    element_type: "text",
+                                    element_id: "title_001",
+                                    position: { x: 0.5, y: 2, width: 9, height: 1.5, unit: "inch" },
+                                    content: "欢迎使用 PPT 生成器",
+                                    style: {
+                                        font_size: 44,
+                                        font_weight: "bold",
+                                        color: "#1a73e8",
+                                        text_align: "center"
+                                    }
+                                },
+                                {
+                                    element_type: "text",
+                                    element_id: "subtitle_001",
+                                    position: { x: 0.5, y: 3.5, width: 9, height: 0.8, unit: "inch" },
+                                    content: "快速将 JSON 数据转换为专业演示文稿",
+                                    style: {
+                                        font_size: 24,
+                                        color: "#666666",
+                                        text_align: "center"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+
+            table: {
+                presentation: {
+                    title: "数据报表",
+                    slides: [
+                        {
+                            slide_id: 1,
+                            elements: [
+                                {
+                                    element_type: "text",
+                                    position: { x: 0.5, y: 0.3, width: 9, height: 0.8, unit: "inch" },
+                                    content: "销售数据统计",
+                                    style: { font_size: 32, font_weight: "bold", color: "#333333" }
+                                },
+                                {
+                                    element_type: "table",
+                                    position: { x: 0.5, y: 1.2, width: 9, height: 3.5, unit: "inch" },
+                                    structure: { rows: 5, columns: 4, has_header: true },
+                                    style: {
+                                        header_bg_color: "#1a73e8",
+                                        header_text_color: "#ffffff",
+                                        border_color: "#dddddd",
+                                        font_size: 12
+                                    },
+                                    data: [
+                                        { row: 0, is_header: true, cells: [
+                                            { col: 0, content: "产品" },
+                                            { col: 1, content: "Q1" },
+                                            { col: 2, content: "Q2" },
+                                            { col: 3, content: "增长率" }
+                                        ]},
+                                        { row: 1, cells: [
+                                            { col: 0, content: "产品A" },
+                                            { col: 1, content: "¥125,000" },
+                                            { col: 2, content: "¥156,000" },
+                                            { col: 3, content: "+24.8%" }
+                                        ]},
+                                        { row: 2, cells: [
+                                            { col: 0, content: "产品B" },
+                                            { col: 1, content: "¥89,000" },
+                                            { col: 2, content: "¥112,000" },
+                                            { col: 3, content: "+25.8%" }
+                                        ]},
+                                        { row: 3, cells: [
+                                            { col: 0, content: "产品C" },
+                                            { col: 1, content: "¥203,000" },
+                                            { col: 2, content: "¥245,000" },
+                                            { col: 3, content: "+20.7%" }
+                                        ]},
+                                        { row: 4, cells: [
+                                            { col: 0, content: "合计" },
+                                            { col: 1, content: "¥417,000" },
+                                            { col: 2, content: "¥513,000" },
+                                            { col: 3, content: "+23.0%" }
+                                        ]}
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+
+            chart: {
+                presentation: {
+                    title: "数据可视化报告",
+                    slides: [
+                        {
+                            slide_id: 1,
+                            elements: [
+                                {
+                                    element_type: "text",
+                                    position: { x: 0.5, y: 0.3, width: 9, height: 0.6, unit: "inch" },
+                                    content: "年度销售趋势分析",
+                                    style: { font_size: 28, font_weight: "bold", color: "#333" }
+                                },
+                                {
+                                    element_type: "chart",
+                                    position: { x: 0.5, y: 1, width: 6, height: 4, unit: "inch" },
+                                    chart_type: "bar",
+                                    title: "季度销售对比",
+                                    data: {
+                                        labels: ["Q1", "Q2", "Q3", "Q4"],
+                                        datasets: [
+                                            { label: "2023年", values: [120, 150, 180, 200], color: "#1a73e8" },
+                                            { label: "2024年", values: [150, 190, 220, 260], color: "#34a853" }
+                                        ]
+                                    },
+                                    options: { show_legend: true, legend_position: "bottom" }
+                                },
+                                {
+                                    element_type: "list",
+                                    position: { x: 6.8, y: 1.2, width: 2.8, height: 3, unit: "inch" },
+                                    list_type: "bullet",
+                                    items: [
+                                        { level: 0, content: "同比增长 25%" },
+                                        { level: 0, content: "Q4 表现最佳" },
+                                        { level: 0, content: "持续增长趋势" }
+                                    ],
+                                    style: { font_size: 14, bullet_color: "#1a73e8" }
+                                }
+                            ]
+                        },
+                        {
+                            slide_id: 2,
+                            elements: [
+                                {
+                                    element_type: "text",
+                                    position: { x: 0.5, y: 0.3, width: 9, height: 0.6, unit: "inch" },
+                                    content: "市场份额分布",
+                                    style: { font_size: 28, font_weight: "bold", color: "#333" }
+                                },
+                                {
+                                    element_type: "chart",
+                                    position: { x: 1.5, y: 1.2, width: 5, height: 4, unit: "inch" },
+                                    chart_type: "pie",
+                                    title: "",
+                                    data: {
+                                        labels: ["产品A", "产品B", "产品C", "其他"],
+                                        datasets: [
+                                            { values: [35, 28, 22, 15] }
+                                        ]
+                                    },
+                                    options: { show_legend: true }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            },
+
+            full: {
+                presentation: {
+                    title: "2024年度工作报告",
+                    author: "项目团队",
+                    theme: {
+                        primary_color: "#1a73e8",
+                        secondary_color: "#ffffff",
+                        font_family: "Microsoft YaHei"
+                    },
+                    slides: [
+                        {
+                            slide_id: 1,
+                            slide_type: "title_slide",
+                            background: { type: "color", value: "#1a73e8" },
+                            elements: [
+                                {
+                                    element_type: "text",
+                                    position: { x: 0.5, y: 2, width: 9, height: 1.2, unit: "inch" },
+                                    content: "2024年度工作报告",
+                                    style: {
+                                        font_size: 48,
+                                        font_weight: "bold",
+                                        color: "#ffffff",
+                                        text_align: "center"
+                                    }
+                                },
+                                {
+                                    element_type: "text",
+                                    position: { x: 0.5, y: 3.5, width: 9, height: 0.6, unit: "inch" },
+                                    content: "项目团队 | 2024年12月",
+                                    style: {
+                                        font_size: 20,
+                                        color: "#ffffff",
+                                        text_align: "center"
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            slide_id: 2,
+                            slide_type: "content_slide",
+                            elements: [
+                                {
+                                    element_type: "text",
+                                    position: { x: 0.5, y: 0.3, width: 9, height: 0.7, unit: "inch" },
+                                    content: "项目概述",
+                                    style: {
+                                        font_size: 32,
+                                        font_weight: "bold",
+                                        color: "#1a73e8"
+                                    }
+                                },
+                                {
+                                    element_type: "list",
+                                    position: { x: 0.5, y: 1.2, width: 4.2, height: 3.5, unit: "inch" },
+                                    list_type: "bullet",
+                                    items: [
+                                        { level: 0, content: "完成核心功能开发" },
+                                        { level: 1, content: "用户管理模块" },
+                                        { level: 1, content: "数据分析模块" },
+                                        { level: 0, content: "性能优化提升 40%" },
+                                        { level: 0, content: "用户满意度 95%" }
+                                    ],
+                                    style: {
+                                        font_size: 18,
+                                        bullet_color: "#1a73e8",
+                                        line_spacing: 1.8
+                                    }
+                                },
+                                {
+                                    element_type: "shape",
+                                    position: { x: 5.2, y: 1.2, width: 4.3, height: 3.2, unit: "inch" },
+                                    shape_type: "rectangle",
+                                    style: {
+                                        fill_color: "#f0f4ff",
+                                        stroke_color: "#1a73e8",
+                                        stroke_width: 2,
+                                        border_radius: 10
+                                    }
+                                },
+                                {
+                                    element_type: "text",
+                                    position: { x: 5.5, y: 1.5, width: 3.8, height: 2.8, unit: "inch" },
+                                    content: "核心成果\n\n✓ 交付 12 个功能模块\n✓ 处理 500 万+ 数据\n✓ 服务 10,000+ 用户\n✓ 系统稳定性 99.9%",
+                                    style: {
+                                        font_size: 16,
+                                        color: "#333333",
+                                        line_height: 1.6
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            slide_id: 3,
+                            elements: [
+                                {
+                                    element_type: "text",
+                                    position: { x: 0.5, y: 0.3, width: 9, height: 0.7, unit: "inch" },
+                                    content: "季度业绩数据",
+                                    style: { font_size: 32, font_weight: "bold", color: "#1a73e8" }
+                                },
+                                {
+                                    element_type: "table",
+                                    position: { x: 0.5, y: 1.1, width: 9, height: 2.5, unit: "inch" },
+                                    structure: { rows: 5, columns: 5, has_header: true },
+                                    style: {
+                                        header_bg_color: "#1a73e8",
+                                        header_text_color: "#ffffff",
+                                        alternate_row_color: "#f5f8ff"
+                                    },
+                                    data: [
+                                        { row: 0, is_header: true, cells: [
+                                            { col: 0, content: "指标" },
+                                            { col: 1, content: "Q1" },
+                                            { col: 2, content: "Q2" },
+                                            { col: 3, content: "Q3" },
+                                            { col: 4, content: "Q4" }
+                                        ]},
+                                        { row: 1, cells: [
+                                            { col: 0, content: "营收(万)" },
+                                            { col: 1, content: "125" },
+                                            { col: 2, content: "156" },
+                                            { col: 3, content: "189" },
+                                            { col: 4, content: "220" }
+                                        ]},
+                                        { row: 2, cells: [
+                                            { col: 0, content: "用户数" },
+                                            { col: 1, content: "2,500" },
+                                            { col: 2, content: "4,200" },
+                                            { col: 3, content: "7,100" },
+                                            { col: 4, content: "10,500" }
+                                        ]},
+                                        { row: 3, cells: [
+                                            { col: 0, content: "转化率" },
+                                            { col: 1, content: "3.2%" },
+                                            { col: 2, content: "4.1%" },
+                                            { col: 3, content: "4.8%" },
+                                            { col: 4, content: "5.5%" }
+                                        ]},
+                                        { row: 4, cells: [
+                                            { col: 0, content: "满意度" },
+                                            { col: 1, content: "88%" },
+                                            { col: 2, content: "91%" },
+                                            { col: 3, content: "94%" },
+                                            { col: 4, content: "95%" }
+                                        ]}
+                                    ]
+                                },
+                                {
+                                    element_type: "chart",
+                                    position: { x: 0.5, y: 3.8, width: 9, height: 2.2, unit: "inch" },
+                                    chart_type: "line",
+                                    title: "",
+                                    data: {
+                                        labels: ["Q1", "Q2", "Q3", "Q4"],
+                                        datasets: [
+                                            { label: "营收趋势", values: [125, 156, 189, 220], color: "#1a73e8" }
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            slide_id: 4,
+                            background: { type: "color", value: "#1a73e8" },
+                            elements: [
+                                {
+                                    element_type: "text",
+                                    position: { x: 0.5, y: 2.2, width: 9, height: 1, unit: "inch" },
+                                    content: "感谢观看",
+                                    style: {
+                                        font_size: 48,
+                                        font_weight: "bold",
+                                        color: "#ffffff",
+                                        text_align: "center"
+                                    }
+                                },
+                                {
+                                    element_type: "text",
+                                    position: { x: 0.5, y: 3.5, width: 9, height: 0.5, unit: "inch" },
+                                    content: "期待与您的进一步合作",
+                                    style: {
+                                        font_size: 20,
+                                        color: "#ffffff",
+                                        text_align: "center"
+                                    }
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        };
+
+        // ===== 工具函数 =====
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function setStatus(status, text) {
+            const dot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            dot.className = `status-dot ${status}`;
+            statusText.textContent = text;
+        }
+
+        function updatePreview() {
+            const input = document.getElementById('jsonInput');
+            const preview = document.getElementById('preview');
+            const charCount = document.getElementById('charCount');
+            const slideCount = document.getElementById('slideCount');
+
+            charCount.textContent = `${input.value.length} 字符`;
+
+            if (!input.value.trim()) {
+                preview.textContent = '等待输入 JSON 数据...';
+                slideCount.textContent = '0 页幻灯片';
+                setStatus('', '准备就绪');
+                return;
+            }
+
+            try {
+                const data = JSON.parse(input.value);
+                preview.innerHTML = syntaxHighlight(JSON.stringify(data, null, 2));
+                
+                const slides = data.presentation?.slides || data.slides || [];
+                slideCount.textContent = `${slides.length} 页幻灯片`;
+                setStatus('valid', 'JSON 格式有效');
+            } catch (e) {
+                preview.textContent = `解析错误: ${e.message}`;
+                slideCount.textContent = '解析失败';
+                setStatus('invalid', 'JSON 格式错误');
+            }
+        }
+
+        function syntaxHighlight(json) {
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                let cls = 'color: #b5cea8;'; // number
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = 'color: #9cdcfe;'; // key
+                    } else {
+                        cls = 'color: #ce9178;'; // string
+                    }
+                } else if (/true|false/.test(match)) {
+                    cls = 'color: #569cd6;'; // boolean
+                } else if (/null/.test(match)) {
+                    cls = 'color: #569cd6;'; // null
+                }
+                return '<span style="' + cls + '">' + match + '</span>';
+            });
+        }
+
+        // ===== 按钮功能 =====
+        function validateJSON() {
+            const input = document.getElementById('jsonInput').value;
+            if (!input.trim()) {
+                showToast('请先输入 JSON 数据', 'error');
+                return false;
+            }
+            try {
+                const data = JSON.parse(input);
+                if (!data.presentation && !data.slides) {
+                    showToast('JSON 有效，但缺少 presentation 或 slides 字段', 'error');
+                    return false;
+                }
+                showToast('JSON 格式验证通过！', 'success');
+                return true;
+            } catch (e) {
+                showToast(`JSON 格式错误: ${e.message}`, 'error');
+                return false;
+            }
+        }
+
+        function formatJSON() {
+            const input = document.getElementById('jsonInput');
+            try {
+                const data = JSON.parse(input.value);
+                input.value = JSON.stringify(data, null, 2);
+                updatePreview();
+                showToast('格式化完成', 'success');
+            } catch (e) {
+                showToast('JSON 格式错误，无法格式化', 'error');
+            }
+        }
+
+        function clearEditor() {
+            document.getElementById('jsonInput').value = '';
+            updatePreview();
+            showToast('已清空', 'info');
+        }
+
+        function showTemplates() {
+            document.getElementById('templateModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('templateModal').classList.remove('show');
+        }
+
+        function loadTemplate(name) {
+            const template = templates[name];
+            if (template) {
+                document.getElementById('jsonInput').value = JSON.stringify(template, null, 2);
+                updatePreview();
+                closeModal();
+                showToast('模板加载成功', 'success');
+            }
+        }
+
+        // ===== PPT 生成核心类 =====
+        class PPTGenerator {
+            constructor() {
+                this.pptx = null;
+            }
+
+            async generate(jsonData) {
+                const pptData = jsonData.presentation || jsonData;
+                
+                // 创建 PPT 实例
+                this.pptx = new PptxGenJS();
+                
+                // 设置演示文稿属性
+                if (pptData.title) this.pptx.title = pptData.title;
+                if (pptData.author) this.pptx.author = pptData.author;
+                this.pptx.layout = 'LAYOUT_16x9';
+
+                // 处理每一页幻灯片
+                const slides = pptData.slides || [];
+                for (const slideData of slides) {
+                    const slide = this.pptx.addSlide();
+                    
+                    // 设置背景
+                    if (slideData.background) {
+                        if (slideData.background.type === 'color') {
+                            slide.background = { color: slideData.background.value.replace('#', '') };
+                        }
+                    }
+
+                    // 处理元素
+                    const elements = slideData.elements || [];
+                    for (const element of elements) {
+                        await this.renderElement(slide, element, pptData.theme);
+                    }
+                }
+
+                // 生成文件名
+                const fileName = pptData.title ? 
+                    `${pptData.title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_')}.pptx` : 
+                    'presentation.pptx';
+
+                // 下载
+                await this.pptx.writeFile({ fileName });
+                
+                return fileName;
+            }
+
+            async renderElement(slide, element, theme) {
+                const pos = element.position || {};
+                const style = element.style || {};
+                
+                // 转换位置（默认使用 inch）
+                const x = pos.x || 0;
+                const y = pos.y || 0;
+                const w = pos.width || pos.w || 5;
+                const h = pos.height || pos.h || 1;
+
+                switch (element.element_type) {
+                    case 'text':
+                        this.renderText(slide, element, x, y, w, h, style);
+                        break;
+                    case 'image':
+                        await this.renderImage(slide, element, x, y, w, h, style);
+                        break;
+                    case 'table':
+                        this.renderTable(slide, element, x, y, w, h);
+                        break;
+                    case 'shape':
+                        this.renderShape(slide, element, x, y, w, h, style);
+                        break;
+                    case 'chart':
+                        this.renderChart(slide, element, x, y, w, h);
+                        break;
+                    case 'list':
+                        this.renderList(slide, element, x, y, w, h, style);
+                        break;
+                }
+            }
+
+            renderText(slide, element, x, y, w, h, style) {
+                const textOptions = {
+                    x, y, w, h,
+                    fontSize: style.font_size || 18,
+                    fontFace: style.font_family || 'Microsoft YaHei',
+                    color: (style.color || '#333333').replace('#', ''),
+                    align: style.text_align || 'left',
+                    valign: 'top',
+                    wrap: true
+                };
+
+                if (style.font_weight === 'bold') textOptions.bold = true;
+                if (style.font_style === 'italic') textOptions.italic = true;
+                if (style.line_height) textOptions.lineSpaceMult = style.line_height;
+
+                slide.addText(element.content || '', textOptions);
+            }
+
+            async renderImage(slide, element, x, y, w, h, style) {
+                const content = element.content || {};
+                let imagePath = content.value || content.url || content.src;
+                
+                if (!imagePath || content.source === 'ai_generate') {
+                    // 如果没有图片或需要AI生成，添加占位符
+                    slide.addShape('rect', {
+                        x, y, w, h,
+                        fill: { color: 'F0F0F0' },
+                        line: { color: 'CCCCCC', width: 1 }
+                    });
+                    slide.addText(content.alt_text || content.description || '图片占位符', {
+                        x, y, w, h,
+                        fontSize: 12,
+                        color: '999999',
+                        align: 'center',
+                        valign: 'middle'
+                    });
+                    return;
+                }
+
+                try {
+                    const imgOptions = { x, y, w, h };
+                    
+                    if (imagePath.startsWith('data:')) {
+                        imgOptions.data = imagePath;
+                    } else {
+                        imgOptions.path = imagePath;
+                    }
+
+                    if (style.border_radius) imgOptions.rounding = true;
+
+                    slide.addImage(imgOptions);
+                } catch (e) {
+                    console.warn('图片加载失败:', e);
+                    slide.addShape('rect', {
+                        x, y, w, h,
+                        fill: { color: 'FFEEEE' },
+                        line: { color: 'FF0000', width: 1 }
+                    });
+                }
+            }
+
+            renderTable(slide, element, x, y, w, h) {
+                const data = element.data || [];
+                const style = element.style || {};
+                
+                // 构建表格数据
+                const tableData = data.map(row => {
+                    return (row.cells || []).map(cell => ({
+                        text: cell.content || '',
+                        options: {
+                            colspan: cell.colspan || 1,
+                            rowspan: cell.rowspan || 1
+                        }
+                    }));
+                });
+
+                if (tableData.length === 0) return;
+
+                const tableOptions = {
+                    x, y, w, h,
+                    fontFace: 'Microsoft YaHei',
+                    fontSize: style.font_size || 12,
+                    color: '333333',
+                    border: { 
+                        type: 'solid', 
+                        pt: 1, 
+                        color: (style.border_color || '#DDDDDD').replace('#', '') 
+                    },
+                    align: 'center',
+                    valign: 'middle'
+                };
+
+                // 设置表头样式
+                if (element.structure?.has_header && data.length > 0) {
+                    tableOptions.firstRow = {
+                        fill: { color: (style.header_bg_color || '#1a73e8').replace('#', '') },
+                        color: (style.header_text_color || '#FFFFFF').replace('#', ''),
+                        bold: true
+                    };
+                }
+
+                // 交替行颜色
+                if (style.alternate_row_color) {
+                    tableOptions.rowAlt = {
+                        fill: { color: style.alternate_row_color.replace('#', '') }
+                    };
+                }
+
+                slide.addTable(tableData, tableOptions);
+            }
+
+            renderShape(slide, element, x, y, w, h, style) {
+                const shapeTypes = {
+                    'rectangle': 'rect',
+                    'rect': 'rect',
+                    'circle': 'ellipse',
+                    'ellipse': 'ellipse',
+                    'triangle': 'triangle',
+                    'arrow': 'rightArrow',
+                    'rightArrow': 'rightArrow',
+                    'line': 'line'
+                };
+
+                const shapeType = shapeTypes[element.shape_type] || 'rect';
+                
+                const shapeOptions = {
+                    x, y, w, h,
+                    fill: { color: (style.fill_color || '#1a73e8').replace('#', '') }
+                };
+
+                if (style.stroke_color || style.stroke_width) {
+                    shapeOptions.line = {
+                        color: (style.stroke_color || '#000000').replace('#', ''),
+                        width: style.stroke_width || 1
+                    };
+                }
+
+                if (style.opacity !== undefined) {
+                    shapeOptions.fill.transparency = (1 - style.opacity) * 100;
+                }
+
+                slide.addShape(shapeType, shapeOptions);
+
+                // 处理形状上的文字
+                if (element.text_overlay?.enabled && element.text_overlay.content) {
+                    slide.addText(element.text_overlay.content, {
+                        x, y, w, h,
+                        align: 'center',
+                        valign: 'middle',
+                        fontSize: element.text_overlay.style?.font_size || 14,
+                        color: (element.text_overlay.style?.color || '#FFFFFF').replace('#', '')
+                    });
+                }
+            }
+
+            renderChart(slide, element, x, y, w, h) {
+                const chartTypeMap = {
+                    'bar': this.pptx.ChartType.bar,
+                    'line': this.pptx.ChartType.line,
+                    'pie': this.pptx.ChartType.pie,
+                    'doughnut': this.pptx.ChartType.doughnut,
+                    'area': this.pptx.ChartType.area,
+                    'scatter': this.pptx.ChartType.scatter
+                };
+
+                const chartType = chartTypeMap[element.chart_type] || this.pptx.ChartType.bar;
+                const data = element.data || {};
+                
+                // 构建图表数据
+                const chartData = (data.datasets || []).map((ds, idx) => ({
+                    name: ds.label || `数据 ${idx + 1}`,
+                    labels: data.labels || [],
+                    values: ds.values || []
+                }));
+
+                if (chartData.length === 0) return;
+
+                // 获取颜色
+                const chartColors = (data.datasets || []).map(ds => 
+                    (ds.color || '#1a73e8').replace('#', '')
+                );
+
+                // 图表位置映射
+                const legendPosMap = {
+                    'bottom': 'b',
+                    'top': 't',
+                    'left': 'l',
+                    'right': 'r'
+                };
+
+                const chartOptions = {
+                    x, y, w, h,
+                    chartColors: chartColors,
+                    showLegend: element.options?.show_legend !== false,
+                    legendPos: legendPosMap[element.options?.legend_position] || 'b',
+                    showValue: element.options?.show_values || false,
+                    catAxisTitle: element.options?.x_axis_title || '',
+                    valAxisTitle: element.options?.y_axis_title || ''
+                };
+
+                if (element.title) {
+                    chartOptions.title = element.title;
+                    chartOptions.showTitle = true;
+                }
+
+                slide.addChart(chartType, chartData, chartOptions);
+            }
+
+            renderList(slide, element, x, y, w, h, style) {
+                const items = element.items || [];
+                const listType = element.list_type || 'bullet';
+                
+                const textItems = items.map(item => ({
+                    text: item.content || '',
+                    options: {
+                        bullet: listType === 'numbered' ? { type: 'number' } : { code: '2022' },
+                        indentLevel: item.level || 0,
+                        fontSize: style.font_size || 16,
+                        color: (style.font_color || '#333333').replace('#', ''),
+                        paraSpaceAfter: 6
+                    }
+                }));
+
+                slide.addText(textItems, {
+                    x, y, w, h,
+                    fontFace: 'Microsoft YaHei',
+                    valign: 'top'
+                });
+            }
+        }
+
+        // ===== 主生成函数 =====
+        async function generatePPT() {
+            if (!validateJSON()) return;
+
+            setStatus('processing', '正在生成 PPT...');
+
+            try {
+                const data = JSON.parse(document.getElementById('jsonInput').value);
+                
+                const generator = new PPTGenerator();
+                const fileName = await generator.generate(data);
+                
+                setStatus('valid', '生成完成');
+                showToast(`PPT 生成成功: ${fileName}`, 'success');
+                document.getElementById('lastAction').textContent = `上次生成: ${new Date().toLocaleTimeString()}`;
+
+            } catch (e) {
+                console.error(e);
+                setStatus('invalid', '生成失败');
+                showToast(`生成失败: ${e.message}`, 'error');
+            }
+        }
+
+        // 点击模态框外部关闭
+        document.getElementById('templateModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        // 快捷键支持
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                generatePPT();
+            }
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>

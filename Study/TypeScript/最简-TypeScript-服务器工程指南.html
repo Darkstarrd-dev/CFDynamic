@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最简 TypeScript 服务器工程指南</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        code, pre { font-family: 'Fira Code', monospace; }
+
+        .code-block { 
+            background: #f8f9fa; 
+            border: 1px solid #e0e0e0; 
+            text-align: left;
+        }
+        .code-block pre {
+            margin: 0;
+            padding: 0;
+            text-align: left;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .code-block code {
+            display: block;
+            text-align: left;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            padding-left: 0;
+            margin-left: 0;
+        }
+        .syntax-keyword { color: #0066cc; }
+        .syntax-string { color: #22863a; }
+        .syntax-function { color: #6f42c1; }
+        .syntax-comment { color: #6a737d; }
+        .syntax-variable { color: #e36209; }
+        .syntax-number { color: #005cc5; }
+        .syntax-type { color: #d73a49; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .float-animation { animation: float 3s ease-in-out infinite; }
+        .fade-in { animation: fadeIn 0.5s ease forwards; }
+        .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+        .progress-bar { transition: width 0.5s ease; }
+
+        .slide { display: none; opacity: 0; transition: opacity 0.4s ease; }
+        .slide.active { display: block; opacity: 1; }
+
+        .quiz-option { transition: all 0.3s ease; cursor: pointer; }
+        .quiz-option:hover { transform: translateX(4px); border-color: #2563eb; background: #eff6ff; }
+        .quiz-option.correct { background: #dcfce7 !important; border-color: #22c55e !important; }
+        .quiz-option.wrong { background: #fee2e2 !important; border-color: #ef4444 !important; }
+
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-primary:active { background: #1e40af; transform: scale(0.98); }
+        .btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+        .btn-secondary:hover { background: #e5e7eb; }
+
+        .tab-active { background: #2563eb; color: white; }
+        .tab-inactive { background: #f3f4f6; color: #6b7280; }
+        .tab-inactive:hover { background: #e5e7eb; }
+
+        .card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .card-green { background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 1px solid #a7f3d0; }
+        .card-blue { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #93c5fd; }
+
+        .touch-nav-zone {
+            position: fixed; top: 0; bottom: 0; width: 12%; z-index: 30;
+            display: none; cursor: pointer;
+        }
+        .touch-nav-zone.left { left: 0; background: linear-gradient(to right, rgba(0,0,0,0.03), transparent); }
+        .touch-nav-zone.right { right: 0; background: linear-gradient(to left, rgba(0,0,0,0.03), transparent); }
+        .touch-nav-zone .nav-hint {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            opacity: 0.3; font-size: 24px; color: #6b7280; transition: opacity 0.2s;
+        }
+        .touch-nav-zone.left .nav-hint { left: 8px; }
+        .touch-nav-zone.right .nav-hint { right: 8px; }
+        .touch-nav-zone:active .nav-hint { opacity: 0.8; }
+        .touch-nav-zone.disabled { pointer-events: none; }
+        .touch-nav-zone.disabled .nav-hint { opacity: 0.1; }
+
+        @media (max-width: 768px) {
+            .touch-nav-zone { display: flex; align-items: center; }
+            .bottom-nav-buttons { display: none !important; }
+            .code-block pre, .code-block code {
+                white-space: pre-wrap; word-wrap: break-word; word-break: break-all;
+            }
+            .quiz-option:hover { transform: none; }
+            .quiz-option:active { background: #eff6ff; border-color: #2563eb; }
+        }
+        @media (min-width: 769px) {
+            .bottom-nav-buttons { display: flex !important; }
+        }
+        @media (pointer: coarse) {
+            .quiz-option, .code-tab, .btn-primary, .btn-secondary { min-height: 44px; }
+        }
+        html, body { overflow-x: hidden; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen text-gray-800">
+    <!-- 移动端触摸导航 -->
+    <div id="touchNavLeft" class="touch-nav-zone left" onclick="prevSlide()">
+        <span class="nav-hint">‹</span>
+    </div>
+    <div id="touchNavRight" class="touch-nav-zone right" onclick="nextSlide()">
+        <span class="nav-hint">›</span>
+    </div>
+
+    <!-- 进度条 -->
+    <div class="fixed top-0 left-0 right-0 h-1 bg-gray-200 z-50">
+        <div id="progress" class="progress-bar h-full bg-blue-600" style="width: 0%"></div>
+    </div>
+  
+    <!-- 导航栏 -->
+    <nav class="fixed top-2 sm:top-4 left-1/2 -translate-x-1/2 z-40 bg-white/95 backdrop-blur-lg rounded-full px-4 sm:px-6 py-2 sm:py-3 flex items-center gap-2 sm:gap-4 shadow-md border border-gray-200 max-w-[90vw]">
+        <span class="text-blue-600 font-semibold text-sm sm:text-base truncate">TS 服务器</span>
+        <span class="text-gray-300 hidden sm:inline">|</span>
+        <span id="slideCounter" class="text-gray-500 text-sm sm:text-base whitespace-nowrap">1 / 10</span>
+    </nav>
+
+    <!-- 主内容 -->
+    <main class="container mx-auto px-3 sm:px-4 pt-16 sm:pt-24 pb-28 sm:pb-32 max-w-4xl">
+        
+        <!-- 第1页：介绍页 -->
+        <section class="slide active" data-slide="1">
+            <div class="text-center mb-8 sm:mb-12">
+                <div class="inline-block p-3 sm:p-4 bg-green-100 rounded-2xl mb-4 sm:mb-6 float-animation">
+                    <svg class="w-16 h-16 sm:w-20 sm:h-20 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
+                    </svg>
+                </div>
+                <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-gray-900">TypeScript 服务器</h1>
+                <p class="text-lg sm:text-xl text-gray-500 mb-6 sm:mb-8">从零搭建最简工程</p>
+            </div>
+
+            <div class="card p-5 sm:p-8">
+                <h2 class="text-2xl font-semibold mb-6 text-center text-gray-800">🎯 你将学到</h2>
+                <div class="grid sm:grid-cols-2 gap-4">
+                    <div class="flex items-start gap-3 p-4 bg-gray-50 rounded-xl">
+                        <span class="text-2xl">📁</span>
+                        <div>
+                            <p class="font-semibold text-gray-800">项目结构</p>
+                            <p class="text-sm text-gray-500">最小化目录组织</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 p-4 bg-gray-50 rounded-xl">
+                        <span class="text-2xl">🛠️</span>
+                        <div>
+                            <p class="font-semibold text-gray-800">初始化流程</p>
+                            <p class="text-sm text-gray-500">依赖安装与配置</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 p-4 bg-gray-50 rounded-xl">
+                        <span class="text-2xl">💻</span>
+                        <div>
+                            <p class="font-semibold text-gray-800">服务器代码</p>
+                            <p class="text-sm text-gray-500">http 模块详解</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 p-4 bg-gray-50 rounded-xl">
+                        <span class="text-2xl">🔄</span>
+                        <div>
+                            <p class="font-semibold text-gray-800">请求响应流程</p>
+                            <p class="text-sm text-gray-500">req 与 res 对象</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第2页：项目结构 -->
+        <section class="slide" data-slide="2">
+            <div class="text-center mb-8">
+                <span class="inline-block px-4 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium mb-4">项目结构</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">最小化目录组织</h2>
+            </div>
+
+            <div class="card p-6 sm:p-8 mb-6">
+                <!-- 图形化目录树 -->
+                <div class="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                    <div class="space-y-2">
+                        <!-- 根目录 -->
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center">
+                                <span class="text-white font-bold text-sm">📁</span>
+                            </div>
+                            <span class="font-semibold text-gray-800">my-server/</span>
+                        </div>
+                        
+                        <!-- src 目录 -->
+                        <div class="ml-8 flex items-center gap-3">
+                            <div class="w-0.5 h-6 bg-gray-300 -mt-4 mr-3"></div>
+                            <div class="w-7 h-7 bg-blue-400 rounded-lg flex items-center justify-center">
+                                <span class="text-white text-xs">📁</span>
+                            </div>
+                            <span class="text-gray-700">src/</span>
+                        </div>
+                        
+                        <!-- index.ts -->
+                        <div class="ml-16 flex items-center gap-3">
+                            <div class="w-0.5 h-6 bg-gray-300 -mt-4 mr-3"></div>
+                            <div class="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
+                                <span class="text-white text-xs font-bold">TS</span>
+                            </div>
+                            <span class="text-gray-700">index.ts</span>
+                            <span class="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">入口文件</span>
+                        </div>
+                        
+                        <!-- package.json -->
+                        <div class="ml-8 flex items-center gap-3">
+                            <div class="w-0.5 h-6 bg-gray-300 -mt-4 mr-3"></div>
+                            <div class="w-6 h-6 bg-green-500 rounded flex items-center justify-center">
+                                <span class="text-white text-xs">📄</span>
+                            </div>
+                            <span class="text-gray-700">package.json</span>
+                            <span class="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">项目配置</span>
+                        </div>
+                        
+                        <!-- tsconfig.json -->
+                        <div class="ml-8 flex items-center gap-3">
+                            <div class="w-0.5 h-6 bg-gray-300 -mt-4 mr-3"></div>
+                            <div class="w-6 h-6 bg-blue-500 rounded flex items-center justify-center">
+                                <span class="text-white text-xs">📄</span>
+                            </div>
+                            <span class="text-gray-700">tsconfig.json</span>
+                            <span class="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">TS 配置</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-6">
+                    <p class="text-blue-700 font-semibold mb-2">💡 极简主义</p>
+                    <p class="text-sm text-gray-600">只需 3 个文件即可运行一个 TypeScript 服务器！</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第3页：初始化步骤 -->
+        <section class="slide" data-slide="3">
+            <div class="text-center mb-8">
+                <span class="inline-block px-4 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium mb-4">初始化</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">5 步创建项目</h2>
+            </div>
+
+            <div class="card p-6 sm:p-8 mb-6">
+                <!-- 步骤时间线 -->
+                <div class="space-y-4">
+                    <!-- 步骤 1 -->
+                    <div class="flex items-start gap-4">
+                        <div class="flex flex-col items-center">
+                            <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center shadow-md">
+                                <span class="text-white font-bold">1</span>
+                            </div>
+                            <div class="w-0.5 h-8 bg-gray-300"></div>
+                        </div>
+                        <div class="flex-1 pb-4">
+                            <span class="text-sm font-semibold text-blue-700">创建目录</span>
+                            <div class="code-block rounded-lg p-3 mt-2">
+                                <pre class="text-sm"><code>mkdir my-server && cd my-server</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 步骤 2 -->
+                    <div class="flex items-start gap-4">
+                        <div class="flex flex-col items-center">
+                            <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center shadow-md">
+                                <span class="text-white font-bold">2</span>
+                            </div>
+                            <div class="w-0.5 h-8 bg-gray-300"></div>
+                        </div>
+                        <div class="flex-1 pb-4">
+                            <span class="text-sm font-semibold text-blue-700">初始化 package.json</span>
+                            <div class="code-block rounded-lg p-3 mt-2">
+                                <pre class="text-sm"><code>npm init -y</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 步骤 3 -->
+                    <div class="flex items-start gap-4">
+                        <div class="flex flex-col items-center">
+                            <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center shadow-md">
+                                <span class="text-white font-bold">3</span>
+                            </div>
+                            <div class="w-0.5 h-8 bg-gray-300"></div>
+                        </div>
+                        <div class="flex-1 pb-4">
+                            <span class="text-sm font-semibold text-blue-700">安装依赖</span>
+                            <div class="code-block rounded-lg p-3 mt-2">
+                                <pre class="text-sm"><code>npm install typescript tsx @types/node -D</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 步骤 4 -->
+                    <div class="flex items-start gap-4">
+                        <div class="flex flex-col items-center">
+                            <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center shadow-md">
+                                <span class="text-white font-bold">4</span>
+                            </div>
+                            <div class="w-0.5 h-8 bg-gray-300"></div>
+                        </div>
+                        <div class="flex-1 pb-4">
+                            <span class="text-sm font-semibold text-blue-700">初始化 tsconfig.json</span>
+                            <div class="code-block rounded-lg p-3 mt-2">
+                                <pre class="text-sm"><code>npx tsc --init</code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 步骤 5 -->
+                    <div class="flex items-start gap-4">
+                        <div class="flex flex-col items-center">
+                            <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center shadow-md">
+                                <span class="text-white font-bold">5</span>
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <span class="text-sm font-semibold text-green-700">配置运行脚本</span>
+                            <div class="code-block rounded-lg p-3 mt-2">
+                                <pre class="text-sm"><code><span class="syntax-comment">// package.json 中添加</span>
+<span class="syntax-string">"scripts"</span>: {
+  <span class="syntax-string">"dev"</span>: <span class="syntax-string">"tsx watch src/index.ts"</span>
+}</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第4页：依赖说明 -->
+        <section class="slide" data-slide="4">
+            <div class="text-center mb-8">
+                <span class="inline-block px-4 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium mb-4">依赖解析</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">安装了什么？</h2>
+            </div>
+
+            <div class="card p-6 sm:p-8 mb-6">
+                <div class="space-y-4">
+                    <!-- typescript -->
+                    <div class="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                                <span class="text-white font-bold text-sm">TS</span>
+                            </div>
+                            <code class="text-blue-700 font-semibold text-lg">typescript</code>
+                        </div>
+                        <p class="text-gray-600 text-sm ml-13">TypeScript 编译器，将 .ts 文件编译为 .js</p>
+                    </div>
+
+                    <!-- tsx -->
+                    <div class="p-4 bg-green-50 rounded-xl border border-green-200">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                                <span class="text-white font-bold text-sm">⚡</span>
+                            </div>
+                            <code class="text-green-700 font-semibold text-lg">tsx</code>
+                        </div>
+                        <p class="text-gray-600 text-sm ml-13">直接运行 .ts 文件，无需手动编译，支持热重载</p>
+                    </div>
+
+                    <!-- @types/node -->
+                    <div class="p-4 bg-purple-50 rounded-xl border border-purple-200">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+                                <span class="text-white font-bold text-sm">📦</span>
+                            </div>
+                            <code class="text-purple-700 font-semibold text-lg">@types/node</code>
+                        </div>
+                        <p class="text-gray-600 text-sm ml-13">Node.js API 的类型声明，提供代码提示</p>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-6">
+                    <p class="text-amber-700 font-semibold">💡 -D 是什么意思？</p>
+                    <p class="text-sm text-gray-600 mt-1"><code class="bg-amber-100 px-1 rounded">-D</code> 表示开发依赖，这些包只在开发时使用，不会打包到生产环境</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第5页：服务器代码 -->
+        <section class="slide" data-slide="5">
+            <div class="text-center mb-8">
+                <span class="inline-block px-4 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium mb-4">核心代码</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Hello World 服务器</h2>
+            </div>
+
+            <div class="card p-6 sm:p-8 mb-6">
+                <div class="code-block rounded-lg p-4 overflow-x-auto">
+                    <div class="flex items-center gap-2 mb-3 text-gray-500 text-sm">
+                        <span class="w-3 h-3 bg-red-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-yellow-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-green-400 rounded-full"></span>
+                        <span class="ml-2">src/index.ts</span>
+                    </div>
+                    <pre class="text-sm"><code><span class="syntax-keyword">import</span> http <span class="syntax-keyword">from</span> <span class="syntax-string">"http"</span>;
+
+<span class="syntax-keyword">const</span> <span class="syntax-variable">server</span> = http.<span class="syntax-function">createServer</span>((<span class="syntax-variable">req</span>, <span class="syntax-variable">res</span>) => {
+  res.<span class="syntax-variable">statusCode</span> = <span class="syntax-number">200</span>;
+  res.<span class="syntax-function">setHeader</span>(<span class="syntax-string">"Content-Type"</span>, <span class="syntax-string">"text/plain"</span>);
+  res.<span class="syntax-function">end</span>(<span class="syntax-string">"Hello World"</span>);
+});
+
+server.<span class="syntax-function">listen</span>(<span class="syntax-number">3000</span>, () => {
+  console.<span class="syntax-function">log</span>(<span class="syntax-string">"服务器运行在 http://localhost:3000"</span>);
+});</code></pre>
+                </div>
+
+                <div class="mt-6 p-4 bg-green-50 rounded-xl border border-green-200">
+                    <p class="text-green-700 font-semibold mb-2">🚀 运行命令</p>
+                    <div class="code-block rounded-lg p-3 bg-white">
+                        <pre class="text-sm"><code>npm run dev</code></pre>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">访问 <code class="bg-green-100 px-1 rounded">http://localhost:3000</code> 即可看到响应</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第6页：createServer 执行流程 -->
+        <section class="slide" data-slide="6">
+            <div class="text-center mb-8">
+                <span class="inline-block px-4 py-1 bg-cyan-100 text-cyan-700 rounded-full text-sm font-medium mb-4">执行流程</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">服务器启动过程</h2>
+            </div>
+
+            <div class="card p-6 sm:p-8 mb-6">
+                <!-- 图形化流程 -->
+                <div class="space-y-3">
+                    <!-- 阶段1：启动 -->
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">1</div>
+                        <div class="flex-1 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <span class="text-sm font-semibold text-blue-700">启动脚本</span>
+                            <span class="text-xs text-gray-500 ml-2">npm run dev</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-center">
+                        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                        </svg>
+                    </div>
+
+                    <!-- 阶段2：创建服务器 -->
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">2</div>
+                        <div class="flex-1 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <span class="text-sm font-semibold text-blue-700">createServer(回调)</span>
+                            <span class="text-xs text-gray-500 ml-2">注册回调，创建实例</span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center">
+                        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                        </svg>
+                    </div>
+
+                    <!-- 阶段3：监听端口 -->
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm">3</div>
+                        <div class="flex-1 p-3 bg-green-50 rounded-lg border border-green-200">
+                            <span class="text-sm font-semibold text-green-700">server.listen(3000)</span>
+                            <span class="text-xs text-gray-500 ml-2">开始监听端口</span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center">
+                        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                        </svg>
+                    </div>
+
+                    <!-- 阶段4：等待 -->
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center text-white font-bold text-sm pulse-dot">4</div>
+                        <div class="flex-1 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                            <span class="text-sm font-semibold text-amber-700">等待请求...</span>
+                            <span class="text-xs text-gray-500 ml-2">回调函数尚未执行</span>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center">
+                        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                        </svg>
+                    </div>
+
+                    <!-- 阶段5：有请求 -->
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm">5</div>
+                        <div class="flex-1 p-3 bg-purple-50 rounded-lg border border-purple-200">
+                            <span class="text-sm font-semibold text-purple-700">用户访问 → 触发回调</span>
+                            <span class="text-xs text-gray-500 ml-2">创建 req/res 并执行</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-6">
+                    <p class="text-blue-700 font-semibold">💡 关键理解</p>
+                    <p class="text-sm text-gray-600 mt-1">回调函数在 <code class="bg-blue-100 px-1 rounded">createServer</code> 时只是<strong>注册</strong>，<strong>不会立即执行</strong>！</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第7页：req 和 res 对象 -->
+        <section class="slide" data-slide="7">
+            <div class="text-center mb-8">
+                <span class="inline-block px-4 py-1 bg-pink-100 text-pink-700 rounded-full text-sm font-medium mb-4">核心对象</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">req 与 res</h2>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- req 对象 -->
+                <div class="card p-5">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                            <span class="text-white font-bold">📥</span>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-800">req 请求对象</h3>
+                            <p class="text-xs text-gray-500">由浏览器自动生成</p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <div class="p-3 bg-gray-50 rounded-lg">
+                            <code class="text-blue-600 text-sm">req.url</code>
+                            <p class="text-xs text-gray-500 mt-1">请求路径，如 "/about"</p>
+                        </div>
+                        <div class="p-3 bg-gray-50 rounded-lg">
+                            <code class="text-blue-600 text-sm">req.method</code>
+                            <p class="text-xs text-gray-500 mt-1">请求方法，如 "GET"</p>
+                        </div>
+                        <div class="p-3 bg-gray-50 rounded-lg">
+                            <code class="text-blue-600 text-sm">req.headers</code>
+                            <p class="text-xs text-gray-500 mt-1">请求头信息</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- res 对象 -->
+                <div class="card p-5">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                            <span class="text-white font-bold">📤</span>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-800">res 响应对象</h3>
+                            <p class="text-xs text-gray-500">由 Node.js 提供</p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <div class="p-3 bg-gray-50 rounded-lg">
+                            <code class="text-green-600 text-sm">res.statusCode</code>
+                            <p class="text-xs text-gray-500 mt-1">设置状态码 200/404/500</p>
+                        </div>
+                        <div class="p-3 bg-gray-50 rounded-lg">
+                            <code class="text-green-600 text-sm">res.setHeader()</code>
+                            <p class="text-xs text-gray-500 mt-1">设置响应头</p>
+                        </div>
+                        <div class="p-3 bg-gray-50 rounded-lg">
+                            <code class="text-green-600 text-sm">res.end()</code>
+                            <p class="text-xs text-gray-500 mt-1">发送内容并结束响应</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-6">
+                <p class="text-amber-700 font-semibold">⚠️ 重要</p>
+                <p class="text-sm text-gray-600 mt-1"><code class="bg-amber-100 px-1 rounded">res.end()</code> 必须调用，否则浏览器会一直等待响应！</p>
+            </div>
+        </section>
+
+        <!-- 第8页：请求响应流程图 -->
+        <section class="slide" data-slide="8">
+            <div class="text-center mb-8">
+                <span class="inline-block px-4 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium mb-4">流程图解</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">请求响应全流程</h2>
+            </div>
+
+            <div class="card p-6 sm:p-8 mb-6">
+                <!-- 图形化请求响应流程 -->
+                <div class="relative bg-gray-50 rounded-xl p-6 border border-gray-200">
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-8">
+                        <!-- 浏览器 -->
+                        <div class="text-center">
+                            <div class="w-20 h-20 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-3 border-2 border-blue-300">
+                                <svg class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                                </svg>
+                            </div>
+                            <p class="font-semibold text-gray-800">浏览器</p>
+                        </div>
+
+                        <!-- 请求箭头 -->
+                        <div class="flex flex-col items-center gap-2">
+                            <div class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                                GET /about
+                            </div>
+                            <svg class="w-16 h-6 text-blue-500 hidden md:block" fill="none" stroke="currentColor" viewBox="0 0 64 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M0 12h56m0 0l-8-8m8 8l-8 8"/>
+                            </svg>
+                            <svg class="w-6 h-10 text-blue-500 md:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 40">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 0v32m0 0l-8-8m8 8l8-8"/>
+                            </svg>
+                            <p class="text-xs text-gray-500">携带请求信息</p>
+                        </div>
+
+                        <!-- 服务器 -->
+                        <div class="text-center">
+                            <div class="w-20 h-20 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-3 border-2 border-green-300">
+                                <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/>
+                                </svg>
+                            </div>
+                            <p class="font-semibold text-gray-800">Node.js 服务器</p>
+                        </div>
+                    </div>
+
+                    <!-- 处理过程 -->
+                    <div class="mt-6 p-4 bg-white rounded-lg border border-gray-200 text-center">
+                        <p class="text-sm text-gray-600">
+                            <span class="font-semibold">处理：</span>
+                            创建 req/res → 调用回调函数 → 执行业务逻辑
+                        </p>
+                    </div>
+
+                    <!-- 响应箭头 -->
+                    <div class="flex flex-col md:flex-row items-center justify-center gap-4 mt-6">
+                        <div class="bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                            HTTP 200 "Hello World"
+                        </div>
+                        <svg class="w-16 h-6 text-green-500 transform rotate-180 hidden md:block" fill="none" stroke="currentColor" viewBox="0 0 64 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M0 12h56m0 0l-8-8m8 8l-8 8"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第9页：常用参考 -->
+        <section class="slide" data-slide="9">
+            <div class="text-center mb-8">
+                <span class="inline-block px-4 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium mb-4">速查表</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">常用参考</h2>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- 状态码 -->
+                <div class="card p-5">
+                    <h3 class="font-bold text-gray-800 mb-4">📊 HTTP 状态码</h3>
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between p-2 bg-green-50 rounded-lg">
+                            <code class="text-green-600 font-semibold">200</code>
+                            <span class="text-sm text-gray-600">成功</span>
+                        </div>
+                        <div class="flex items-center justify-between p-2 bg-amber-50 rounded-lg">
+                            <code class="text-amber-600 font-semibold">404</code>
+                            <span class="text-sm text-gray-600">未找到</span>
+                        </div>
+                        <div class="flex items-center justify-between p-2 bg-red-50 rounded-lg">
+                            <code class="text-red-600 font-semibold">500</code>
+                            <span class="text-sm text-gray-600">服务器错误</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content-Type -->
+                <div class="card p-5">
+                    <h3 class="font-bold text-gray-800 mb-4">📝 Content-Type</h3>
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                            <code class="text-blue-600 text-sm">text/plain</code>
+                            <span class="text-sm text-gray-600">纯文本</span>
+                        </div>
+                        <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                            <code class="text-blue-600 text-sm">text/html</code>
+                            <span class="text-sm text-gray-600">HTML 页面</span>
+                        </div>
+                        <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                            <code class="text-blue-600 text-sm">application/json</code>
+                            <span class="text-sm text-gray-600">JSON 数据</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 常用命令 -->
+                <div class="card p-5 md:col-span-2">
+                    <h3 class="font-bold text-gray-800 mb-4">⌨️ 常用命令</h3>
+                    <div class="grid sm:grid-cols-2 gap-2">
+                        <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                            <code class="text-purple-600 text-sm">npm init -y</code>
+                            <span class="text-xs text-gray-500">初始化项目</span>
+                        </div>
+                        <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                            <code class="text-purple-600 text-sm">npm install xxx -D</code>
+                            <span class="text-xs text-gray-500">安装开发依赖</span>
+                        </div>
+                        <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                            <code class="text-purple-600 text-sm">npx tsc --init</code>
+                            <span class="text-xs text-gray-500">初始化 TS 配置</span>
+                        </div>
+                        <div class="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                            <code class="text-purple-600 text-sm">npm run dev</code>
+                            <span class="text-xs text-gray-500">运行开发脚本</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-6">
+                <p class="text-blue-700 font-semibold">💡 实际开发建议</p>
+                <p class="text-sm text-gray-600 mt-1">原生 http 模块较繁琐，推荐使用 <code class="bg-blue-100 px-1 rounded">Hono</code> 或 <code class="bg-blue-100 px-1 rounded">Express</code> 框架</p>
+            </div>
+        </section>
+
+        <!-- 第10页：测验 + 总结 -->
+        <section class="slide" data-slide="10">
+            <div class="text-center mb-8">
+                <span class="inline-block px-4 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium mb-4">知识检验</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">快速测验</h2>
+            </div>
+
+            <div class="card p-6 sm:p-8 mb-6">
+                <p class="text-lg text-gray-700 mb-6">createServer 的回调函数在什么时候执行？</p>
+                
+                <div id="quiz1" class="space-y-4">
+                    <div class="quiz-option p-4 bg-white rounded-xl border border-gray-200 flex items-center gap-4" 
+                         data-correct="false" onclick="checkAnswer(this, 1)">
+                        <span class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-sm font-medium">A</span>
+                        <span>调用 createServer 时立即执行</span>
+                    </div>
+                    <div class="quiz-option p-4 bg-white rounded-xl border border-gray-200 flex items-center gap-4" 
+                         data-correct="false" onclick="checkAnswer(this, 1)">
+                        <span class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-sm font-medium">B</span>
+                        <span>调用 server.listen 时执行</span>
+                    </div>
+                    <div class="quiz-option p-4 bg-white rounded-xl border border-gray-200 flex items-center gap-4" 
+                         data-correct="true" onclick="checkAnswer(this, 1)">
+                        <span class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-sm font-medium">C</span>
+                        <span>有用户请求访问时执行</span>
+                    </div>
+                </div>
+
+                <div id="quiz1-explanation" class="mt-6 hidden">
+                    <div class="p-4 bg-green-50 border border-green-200 rounded-xl">
+                        <p class="text-green-700 font-semibold">✓ 正确！</p>
+                        <p class="text-gray-700 mt-2">回调函数在 createServer 时只是<strong>注册</strong>，当有用户访问时，Node.js 会创建 req 和 res 对象，然后<strong>调用</strong>回调函数。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 核心要点总结 -->
+            <div class="card-green p-6 sm:p-8">
+                <h3 class="text-xl font-bold text-green-800 mb-4">🎯 核心要点</h3>
+                <div class="space-y-3">
+                    <div class="flex items-start gap-3">
+                        <span class="text-green-600 font-bold">1.</span>
+                        <p class="text-gray-700">最简工程只需 <strong>3 个文件</strong>：src/index.ts、package.json、tsconfig.json</p>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="text-green-600 font-bold">2.</span>
+                        <p class="text-gray-700"><strong>req</strong> 包含请求信息（只读），<strong>res</strong> 用于返回数据（可写）</p>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="text-green-600 font-bold">3.</span>
+                        <p class="text-gray-700">回调函数是<strong>事件驱动</strong>的，有请求才执行</p>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="text-green-600 font-bold">4.</span>
+                        <p class="text-gray-700"><code class="bg-green-100 px-1 rounded">res.end()</code> 必须调用，否则请求会挂起</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 完成按钮 -->
+            <div class="text-center mt-8">
+                <button onclick="restartTutorial()" class="btn-secondary px-6 py-3 rounded-xl text-base font-semibold">
+                    🔄 重新学习
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 底部导航 -->
+    <footer class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 py-3 sm:py-4 px-4 z-40">
+        <div class="container mx-auto max-w-4xl flex justify-between items-center bottom-nav-buttons">
+            <button id="prevBtn" onclick="prevSlide()" class="btn-secondary px-4 sm:px-6 py-2 sm:py-3 rounded-xl text-sm sm:text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
+                <span>←</span> 上一页
+            </button>
+            <button id="nextBtn" onclick="nextSlide()" class="btn-primary px-4 sm:px-6 py-2 sm:py-3 rounded-xl text-sm sm:text-base font-semibold">
+                下一页 <span>→</span>
+            </button>
+        </div>
+    </footer>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 10;
+
+        function updateSlide() {
+            document.querySelectorAll('.slide').forEach(slide => slide.classList.remove('active'));
+            document.querySelector(`[data-slide="${currentSlide}"]`).classList.add('active');
+          
+            const progress = (currentSlide / totalSlides) * 100;
+            document.getElementById('progress').style.width = `${progress}%`;
+            document.getElementById('slideCounter').textContent = `${currentSlide} / ${totalSlides}`;
+            document.getElementById('prevBtn').disabled = currentSlide === 1;
+            document.getElementById('nextBtn').innerHTML = currentSlide === totalSlides ? '完成 ✓' : '下一页 <span>→</span>';
+            document.getElementById('touchNavLeft').classList.toggle('disabled', currentSlide === 1);
+            document.getElementById('touchNavRight').classList.toggle('disabled', currentSlide === totalSlides);
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) { 
+                currentSlide++; 
+                updateSlide(); 
+                window.scrollTo({ top: 0, behavior: 'smooth' }); 
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) { 
+                currentSlide--; 
+                updateSlide(); 
+                window.scrollTo({ top: 0, behavior: 'smooth' }); 
+            }
+        }
+
+        function restartTutorial() {
+            currentSlide = 1;
+            document.querySelectorAll('.quiz-option').forEach(opt => opt.classList.remove('correct', 'wrong'));
+            document.querySelectorAll('[id$="-explanation"]').forEach(exp => exp.classList.add('hidden'));
+            updateSlide();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function checkAnswer(element, quizNum) {
+            const parent = element.parentElement;
+            if (parent.querySelector('.correct') || parent.querySelector('.wrong')) return;
+            parent.querySelectorAll('.quiz-option').forEach(opt => {
+                if (opt.dataset.correct === 'true') opt.classList.add('correct');
+                else if (opt === element) opt.classList.add('wrong');
+            });
+            const explanation = document.getElementById(`quiz${quizNum}-explanation`);
+            if (explanation) explanation.classList.remove('hidden');
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+            else if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
+        });
+
+        updateSlide();
+    </script>
+</body>
+</html>

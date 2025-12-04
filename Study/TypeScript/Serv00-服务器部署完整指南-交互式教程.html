@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serv00 服务器部署完整指南 - 交互式教程</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        code, pre { font-family: 'Fira Code', monospace; }
+
+        .code-block { 
+            background: #1e1e1e; 
+            border: 1px solid #333; 
+            text-align: left;
+        }
+        .code-block pre {
+            margin: 0;
+            padding: 0;
+            text-align: left;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .code-block code {
+            display: block;
+            text-align: left;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            padding-left: 0;
+            margin-left: 0;
+            color: #d4d4d4;
+        }
+        .syntax-keyword { color: #569cd6; }
+        .syntax-string { color: #ce9178; }
+        .syntax-function { color: #dcdcaa; }
+        .syntax-comment { color: #6a9955; }
+        .syntax-variable { color: #9cdcfe; }
+        .syntax-number { color: #b5cea8; }
+        .syntax-operator { color: #d4d4d4; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+        @keyframes blink {
+            0%, 50% { border-color: #22c55e; }
+            51%, 100% { border-color: transparent; }
+        }
+        .float-animation { animation: float 3s ease-in-out infinite; }
+        .fade-in { animation: fadeIn 0.5s ease forwards; }
+        .progress-bar { transition: width 0.5s ease; }
+
+        .slide { display: none; opacity: 0; transition: opacity 0.4s ease; }
+        .slide.active { display: block; opacity: 1; }
+
+        .quiz-option { transition: all 0.3s ease; cursor: pointer; }
+        .quiz-option:hover { transform: translateX(4px); border-color: #2563eb; background: #eff6ff; }
+        .quiz-option.correct { background: #dcfce7 !important; border-color: #22c55e !important; }
+        .quiz-option.wrong { background: #fee2e2 !important; border-color: #ef4444 !important; }
+
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-primary:active { background: #1e40af; transform: scale(0.98); }
+        .btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+        .btn-secondary:hover { background: #e5e7eb; }
+
+        .card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .card-green { background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 1px solid #a7f3d0; }
+
+        .terminal-header {
+            background: #323233;
+            padding: 8px 12px;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .terminal-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .terminal-body {
+            background: #1e1e1e;
+            padding: 16px;
+            border-radius: 0 0 8px 8px;
+            font-family: 'Fira Code', monospace;
+            font-size: 13px;
+            color: #d4d4d4;
+            overflow-x: auto;
+        }
+        .terminal-prompt { color: #22c55e; }
+        .terminal-command { color: #fff; }
+        .terminal-output { color: #9ca3af; }
+
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #3b82f6;
+        }
+
+        .touch-nav-zone {
+            position: fixed; top: 0; bottom: 0; width: 12%; z-index: 30;
+            display: none; cursor: pointer;
+        }
+        .touch-nav-zone.left { left: 0; background: linear-gradient(to right, rgba(0,0,0,0.03), transparent); }
+        .touch-nav-zone.right { right: 0; background: linear-gradient(to left, rgba(0,0,0,0.03), transparent); }
+        .touch-nav-zone .nav-hint {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            opacity: 0.3; font-size: 24px; color: #6b7280; transition: opacity 0.2s;
+        }
+        .touch-nav-zone.left .nav-hint { left: 8px; }
+        .touch-nav-zone.right .nav-hint { right: 8px; }
+        .touch-nav-zone:active .nav-hint { opacity: 0.8; }
+        .touch-nav-zone.disabled { pointer-events: none; }
+        .touch-nav-zone.disabled .nav-hint { opacity: 0.1; }
+
+        .phase-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .touch-nav-zone { display: flex; align-items: center; }
+            .bottom-nav-buttons { display: none !important; }
+            .code-block pre, .code-block code, .terminal-body {
+                white-space: pre-wrap; word-wrap: break-word; word-break: break-all;
+                font-size: 12px;
+            }
+            .quiz-option:hover { transform: none; }
+            .quiz-option:active { background: #eff6ff; border-color: #2563eb; }
+        }
+        @media (min-width: 769px) {
+            .bottom-nav-buttons { display: flex !important; }
+        }
+        @media (pointer: coarse) {
+            .quiz-option, .btn-primary, .btn-secondary { min-height: 44px; }
+        }
+        html, body { overflow-x: hidden; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen text-gray-800">
+    <!-- 移动端触摸导航 -->
+    <div id="touchNavLeft" class="touch-nav-zone left" onclick="prevSlide()">
+        <span class="nav-hint">‹</span>
+    </div>
+    <div id="touchNavRight" class="touch-nav-zone right" onclick="nextSlide()">
+        <span class="nav-hint">›</span>
+    </div>
+
+    <!-- 进度条 -->
+    <div class="fixed top-0 left-0 right-0 h-1 bg-gray-200 z-50">
+        <div id="progress" class="progress-bar h-full bg-blue-600" style="width: 0%"></div>
+    </div>
+  
+    <!-- 导航栏 -->
+    <nav class="fixed top-2 sm:top-4 left-1/2 -translate-x-1/2 z-40 bg-white/95 backdrop-blur-lg rounded-full px-4 sm:px-6 py-2 sm:py-3 flex items-center gap-2 sm:gap-4 shadow-md border border-gray-200 max-w-[90vw]">
+        <span class="text-blue-600 font-semibold text-sm sm:text-base truncate">🖥️ Serv00 部署</span>
+        <span class="text-gray-300 hidden sm:inline">|</span>
+        <span id="slideCounter" class="text-gray-500 text-sm sm:text-base whitespace-nowrap">1 / 16</span>
+    </nav>
+
+    <!-- 主内容 -->
+    <main class="container mx-auto px-3 sm:px-4 pt-16 sm:pt-24 pb-28 sm:pb-32 max-w-4xl">
+        
+        <!-- 第1页：介绍页 -->
+        <section class="slide active" data-slide="1">
+            <div class="text-center mb-8 sm:mb-12">
+                <div class="inline-block p-3 sm:p-4 bg-green-100 rounded-2xl mb-4 sm:mb-6 float-animation">
+                    <svg class="w-16 h-16 sm:w-20 sm:h-20 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
+                    </svg>
+                </div>
+                <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-gray-900">Serv00 服务器部署</h1>
+                <p class="text-lg sm:text-xl text-gray-500 mb-6 sm:mb-8">从零开始的完整指南</p>
+            </div>
+            
+            <div class="card p-5 sm:p-8">
+                <h2 class="text-xl font-semibold mb-6 text-center text-gray-800">🎯 学习路线</h2>
+                <div class="space-y-4">
+                    <div class="flex items-start gap-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
+                        <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span class="text-white font-bold">1</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-800">SSH 登录服务器</h3>
+                            <p class="text-sm text-gray-600">连接到远程服务器</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-4 p-4 bg-green-50 rounded-xl border border-green-200">
+                        <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span class="text-white font-bold">2</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-800">部署最简后端服务</h3>
+                            <p class="text-sm text-gray-600">创建并运行 Node.js 应用</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-4 p-4 bg-orange-50 rounded-xl border border-orange-200">
+                        <div class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span class="text-white font-bold">3</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-800">外网访问配置</h3>
+                            <p class="text-sm text-gray-600">反向代理 + SSL 证书</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-4 p-4 bg-purple-50 rounded-xl border border-purple-200">
+                        <div class="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span class="text-white font-bold">4</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-800">自定义域名绑定</h3>
+                            <p class="text-sm text-gray-600">使用 Cloudflare 配置</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第2页：SSH 连接 -->
+        <section class="slide" data-slide="2">
+            <div class="text-center mb-6">
+                <span class="phase-badge bg-blue-100 text-blue-700">
+                    <span>🔗</span> 阶段一
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mt-4">SSH 登录服务器</h2>
+                <p class="text-gray-500 mt-2">远程连接你的服务器</p>
+            </div>
+
+            <div class="card p-6 mb-6">
+                <h3 class="font-semibold text-gray-800 mb-4">🤔 什么是 SSH？</h3>
+                <div class="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                    <p class="text-gray-700">SSH（Secure Shell）是远程登录服务器的安全协议，允许你在本地电脑上操作远程服务器的命令行。</p>
+                    <div class="mt-3 flex items-center gap-3">
+                        <div class="bg-white rounded-lg px-3 py-2 border text-center">
+                            <span class="text-xl">💻</span>
+                            <p class="text-xs text-gray-600">你的电脑</p>
+                        </div>
+                        <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                        </svg>
+                        <div class="bg-white rounded-lg px-3 py-2 border text-center">
+                            <span class="text-xl">🔒</span>
+                            <p class="text-xs text-gray-600">加密连接</p>
+                        </div>
+                        <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                        </svg>
+                        <div class="bg-white rounded-lg px-3 py-2 border text-center">
+                            <span class="text-xl">🖥️</span>
+                            <p class="text-xs text-gray-600">远程服务器</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-6 mb-6">
+                <h3 class="font-semibold text-gray-800 mb-4">⌨️ 连接命令</h3>
+                <div class="terminal-header">
+                    <div class="terminal-dot bg-red-500"></div>
+                    <div class="terminal-dot bg-yellow-500"></div>
+                    <div class="terminal-dot bg-green-500"></div>
+                    <span class="text-gray-400 text-sm ml-2">Terminal</span>
+                </div>
+                <div class="terminal-body">
+                    <p><span class="terminal-prompt">$</span> <span class="terminal-command">ssh 用户名@服务器地址</span></p>
+                    <p class="mt-2 text-gray-500"># 示例：</p>
+                    <p><span class="terminal-prompt">$</span> <span class="terminal-command">ssh darkstarrd-dev@s12.serv00.com</span></p>
+                </div>
+            </div>
+
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <p class="text-amber-700 font-semibold mb-2">📧 登录信息在哪里？</p>
+                <ul class="text-sm text-gray-700 space-y-1">
+                    <li>• <strong>用户名</strong>：Serv00 注册时的用户名</li>
+                    <li>• <strong>密码</strong>：注册邮件中提供的密码</li>
+                    <li>• <strong>服务器地址</strong>：邮件中指定的服务器（如 s12.serv00.com）</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- 第3页：首次连接 -->
+        <section class="slide" data-slide="3">
+            <div class="text-center mb-6">
+                <span class="phase-badge bg-blue-100 text-blue-700">
+                    <span>🔗</span> 阶段一
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mt-4">首次连接确认</h2>
+                <p class="text-gray-500 mt-2">建立信任关系</p>
+            </div>
+
+            <div class="card p-6 mb-6">
+                <h3 class="font-semibold text-gray-800 mb-4">🔐 首次连接提示</h3>
+                <div class="terminal-header">
+                    <div class="terminal-dot bg-red-500"></div>
+                    <div class="terminal-dot bg-yellow-500"></div>
+                    <div class="terminal-dot bg-green-500"></div>
+                </div>
+                <div class="terminal-body">
+                    <p class="terminal-output">The authenticity of host 's12.serv00.com' can't be established.</p>
+                    <p class="terminal-output">ED25519 key fingerprint is SHA256:xxx...</p>
+                    <p class="terminal-output">Are you sure you want to continue connecting (yes/no)?</p>
+                    <p class="mt-2"><span class="terminal-prompt">输入:</span> <span class="text-green-400">yes</span></p>
+                </div>
+            </div>
+
+            <div class="card p-6 mb-6">
+                <h3 class="font-semibold text-gray-800 mb-4">✅ 连接成功</h3>
+                <div class="terminal-header">
+                    <div class="terminal-dot bg-red-500"></div>
+                    <div class="terminal-dot bg-yellow-500"></div>
+                    <div class="terminal-dot bg-green-500"></div>
+                </div>
+                <div class="terminal-body">
+                    <p class="terminal-output">Welcome to FreeBSD!</p>
+                    <p class="terminal-output">Last login: Mon Jan 15 10:30:00 2024</p>
+                    <p class="mt-2"><span class="terminal-prompt">darkstarrd-dev@s12:~$</span> <span class="text-gray-400">▊</span></p>
+                </div>
+                <p class="text-sm text-gray-600 mt-3">看到命令提示符 <code class="bg-gray-100 px-1 rounded">用户名@服务器:~$</code> 表示登录成功！</p>
+            </div>
+
+            <div class="bg-green-50 border border-green-200 rounded-xl p-4">
+                <p class="text-green-700 font-semibold">🎉 恭喜！</p>
+                <p class="text-sm text-green-700 mt-1">你现在已经可以在远程服务器上执行命令了</p>
+            </div>
+        </section>
+
+        <!-- 第4页：检查端口（第一个坑） -->
+        <section class="slide" data-slide="4">
+            <div class="text-center mb-6">
+                <span class="phase-badge bg-green-100 text-green-700">
+                    <span>🚀</span> 阶段二
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mt-4">第一个坑：端口限制</h2>
+                <p class="text-gray-500 mt-2">Serv00 不允许使用任意端口</p>
+            </div>
+
+            <div class="card p-6 mb-6">
+                <h3 class="font-semibold text-gray-800 mb-4">❌ 常见错误</h3>
+                <div class="bg-red-50 rounded-xl p-4 border border-red-200">
+                    <p class="text-sm text-gray-700 mb-2">尝试监听端口 3000：</p>
+                    <div class="terminal-header">
+                        <div class="terminal-dot bg-red-500"></div>
+                        <div class="terminal-dot bg-yellow-500"></div>
+                        <div class="terminal-dot bg-green-500"></div>
+                    </div>
+                    <div class="terminal-body text-sm">
+                        <p><span class="terminal-prompt">$</span> node server.js</p>
+                        <p class="text-red-400 mt-1">Error: listen EACCES: permission denied 0.0.0.0:3000</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-6 mb-6">
+                <h3 class="font-semibold text-gray-800 mb-4">✅ 正确做法：先查看可用端口</h3>
+                <div class="terminal-header">
+                    <div class="terminal-dot bg-red-500"></div>
+                    <div class="terminal-dot bg-yellow-500"></div>
+                    <div class="terminal-dot bg-green-500"></div>
+                </div>
+                <div class="terminal-body">
+                    <p><span class="terminal-prompt">$</span> <span class="terminal-command">devil port list</span></p>
+                    <p class="terminal-output mt-2">Port   Type</p>
+                    <p class="terminal-output">─────────────</p>
+                    <p class="text-green-400">8188   tcp</p>
+                </div>
+                <p class="text-sm text-gray-600 mt-3">只能使用系统分配的端口（如 8188），不能随意选择！</p>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <p class="text-blue-700 font-semibold mb-2">💡 如何添加新端口？</p>
+                <div class="bg-white rounded-lg p-2 font-mono text-sm mt-2">
+                    devil port add tcp 3000
+                </div>
+            </div>
+        </section>
+
+        <!-- 第5页：配置 Node.js 环境 -->
+        <section class="slide" data-slide="5">
+            <div class="text-center mb-6">
+                <span class="phase-badge bg-green-100 text-green-700">
+                    <span>🚀</span> 阶段二
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mt-4">配置 Node.js 环境</h2>
+                <p class="text-gray-500 mt-2">让 node 和 npm 命令可用</p>
+            </div>
+
+            <div class="card p-6 mb-6">
+                <h3 class="font-semibold text-gray-800 mb-4">🔍 检查 Node.js 状态</h3>
+                <div class="terminal-header">
+                    <div class="terminal-dot bg-red-500"></div>
+                    <div class="terminal-dot bg-yellow-500"></div>
+                    <div class="terminal-dot bg-green-500"></div>
+                </div>
+                <div class="terminal-body">
+                    <p><span class="terminal-prompt">$</span> node --version</p>
+                    <p class="text-red-400">bash: node: command not found</p>
+                </div>
+                <p class="text-sm text-gray-600 mt-3">如果提示找不到命令，需要配置环境变量</p>
+            </div>
+
+            <div class="card p-6 mb-6">
+                <h3 class="font-semibold text-gray-800 mb-4">📦 查看可用版本</h3>
+                <div class="terminal-header">
+                    <div class="terminal-dot bg-red-500"></div>
+                    <div class="terminal-dot bg-yellow-500"></div>
+                    <div class="terminal-dot bg-green-500"></div>
+                </div>
+                <div class="terminal-body">
+                    <p><span class="terminal-prompt">$</span> ls /usr/local/bin/node*</p>
+                    <p class="terminal-output mt-1">/usr/local/bin/node</p>
+                    <p class="terminal-output">/usr/local/bin/node18</p>
+                    <p class="terminal-output">/usr/local/bin/node20</p>
+                    <p class="terminal-output">/usr/local/bin/node22</p>
+                </div>
+            </div>
+
+            <div class="card p-6">
+                <h3 class="font-semibold text-gray-800 mb-4">⚙️ 配置环境变量</h3>
+                <div class="terminal-header">
+                    <div class="terminal-dot bg-red-500"></div>
+                    <div class="terminal-dot bg-yellow-500"></div>
+                    <div class="terminal-dot bg-green-500"></div>
+                </div>
+                <div class="terminal-body text-sm">
+                    <p class="text-gray-500"># 编辑配置文件</p>
+                    <p><span class="terminal-prompt">$</span> nano ~/.bashrc</p>
+                    <p class="mt-2 text-gray-500"># 添加以下内容：</p>
+                    <p class="text-yellow-300">export PATH="/usr/local/bin:$PATH"</p>
+                    <p class="text-yellow-300">alias node='/usr/local/bin/node20'</p>
+                    <p class="text-yellow-300">alias npm='/usr/local/bin/npm20'</p>
+                    <p class="mt-2 text-gray-500"># 保存：Ctrl+O → Enter → Ctrl+X</p>
+                    <p class="mt-2 text-gray-500"># 使配置生效：</p>
+                    <p><span class="terminal-prompt">$</span> source ~/.bashrc</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第6页：创建最简服务 -->
+        <section class="slide" data-slide="6">
+            <div class="text-center mb-6">
+                <span class="phase-badge bg-green-100 text-green-700">
+                    <span>🚀</span> 阶段二
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mt-4">创建最简服务</h2>
+                <p class="text-gray-500 mt-2">Hello World 级别的后端</p>
+            </div>
+
+            <div class="card p-6 mb-6">
+                <h3 class="font-semibold text-gray-800 mb-4">📁 创建项目目录</h3>
+                <div class="terminal-header">
+                    <div class="terminal-dot bg-red-500"></div>
+                    <div class="terminal-dot bg-yellow-500"></div>
+                    <div class="terminal-dot bg-green-500"></div>
+                </div>
+                <div class="terminal-body">
+                    <p><span class="terminal-prompt">$</span> mkdir ~/myserver</p>
+                    <p><span class="terminal-prompt">$</span> cd ~/myserver</p>
+                </div>
+            </div>
+
+            <div class="card p-6">
+                <h3 class="font-semibold text-gray-800 mb-4">📝 创建 server.js</h3>
+                <div class="code-block rounded-lg p-4 overflow-x-auto">
+                    <div class="flex items-center gap-2 mb-3 text-gray-400 text-sm">
+                        <span class="w-3 h-3 bg-red-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-yellow-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-green-400 rounded-full"></span>
+                        <span class="ml-2">server.js</span>
+                    </div>
+                    <pre class="text-sm"><code><span class="syntax-keyword">const</span> <span class="syntax-variable">http</span> <span class="syntax-operator">=</span> <span class="syntax-function">require</span>(<span class="syntax-string">'http'</span>);
+
+<span class="syntax-comment">// ⚠️ 注意：必须使用 devil port list 显示的端口！</span>
+<span class="syntax-keyword">const</span> <span class="syntax-variable">PORT</span> <span class="syntax-operator">=</span> <span class="syntax-number">8188</span>;
+
+<span class="syntax-keyword">const</span> <span class="syntax-variable">server</span> <span class="syntax-operator">=</span> <span class="syntax-variable">http</span>.<span class="syntax-function">createServer</span>((<span class="syntax-variable">req</span>, <span class="syntax-variable">res</span>) <span class="syntax-operator">=></span> {
+  <span class="syntax-variable">res</span>.<span class="syntax-function">writeHead</span>(<span class="syntax-number">200</span>, { 
+    <span class="syntax-string">'Content-Type'</span>: <span class="syntax-string">'text/html; charset=utf-8'</span> 
+  });
+  <span class="syntax-variable">res</span>.<span class="syntax-function">end</span>(<span class="syntax-string">'&lt;h1&gt;Hello World!&lt;/h1&gt;'</span>);
+});
+
+<span class="syntax-variable">server</span>.<span class="syntax-function">listen</span>(<span class="syntax-variable">PORT</span>, () <span class="syntax-operator">=></span> {
+  <span class="syntax-variable">console</span>.<span class="syntax-function">log</span>(<span class="syntax-string">`服务器运行在端口 </span><span class="syntax-variable">${PORT}</span><span class="syntax-string">`</span>);
+});</code></pre>
+                </div>
+                <p class="text-sm text-gray-500 mt-3">💡 可以用 <code class="bg-gray-100 px-1 rounded">nano server.js</code> 创建并编辑文件</p>
+            </div>
+        </section>
+
+        <!-- 第7页：测试运行 -->
+        <section class="slide" data-slide="7">
+            <div class="text-center mb-6">
+                <span class="phase-badge bg-green-100 text-green-700">
+                    <span>🚀</span> 阶段二
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mt-4">测试运行</h2>
+                <p class="text-gray-500 mt-2">先确认应用能正常启动</p>
+            </div>
+
+            <div class="card p-6 mb-6">
+                <h3 class="font-semibold text-gray-800 mb-4">▶️ 启动服务</h3>
+                <div class="terminal-header">
+                    <div class="terminal-dot bg-red-500"></div>
+                    <div class="terminal-dot bg-yellow-500"></div>
+                    <div class="terminal-dot bg-green-500"></div>
+                </div>
+                <div class="terminal-body">
+                    <p><span class="terminal-prompt">$</span> cd ~/myserver</p>
+                    <p><span class="terminal-prompt">$</span> node server.js</p>
+                    <p class="text-green-400 mt-1">服务器运行在端口 8188</p>
+                </div>
+            </div>
+
+            <div class="card p-6 mb-6">
+                <h3 class="font-semibold text-gray-800 mb-4">🧪 本地测试（新开一个 SSH 窗口）</h3>
+                <div class="terminal-header">
+                    <div class="terminal-dot bg-red-500"></div>
+                    <div class="terminal-dot bg-yellow-500"></div>
+                    <div class="terminal-dot bg-green-500"></div>
+                </div>
+                <div class="terminal-body">
+                    <p><span class="terminal-prompt">$</span> curl http://localhost:8188</p>
+                    <p class="text-green-400 mt-1">&lt;h1&gt;Hello World!&lt;/h1&gt;</p>
+                </div>
+            </div>
+
+            <div class="bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
+                <p class="text-green-700 font-semibold">✅ 如果看到 HTML 响应，说明服务运行正常！</p>
+            </div>
+
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <p class="text-amber-700 font-semibold mb-2">⚠️ 问题来了</p>
+                <p class="text-sm text-gray-700">现在只能在服务器本地访问，外网还无法访问。<br>而且一旦关闭 SSH 连接，服务就会停止。</p>
+            </div>
+        </section>
+
+        <!-- 第8页：配置反向代理 -->
+        <section class="slide" data-slide="8">
+            <div class="text-center mb-6">
+                <span class="phase-badge bg-orange-100 text-orange-700">
+                    <span>🌐</span> 阶段三
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mt-4">配置外网访问</h2>
+                <p class="text-gray-500 mt-2">设置反向代理</p>
+            </div>
+
+            <div class="card p-6 mb-6">
+                <h3 class="font-semibold text-gray-800 mb-4">🔀 什么是反向代理？</h3>
+                <div class="bg-orange-50 rounded-xl p-4 border border-orange-200">
+                    <div class="flex flex-col items-center space-y-2 text-sm">
+                        <div class="bg-white rounded-lg px-4 py-2 border">
+                            <span class="font-mono">外网用户访问 example.serv00.net</span>
+                        </div>
+                        <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                        </svg>
+                        <div class="bg-orange-200 rounded-lg px-4 py-2">
+                            <span class="font-semibold text-orange-800">Serv00 反向代理</span>
+                        </div>
+                        <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                        </svg>
+                        <div class="bg-white rounded-lg px-4 py-2 border">
+                            <span class="font-mono">localhost:8188 (Node.js)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-6 mb-6">
+                <h3 class="font-semibold text-gray-800 mb-4">⚙️ 配置步骤</h3>
+                <div class="terminal-header">
+                    <div class="terminal-dot bg-red-500"></div>
+                    <div class="terminal-dot bg-yellow-500"></div>
+                    <div class="terminal-dot bg-green-500"></div>
+                </div>
+                <div class="terminal-body text-sm">
+                    <p class="text-gray-500"># 1. 删除默认网站配置</p>
+                    <p><span class="terminal-prompt">$</span> devil www del 用户名.serv00.net</p>
+                    <p class="mt-3 text-gray-500"># 2. 添加反向代理配置</p>
+                    <p><span class="terminal-prompt">$</span> devil www add 用户名.serv00.net proxy localhost 8188</p>
+                    <p class="mt-3 text-gray-500"># 3. 验证配置</p>
+                    <p><span class="terminal-prompt">$</span> devil www list</p>
+                    <p class="terminal-output mt-1">用户名.serv00.net    proxy    http://127.0.0.1:8188</p>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <p class="text-blue-700 font-semibold">🌐 现在可以尝试访问</p>
+                <p class="text-sm text-gray-700 mt-1">打开浏览器访问 <code class="bg-white px-2 py-0.5 rounded">http://用户名.serv00.net</code></p>
+            </div>
+        </section>
+
+        <!-- 第9页：进程守护 -->
+        <section class="slide" data-slide="9">
+            <div class="text-center mb-6">
+                <span class="phase-badge bg-orange-100 text-orange-700">
+                    <span>🌐</span> 阶段三
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mt-4">进程守护</h2>
+                <p class="text-gray-500 mt-2">让服务 24/7 稳定运行</p>
+            </div>
+
+            <div class="card p-6 mb-6">
+                <h3 class="font-semibold text-gray-800 mb-4">❌ 问题：SSH 断开后服务停止</h3>
+                <div class="bg-red-50 rounded-xl p-4 border border-red-200">
+                    <ul class="text-sm text-gray-700 space-y-2">
+                        <li>• SSH 断开后，直接运行的 <code class="bg-white px-1 rounded">node server.js</code> 会终止</li>
+                        <li>• 服务器重启后，应用不会自动启动</li>
+                        <li>• 应用崩溃后无法自动恢复</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card p-6 mb-6">
+                <h3 class="font-semibold text-gray-800 mb-4">✅ 解决：使用进程管理器</h3>
+                <div class="terminal-header">
+                    <div class="terminal-dot bg-red-500"></div>
+                    <div class="terminal-dot bg-yellow-500"></div>
+                    <div class="terminal-dot bg-green-500"></div>
+                </div>
+                <div class="terminal-body text-sm">
+                    <p class="text-gray-500"># 添加守护进程（注意使用绝对路径）</p>
+                    <p><span class="terminal-prompt">$</span> devil www options 用户名.serv00.net pm add /home/用户名/myserver/server.js</p>
+                    <p class="mt-3 text-gray-500"># 查看进程状态</p>
+                    <p><span class="terminal-prompt">$</span> devil www options 用户名.serv00.net pm list</p>
+                    <p class="mt-3 text-gray-500"># 重启进程（修改代码后使用）</p>
+                    <p><span class="terminal-prompt">$</span> devil www options 用户名.serv00.net pm restart</p>
+                </div>
+            </div>
+
+            <div class="bg-green-50 border border-green-200 rounded-xl p-4">
+                <p class="text-green-700 font-semibold">✅ 配置完成后</p>
+                <p class="text-sm text-green-700 mt-1">现在可以关闭 SSH，服务依然运行！</p>
+            </div>
+        </section>
+
+        <!-- 第10页：SSL 证书 -->
+        <section class="slide" data-slide="10">
+            <div class="text-center mb-6">
+                <span class="phase-badge bg-orange-100 text-orange-700">
+                    <span>🌐</span> 阶段三
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mt-4">配置 SSL 证书</h2>
+                <p class="text-gray-500 mt-2">启用 HTTPS 加密</p>
+            </div>
+
+            <div class="card p-6 mb-6">
+                <h3 class="font-semibold text-gray-800 mb-4">🔒 为什么需要 SSL？</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-gray-50 rounded-lg p-3 text-center">
+                        <span class="text-2xl">🔐</span>
+                        <p class="text-sm font-medium text-gray-700 mt-1">数据加密</p>
+                        <p class="text-xs text-gray-500">防止中间人攻击</p>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-3 text-center">
+                        <span class="text-2xl">📈</span>
+                        <p class="text-sm font-medium text-gray-700 mt-1">SEO 优化</p>
+                        <p class="text-xs text-gray-500">搜索引擎优先收录</p>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-3 text-center">
+                        <span class="text-2xl">🌐</span>
+                        <p class="text-sm font-medium text-gray-700 mt-1">浏览器信任</p>
+                        <p class="text-xs text-gray-500">不显示"不安全"</p>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-3 text-center">
+                        <span class="text-2xl">☁️</span>
+                        <p class="text-sm font-medium text-gray-700 mt-1">Cloudflare</p>
+                        <p class="text-xs text-gray-500">代理需要源站 SSL</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-6">
+                <h3 class="font-semibold text-gray-800 mb-4">⚙️ 添加 Let's Encrypt 证书</h3>
+                <div class="terminal-header">
+                    <div class="terminal-dot bg-red-500"></div>
+                    <div class="terminal-dot bg-yellow-500"></div>
+                    <div class="terminal-dot bg-green-500"></div>
+                </div>
+                <div class="terminal-body text-sm">
+                    <p class="text-gray-500"># 1. 查看服务器 IP</p>
+                    <p><span class="terminal-prompt">$</span> devil vhost list</p>
+                    <p class="terminal-output mt-1">85.194.246.69    web12.serv00.com</p>
+                    <p class="mt-3 text-gray-500"># 2. 添加 SSL 证书</p>
+                    <p><span class="terminal-prompt">$</span> devil ssl www add 85.194.246.69 le le 用户名.serv00.net</p>
+                    <p class="mt-3 text-gray-500"># 3. 验证</p>
+                    <p><span class="terminal-prompt">$</span> devil ssl www list</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第11页：阶段三总结 -->
+        <section class="slide" data-slide="11">
+            <div class="text-center mb-6">
+                <span class="phase-badge bg-green-100 text-green-700">
+                    <span>✅</span> 阶段三完成
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mt-4">外网访问已就绪！</h2>
+                <p class="text-gray-500 mt-2">现在可以通过 Serv00 域名访问你的服务了</p>
+            </div>
+
+            <div class="card p-6 mb-6">
+                <h3 class="font-semibold text-gray-800 mb-4">✅ 完成清单</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                        <span class="text-green-500 text-xl">✓</span>
+                        <span class="text-gray-700">反向代理配置</span>
+                    </div>
+                    <div class="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                        <span class="text-green-500 text-xl">✓</span>
+                        <span class="text-gray-700">进程守护（24/7 运行）</span>
+                    </div>
+                    <div class="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                        <span class="text-green-500 text-xl">✓</span>
+                        <span class="text-gray-700">SSL 证书（HTTPS）</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-green p-6 rounded-xl text-center">
+                <p class="text-2xl mb-2">🎉</p>
+                <p class="text-green-800 font-bold text-lg">访问你的网站</p>
+                <p class="text-green-700 mt-2 font-mono bg-white/50 rounded-lg py-2 px-4 inline-block">
+                    https://用户名.serv00.net
+                </p>
+            </div>
+
+            <div class="mt-6 bg-purple-50 border border-purple-200 rounded-xl p-4">
+                <p class="text-purple-700 font-semibold">🚀 下一步</p>
+                <p class="text-sm text-gray-700 mt-1">如果想使用自己的域名（如 myapp.example.com），继续学习第四阶段！</p>
+            </div>
+        </section>
+
+        <!-- 第12页：自定义域名介绍 -->
+        <section class="slide" data-slide="12">
+            <div class="text-center mb-6">
+                <span class="phase-badge bg-purple-100 text-purple-700">
+                    <span>🔗</span> 阶段四
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mt-4">使用自定义域名</h2>
+                <p class="text-gray-500 mt-2">通过 Cloudflare 绑定自己的域名</p>
+            </div>
+
+            <div class="card p-6 mb-6">
+                <h3 class="font-semibold text-gray-800 mb-4">🏗️ 整体架构</h3>
+                <div class="bg-purple-50 rounded-xl p-4 border border-purple-200">
+                    <div class="flex flex-col items-center space-y-3">
+                        <div class="bg-white rounded-lg px-4 py-2 border text-center">
+                            <span class="text-xl">👤</span>
+                            <p class="text-sm font-medium">用户访问 myapp.example.com</p>
+                        </div>
+                        <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                        </svg>
+                        <div class="bg-orange-100 rounded-lg px-4 py-2 border border-orange-300 text-center">
+                            <span class="text-xl">☁️</span>
+                            <p class="text-sm font-medium text-orange-700">Cloudflare CDN</p>
+                            <p class="text-xs text-orange-600">代理、缓存、防护</p>
+                        </div>
+                        <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                        </svg>
+                        <div class="bg-green-100 rounded-lg px-4 py-2 border border-green-300 text-center">
+                            <span class="text-xl">🖥️</span>
+                            <p class="text-sm font-medium text-green-700">Serv00 服务器</p>
+                            <p class="text-xs text-green-600">你的 Node.js 应用</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-6">
+                <h3 class="font-semibold text-gray-800 mb-4">📋 需要完成的步骤</h3>
+                <div class="space-y-2">
+                    <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <span class="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">1</span>
+                        <span class="text-sm text-gray-700">在 Cloudflare 添加 DNS 记录</span>
+                    </div>
+                    <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <span class="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">2</span>
+                        <span class="text-sm text-gray-700">在 Serv00 添加域名</span>
+                    </div>
+                    <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <span class="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">3</span>
+                        <span class="text-sm text-gray-700">添加 SSL 证书</span>
+                    </div>
+                    <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <span class="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">4</span>
+                        <span class="text-sm text-gray-700">开启 Cloudflare 代理</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第13页：Cloudflare DNS 设置 -->
+        <section class="slide" data-slide="13">
+            <div class="text-center mb-6">
+                <span class="phase-badge bg-purple-100 text-purple-700">
+                    <span>🔗</span> 阶段四
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mt-4">步骤一：DNS 记录</h2>
+                <p class="text-gray-500 mt-2">在 Cloudflare 添加指向</p>
+            </div>
+
+            <div class="card p-6 mb-6">
+                <h3 class="font-semibold text-gray-800 mb-4">⚙️ Cloudflare DNS 设置</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-gray-200">
+                                <th class="text-left py-2 px-3 font-semibold text-gray-600">字段</th>
+                                <th class="text-left py-2 px-3 font-semibold text-gray-600">值</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-gray-100">
+                                <td class="py-2 px-3 text-gray-600">Type</td>
+                                <td class="py-2 px-3"><span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded text-xs font-medium">A</span></td>
+                            </tr>
+                            <tr class="border-b border-gray-100">
+                                <td class="py-2 px-3 text-gray-600">Name</td>
+                                <td class="py-2 px-3 font-mono">app</td>
+                            </tr>
+                            <tr class="border-b border-gray-100">
+                                <td class="py-2 px-3 text-gray-600">IPv4 address</td>
+                                <td class="py-2 px-3 font-mono">85.194.246.69</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 px-3 text-gray-600">Proxy status</td>
+                                <td class="py-2 px-3"><span class="text-gray-500">⚫ DNS only（先关闭代理）</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <p class="text-amber-700 font-semibold mb-2">⚠️ 重要提醒</p>
+                <p class="text-sm text-gray-700">添加 SSL 证书<strong>之前</strong>，必须先关闭 Cloudflare 代理（灰色云朵）。<br>否则 Let's Encrypt 验证会失败！</p>
+            </div>
+        </section>
+
+        <!-- 第14页：Serv00 添加域名 -->
+        <section class="slide" data-slide="14">
+            <div class="text-center mb-6">
+                <span class="phase-badge bg-purple-100 text-purple-700">
+                    <span>🔗</span> 阶段四
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mt-4">步骤二、三：添加域名和证书</h2>
+                <p class="text-gray-500 mt-2">在 Serv00 完成配置</p>
+            </div>
+
+            <div class="card p-6 mb-6">
+                <h3 class="font-semibold text-gray-800 mb-4">⚙️ 执行命令</h3>
+                <div class="terminal-header">
+                    <div class="terminal-dot bg-red-500"></div>
+                    <div class="terminal-dot bg-yellow-500"></div>
+                    <div class="terminal-dot bg-green-500"></div>
+                </div>
+                <div class="terminal-body text-sm">
+                    <p class="text-gray-500"># 步骤二：添加域名</p>
+                    <p><span class="terminal-prompt">$</span> devil www add app.example.com proxy localhost 8188</p>
+                    <p class="mt-3 text-gray-500"># 步骤三：添加 SSL 证书</p>
+                    <p><span class="terminal-prompt">$</span> devil ssl www add 85.194.246.69 le le app.example.com</p>
+                    <p class="mt-3 text-gray-500"># 验证</p>
+                    <p><span class="terminal-prompt">$</span> devil www list</p>
+                    <p class="terminal-output mt-1">用户名.serv00.net       proxy    http://127.0.0.1:8188</p>
+                    <p class="terminal-output">app.example.com         proxy    http://127.0.0.1:8188</p>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <p class="text-blue-700 font-semibold mb-2">💡 注意</p>
+                <p class="text-sm text-gray-700">多个域名可以指向同一个端口（8188），都会访问到你的 Node.js 应用。</p>
+            </div>
+        </section>
+
+        <!-- 第15页：开启 Cloudflare 代理 -->
+        <section class="slide" data-slide="15">
+            <div class="text-center mb-6">
+                <span class="phase-badge bg-purple-100 text-purple-700">
+                    <span>🔗</span> 阶段四
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mt-4">步骤四：开启 Cloudflare 代理</h2>
+                <p class="text-gray-500 mt-2">完成最后配置</p>
+            </div>
+
+            <div class="card p-6 mb-6">
+                <h3 class="font-semibold text-gray-800 mb-4">1️⃣ 配置 SSL 模式</h3>
+                <p class="text-sm text-gray-600 mb-3">在 Cloudflare → SSL/TLS → Overview 中选择：</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-gray-50 rounded-lg p-3 border">
+                        <p class="font-medium text-gray-700">Full</p>
+                        <p class="text-xs text-gray-500">加密但不验证源站证书</p>
+                    </div>
+                    <div class="bg-green-50 rounded-lg p-3 border-2 border-green-300">
+                        <p class="font-medium text-green-700">Full (Strict) ✓</p>
+                        <p class="text-xs text-green-600">推荐！验证源站证书</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-6 mb-6">
+                <h3 class="font-semibold text-gray-800 mb-4">2️⃣ 开启代理</h3>
+                <p class="text-sm text-gray-600 mb-3">回到 DNS 设置，点击云朵图标切换：</p>
+                <div class="flex items-center justify-center gap-8">
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-2xl mb-2">⚫</div>
+                        <p class="text-sm text-gray-500">DNS only</p>
+                    </div>
+                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                    </svg>
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center text-2xl mb-2">☁️</div>
+                        <p class="text-sm text-orange-600 font-medium">Proxied</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-green p-6 rounded-xl text-center">
+                <p class="text-2xl mb-2">🎉</p>
+                <p class="text-green-800 font-bold text-lg">配置完成！</p>
+                <p class="text-green-700 mt-2">现在可以通过自定义域名访问你的服务了</p>
+                <p class="text-green-700 mt-2 font-mono bg-white/50 rounded-lg py-2 px-4 inline-block">
+                    https://app.example.com
+                </p>
+            </div>
+        </section>
+
+        <!-- 第16页：总结与常见问题 -->
+        <section class="slide" data-slide="16">
+            <div class="text-center mb-6">
+                <span class="phase-badge bg-gray-100 text-gray-700">
+                    <span>📚</span> 总结
+                </span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mt-4">部署完成！</h2>
+                <p class="text-gray-500 mt-2">回顾整个流程</p>
+            </div>
+
+            <div class="card p-6 mb-6">
+                <h3 class="font-semibold text-gray-800 mb-4">📋 完整流程</h3>
+                <div class="space-y-3">
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">1</div>
+                        <div>
+                            <p class="font-medium text-gray-800">SSH 登录</p>
+                            <p class="text-sm text-gray-500">ssh 用户名@s12.serv00.com</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">2</div>
+                        <div>
+                            <p class="font-medium text-gray-800">部署服务</p>
+                            <p class="text-sm text-gray-500">检查端口 → 配置 Node → 创建代码 → 测试运行</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">3</div>
+                        <div>
+                            <p class="font-medium text-gray-800">外网配置</p>
+                            <p class="text-sm text-gray-500">反向代理 → 进程守护 → SSL 证书</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">4</div>
+                        <div>
+                            <p class="font-medium text-gray-800">自定义域名</p>
+                            <p class="text-sm text-gray-500">Cloudflare DNS → Serv00 添加域名 → 开启代理</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-6 mb-6">
+                <h3 class="font-semibold text-gray-800 mb-4">⚠️ 常见问题速查</h3>
+                <div class="space-y-3 text-sm">
+                    <div class="p-3 bg-red-50 rounded-lg border border-red-200">
+                        <p class="font-medium text-red-700">端口权限错误</p>
+                        <p class="text-gray-600">→ 使用 devil port list 查看授权端口</p>
+                    </div>
+                    <div class="p-3 bg-red-50 rounded-lg border border-red-200">
+                        <p class="font-medium text-red-700">502 Bad Gateway</p>
+                        <p class="text-gray-600">→ 检查进程是否运行：ps aux | grep node</p>
+                    </div>
+                    <div class="p-3 bg-red-50 rounded-lg border border-red-200">
+                        <p class="font-medium text-red-700">SSL 证书申请失败</p>
+                        <p class="text-gray-600">→ 先关闭 Cloudflare 代理（灰色云朵）</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-green p-6 rounded-xl text-center">
+                <p class="text-2xl mb-2">🎓</p>
+                <p class="text-green-800 font-bold text-lg">恭喜你完成学习！</p>
+                <button onclick="restartTutorial()" class="mt-4 px-6 py-2 bg-green-600 text-white rounded-full font-medium hover:bg-green-700 transition-colors">
+                    再学一遍
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 底部导航 -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 px-4 py-3 z-40">
+        <div class="container mx-auto max-w-4xl flex items-center justify-between">
+            <button id="prevBtn" onclick="prevSlide()" class="btn-secondary px-4 py-2 rounded-full font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bottom-nav-buttons">
+                <span>←</span> 上一页
+            </button>
+            <div class="flex items-center gap-2">
+                <span class="text-sm text-gray-500 hidden sm:inline">按 ← → 键或点击两侧导航</span>
+            </div>
+            <button id="nextBtn" onclick="nextSlide()" class="btn-primary px-6 py-2 rounded-full font-medium flex items-center gap-2 bottom-nav-buttons">
+                下一页 <span>→</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 16;
+
+        function updateSlide() {
+            document.querySelectorAll('.slide').forEach(slide => slide.classList.remove('active'));
+            document.querySelector(`[data-slide="${currentSlide}"]`).classList.add('active');
+          
+            const progress = (currentSlide / totalSlides) * 100;
+            document.getElementById('progress').style.width = `${progress}%`;
+            document.getElementById('slideCounter').textContent = `${currentSlide} / ${totalSlides}`;
+            document.getElementById('prevBtn').disabled = currentSlide === 1;
+            document.getElementById('nextBtn').innerHTML = currentSlide === totalSlides ? '完成 ✓' : '下一页 <span>→</span>';
+            document.getElementById('touchNavLeft').classList.toggle('disabled', currentSlide === 1);
+            document.getElementById('touchNavRight').classList.toggle('disabled', currentSlide === totalSlides);
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) { 
+                currentSlide++; 
+                updateSlide(); 
+                window.scrollTo({ top: 0, behavior: 'smooth' }); 
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) { 
+                currentSlide--; 
+                updateSlide(); 
+                window.scrollTo({ top: 0, behavior: 'smooth' }); 
+            }
+        }
+
+        function restartTutorial() {
+            currentSlide = 1;
+            updateSlide();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+            else if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
+        });
+
+        updateSlide();
+    </script>
+</body>
+</html>

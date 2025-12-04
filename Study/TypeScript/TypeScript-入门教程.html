@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TypeScript 入门教程</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        code, pre { font-family: 'Fira Code', monospace; }
+
+        .code-block { 
+            background: #f8f9fa; 
+            border: 1px solid #e0e0e0; 
+            text-align: left;
+        }
+        .code-block pre {
+            margin: 0;
+            padding: 0;
+            text-align: left;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .code-block code {
+            display: block;
+            text-align: left;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            padding-left: 0;
+            margin-left: 0;
+        }
+        .syntax-keyword { color: #0066cc; }
+        .syntax-string { color: #22863a; }
+        .syntax-function { color: #6f42c1; }
+        .syntax-comment { color: #6a737d; }
+        .syntax-variable { color: #e36209; }
+        .syntax-number { color: #005cc5; }
+        .syntax-type { color: #d73a49; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .float-animation { animation: float 3s ease-in-out infinite; }
+        .fade-in { animation: fadeIn 0.5s ease forwards; }
+        .progress-bar { transition: width 0.5s ease; }
+
+        .slide { display: none; opacity: 0; transition: opacity 0.4s ease; }
+        .slide.active { display: block; opacity: 1; }
+
+        .quiz-option { transition: all 0.3s ease; cursor: pointer; }
+        .quiz-option:hover { transform: translateX(4px); border-color: #2563eb; background: #eff6ff; }
+        .quiz-option.correct { background: #dcfce7 !important; border-color: #22c55e !important; }
+        .quiz-option.wrong { background: #fee2e2 !important; border-color: #ef4444 !important; }
+
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-primary:active { background: #1e40af; transform: scale(0.98); }
+        .btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+        .btn-secondary:hover { background: #e5e7eb; }
+
+        .tab-active { background: #2563eb; color: white; }
+        .tab-inactive { background: #f3f4f6; color: #6b7280; }
+        .tab-inactive:hover { background: #e5e7eb; }
+
+        .card { background: white; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .card-green { background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 1px solid #a7f3d0; }
+        .card-blue { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #93c5fd; }
+
+        .touch-nav-zone {
+            position: fixed; top: 0; bottom: 0; width: 12%; z-index: 30;
+            display: none; cursor: pointer;
+        }
+        .touch-nav-zone.left { left: 0; background: linear-gradient(to right, rgba(0,0,0,0.03), transparent); }
+        .touch-nav-zone.right { right: 0; background: linear-gradient(to left, rgba(0,0,0,0.03), transparent); }
+        .touch-nav-zone .nav-hint {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            opacity: 0.3; font-size: 24px; color: #6b7280; transition: opacity 0.2s;
+        }
+        .touch-nav-zone.left .nav-hint { left: 8px; }
+        .touch-nav-zone.right .nav-hint { right: 8px; }
+        .touch-nav-zone:active .nav-hint { opacity: 0.8; }
+        .touch-nav-zone.disabled { pointer-events: none; }
+        .touch-nav-zone.disabled .nav-hint { opacity: 0.1; }
+
+        @media (max-width: 768px) {
+            .touch-nav-zone { display: flex; align-items: center; }
+            .bottom-nav-buttons { display: none !important; }
+            .code-block pre, .code-block code {
+                white-space: pre-wrap; word-wrap: break-word; word-break: break-all;
+            }
+            .quiz-option:hover { transform: none; }
+            .quiz-option:active { background: #eff6ff; border-color: #2563eb; }
+        }
+        @media (min-width: 769px) {
+            .bottom-nav-buttons { display: flex !important; }
+        }
+        @media (pointer: coarse) {
+            .quiz-option, .code-tab, .btn-primary, .btn-secondary { min-height: 44px; }
+        }
+        html, body { overflow-x: hidden; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen text-gray-800">
+    <!-- 移动端触摸导航 -->
+    <div id="touchNavLeft" class="touch-nav-zone left" onclick="prevSlide()">
+        <span class="nav-hint">‹</span>
+    </div>
+    <div id="touchNavRight" class="touch-nav-zone right" onclick="nextSlide()">
+        <span class="nav-hint">›</span>
+    </div>
+
+    <!-- 进度条 -->
+    <div class="fixed top-0 left-0 right-0 h-1 bg-gray-200 z-50">
+        <div id="progress" class="progress-bar h-full bg-blue-600" style="width: 0%"></div>
+    </div>
+  
+    <!-- 导航栏 -->
+    <nav class="fixed top-2 sm:top-4 left-1/2 -translate-x-1/2 z-40 bg-white/95 backdrop-blur-lg rounded-full px-4 sm:px-6 py-2 sm:py-3 flex items-center gap-2 sm:gap-4 shadow-md border border-gray-200 max-w-[90vw]">
+        <span class="text-blue-600 font-semibold text-sm sm:text-base truncate">TS 入门</span>
+        <span class="text-gray-300 hidden sm:inline">|</span>
+        <span id="slideCounter" class="text-gray-500 text-sm sm:text-base whitespace-nowrap">1 / 8</span>
+    </nav>
+
+    <!-- 主内容 -->
+    <main class="container mx-auto px-3 sm:px-4 pt-16 sm:pt-24 pb-28 sm:pb-32 max-w-4xl">
+        
+        <!-- 第1页：介绍页 -->
+        <section class="slide active" data-slide="1">
+            <div class="text-center mb-8 sm:mb-12">
+                <div class="inline-block p-3 sm:p-4 bg-blue-100 rounded-2xl mb-4 sm:mb-6 float-animation">
+                    <svg class="w-16 h-16 sm:w-20 sm:h-20 text-blue-600" viewBox="0 0 128 128">
+                        <path fill="#3178c6" d="M2 63.91v62.5h125v-125H2zm100.73-5a15.56 15.56 0 017.82 4.5 20.58 20.58 0 013 4c0 .16-5.4 3.81-8.69 5.85-.12.08-.6-.44-1.13-1.23a6.28 6.28 0 00-5.29-2.9c-3.4-.26-5.6 1.66-5.59 4.83a4.29 4.29 0 00.49 2.29c.66 1.35 1.9 2.16 6.29 4.11 8.07 3.6 11.53 5.94 13.62 9.2a15.63 15.63 0 011.43 11.67 16.06 16.06 0 01-5.56 9.22c-2.39 1.89-5.52 3.19-9.42 3.91a35.6 35.6 0 01-9.15.15 22.85 22.85 0 01-12.52-5.43 24.48 24.48 0 01-3.67-5c.31-.18 1.38-.79 2.39-1.35l4.17-2.32 1.43-.81 1 1.49a14.57 14.57 0 006.1 4.48c5.4 1.67 12.81.24 14.25-2.74a5.15 5.15 0 00-.16-4.87c-.89-1.45-2.77-2.62-7.94-4.93-5.93-2.65-8.47-4.25-10.6-6.67a13.94 13.94 0 01-2.84-7.39 22.72 22.72 0 01.19-5.52 14.14 14.14 0 019.66-10.7 27.61 27.61 0 0110.62-.78zM73 66.46v5.39H57.14v46.33H45.83V71.85H30v-5.22q0-2.56.06-5.47l.09-2.91.13-.15h42.69z"/>
+                    </svg>
+                </div>
+                <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-gray-900">TypeScript 入门</h1>
+                <p class="text-lg sm:text-xl text-gray-500 mb-6 sm:mb-8">给 JavaScript 加上类型检查的超级能力</p>
+            </div>
+
+            <div class="card p-5 sm:p-8">
+                <h2 class="text-2xl font-semibold mb-6 text-center text-gray-800">🎯 你将学到</h2>
+                <div class="grid sm:grid-cols-2 gap-4">
+                    <div class="flex items-start gap-3 p-4 bg-gray-50 rounded-xl">
+                        <span class="text-2xl">📦</span>
+                        <div>
+                            <p class="font-semibold text-gray-800">什么是 TypeScript</p>
+                            <p class="text-sm text-gray-500">理解 TS 与 JS 的关系</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 p-4 bg-gray-50 rounded-xl">
+                        <span class="text-2xl">🛠️</span>
+                        <div>
+                            <p class="font-semibold text-gray-800">环境搭建</p>
+                            <p class="text-sm text-gray-500">安装与运行方式</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 p-4 bg-gray-50 rounded-xl">
+                        <span class="text-2xl">✏️</span>
+                        <div>
+                            <p class="font-semibold text-gray-800">基础语法</p>
+                            <p class="text-sm text-gray-500">类型、接口、函数</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3 p-4 bg-gray-50 rounded-xl">
+                        <span class="text-2xl">🔍</span>
+                        <div>
+                            <p class="font-semibold text-gray-800">编译原理</p>
+                            <p class="text-sm text-gray-500">类型检查与编译产物</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第2页：什么是 TypeScript -->
+        <section class="slide" data-slide="2">
+            <div class="text-center mb-8">
+                <span class="inline-block px-4 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium mb-4">核心概念</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">什么是 TypeScript？</h2>
+            </div>
+
+            <div class="card p-6 sm:p-8 mb-6">
+                <div class="text-center mb-8">
+                    <div class="inline-flex items-center gap-4 text-xl sm:text-2xl font-bold">
+                        <span class="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-xl">JavaScript</span>
+                        <span class="text-gray-400">+</span>
+                        <span class="px-4 py-2 bg-blue-100 text-blue-700 rounded-xl">静态类型检查</span>
+                        <span class="text-gray-400">=</span>
+                        <span class="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl">TypeScript</span>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+                    <p class="text-amber-700 font-semibold mb-2">⚡ 重要理解</p>
+                    <p class="text-gray-700">类型检查<strong>只在开发阶段</strong>进行，编译后变成普通 JavaScript</p>
+                </div>
+
+                <!-- 图形化流程 -->
+                <div class="relative bg-gray-50 rounded-xl p-6 border border-gray-200">
+                    <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <!-- TS 文件 -->
+                        <div class="bg-blue-50 rounded-xl border-2 border-blue-200 p-4 text-center w-32">
+                            <div class="text-3xl mb-2">📄</div>
+                            <p class="font-semibold text-blue-700">index.ts</p>
+                            <p class="text-xs text-gray-500">带类型注解</p>
+                        </div>
+                        
+                        <!-- 箭头 + 编译 -->
+                        <div class="flex flex-col items-center">
+                            <div class="bg-green-500 text-white px-4 py-2 rounded-lg font-semibold text-sm">
+                                tsc 编译
+                            </div>
+                            <svg class="w-8 h-8 text-gray-400 mt-2 rotate-90 sm:rotate-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                            </svg>
+                            <p class="text-xs text-gray-500 mt-1">类型被移除</p>
+                        </div>
+                        
+                        <!-- JS 文件 -->
+                        <div class="bg-yellow-50 rounded-xl border-2 border-yellow-200 p-4 text-center w-32">
+                            <div class="text-3xl mb-2">📄</div>
+                            <p class="font-semibold text-yellow-700">index.js</p>
+                            <p class="text-xs text-gray-500">普通 JS</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第3页：环境搭建 -->
+        <section class="slide" data-slide="3">
+            <div class="text-center mb-8">
+                <span class="inline-block px-4 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium mb-4">环境准备</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">安装与运行</h2>
+            </div>
+
+            <div class="card p-6 sm:p-8 mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">📦 安装 TypeScript</h3>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-6">
+                    <div class="flex items-center gap-2 mb-3 text-gray-500 text-sm">
+                        <span class="w-3 h-3 bg-red-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-yellow-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-green-400 rounded-full"></span>
+                        <span class="ml-2">Terminal</span>
+                    </div>
+                    <pre class="text-sm"><code><span class="syntax-comment"># 全局安装 TypeScript</span>
+npm install -g typescript</code></pre>
+                </div>
+
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">🚀 运行方式</h3>
+                
+                <!-- 运行方式标签页 -->
+                <div class="flex gap-2 mb-4">
+                    <button class="code-tab tab-active px-4 py-2 rounded-lg text-sm font-medium" onclick="showCodeTab('traditional')">传统方式</button>
+                    <button class="code-tab tab-inactive px-4 py-2 rounded-lg text-sm font-medium" onclick="showCodeTab('modern')">现代方式</button>
+                </div>
+                
+                <div id="code-traditional" class="code-content code-block rounded-lg p-4 overflow-x-auto">
+                    <div class="flex items-center gap-2 mb-3 text-gray-500 text-sm">
+                        <span class="w-3 h-3 bg-red-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-yellow-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-green-400 rounded-full"></span>
+                        <span class="ml-2">Terminal</span>
+                    </div>
+                    <pre class="text-sm"><code><span class="syntax-comment"># 步骤1: 编译 TS → JS</span>
+tsc index.ts
+
+<span class="syntax-comment"># 步骤2: 运行 JS</span>
+node index.js</code></pre>
+                </div>
+                
+                <div id="code-modern" class="code-content code-block rounded-lg p-4 overflow-x-auto hidden">
+                    <div class="flex items-center gap-2 mb-3 text-gray-500 text-sm">
+                        <span class="w-3 h-3 bg-red-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-yellow-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-green-400 rounded-full"></span>
+                        <span class="ml-2">Terminal</span>
+                    </div>
+                    <pre class="text-sm"><code><span class="syntax-comment"># 直接运行 (需要 Node 22+ 或 tsx)</span>
+tsx index.ts
+
+<span class="syntax-comment"># 或使用 Node 22+ 原生支持</span>
+node --experimental-strip-types index.ts</code></pre>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-6">
+                    <p class="text-blue-700 font-semibold mb-2">💡 推荐</p>
+                    <p class="text-sm text-gray-600">开发时使用 <code class="bg-blue-100 px-1 rounded">tsx</code> 可以跳过编译步骤，直接运行 TS 文件</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第4页：基础类型 -->
+        <section class="slide" data-slide="4">
+            <div class="text-center mb-8">
+                <span class="inline-block px-4 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium mb-4">基础语法</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">变量类型声明</h2>
+            </div>
+
+            <div class="card p-6 sm:p-8 mb-6">
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-6">
+                    <div class="flex items-center gap-2 mb-3 text-gray-500 text-sm">
+                        <span class="w-3 h-3 bg-red-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-yellow-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-green-400 rounded-full"></span>
+                        <span class="ml-2">types.ts</span>
+                    </div>
+                    <pre class="text-sm"><code><span class="syntax-comment">// 基本类型</span>
+<span class="syntax-keyword">let</span> <span class="syntax-variable">name</span>: <span class="syntax-type">string</span> = <span class="syntax-string">"Tom"</span>;
+<span class="syntax-keyword">let</span> <span class="syntax-variable">age</span>: <span class="syntax-type">number</span> = <span class="syntax-number">25</span>;
+<span class="syntax-keyword">let</span> <span class="syntax-variable">isStudent</span>: <span class="syntax-type">boolean</span> = <span class="syntax-keyword">true</span>;
+
+<span class="syntax-comment">// 任意类型（尽量避免使用）</span>
+<span class="syntax-keyword">let</span> <span class="syntax-variable">data</span>: <span class="syntax-type">any</span> = <span class="syntax-string">"anything"</span>;
+
+<span class="syntax-comment">// 数组类型</span>
+<span class="syntax-keyword">let</span> <span class="syntax-variable">nums</span>: <span class="syntax-type">number</span>[] = [<span class="syntax-number">1</span>, <span class="syntax-number">2</span>, <span class="syntax-number">3</span>];
+<span class="syntax-keyword">let</span> <span class="syntax-variable">names</span>: <span class="syntax-type">string</span>[] = [<span class="syntax-string">"a"</span>, <span class="syntax-string">"b"</span>];</code></pre>
+                </div>
+
+                <!-- 类型说明卡片 -->
+                <div class="grid sm:grid-cols-2 gap-4">
+                    <div class="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                        <code class="text-blue-700 font-semibold">string</code>
+                        <p class="text-sm text-gray-600 mt-1">文本字符串</p>
+                    </div>
+                    <div class="p-4 bg-green-50 rounded-xl border border-green-200">
+                        <code class="text-green-700 font-semibold">number</code>
+                        <p class="text-sm text-gray-600 mt-1">数字（整数/小数）</p>
+                    </div>
+                    <div class="p-4 bg-purple-50 rounded-xl border border-purple-200">
+                        <code class="text-purple-700 font-semibold">boolean</code>
+                        <p class="text-sm text-gray-600 mt-1">布尔值 true/false</p>
+                    </div>
+                    <div class="p-4 bg-amber-50 rounded-xl border border-amber-200">
+                        <code class="text-amber-700 font-semibold">any</code>
+                        <p class="text-sm text-gray-600 mt-1">任意类型（慎用）</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第5页：函数与接口 -->
+        <section class="slide" data-slide="5">
+            <div class="text-center mb-8">
+                <span class="inline-block px-4 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium mb-4">进阶语法</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">函数与接口</h2>
+            </div>
+
+            <div class="card p-6 sm:p-8 mb-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">📝 函数类型</h3>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-6">
+                    <div class="flex items-center gap-2 mb-3 text-gray-500 text-sm">
+                        <span class="w-3 h-3 bg-red-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-yellow-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-green-400 rounded-full"></span>
+                        <span class="ml-2">functions.ts</span>
+                    </div>
+                    <pre class="text-sm"><code><span class="syntax-comment">// 参数和返回值都有类型</span>
+<span class="syntax-keyword">function</span> <span class="syntax-function">add</span>(<span class="syntax-variable">a</span>: <span class="syntax-type">number</span>, <span class="syntax-variable">b</span>: <span class="syntax-type">number</span>): <span class="syntax-type">number</span> {
+    <span class="syntax-keyword">return</span> a + b;
+}</code></pre>
+                </div>
+
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">📦 接口（定义对象结构）</h3>
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-6">
+                    <div class="flex items-center gap-2 mb-3 text-gray-500 text-sm">
+                        <span class="w-3 h-3 bg-red-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-yellow-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-green-400 rounded-full"></span>
+                        <span class="ml-2">interfaces.ts</span>
+                    </div>
+                    <pre class="text-sm"><code><span class="syntax-keyword">interface</span> <span class="syntax-type">User</span> {
+    <span class="syntax-variable">name</span>: <span class="syntax-type">string</span>;
+    <span class="syntax-variable">age</span>: <span class="syntax-type">number</span>;
+    <span class="syntax-variable">email</span>?: <span class="syntax-type">string</span>;  <span class="syntax-comment">// ? 表示可选属性</span>
+}
+
+<span class="syntax-keyword">let</span> <span class="syntax-variable">user</span>: <span class="syntax-type">User</span> = { <span class="syntax-variable">name</span>: <span class="syntax-string">"Tom"</span>, <span class="syntax-variable">age</span>: <span class="syntax-number">25</span> };</code></pre>
+                </div>
+
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">🏷️ 类型别名（联合类型）</h3>
+                <div class="code-block rounded-lg p-4 overflow-x-auto">
+                    <div class="flex items-center gap-2 mb-3 text-gray-500 text-sm">
+                        <span class="w-3 h-3 bg-red-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-yellow-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-green-400 rounded-full"></span>
+                        <span class="ml-2">types.ts</span>
+                    </div>
+                    <pre class="text-sm"><code><span class="syntax-comment">// 限制变量只能是这几个值之一</span>
+<span class="syntax-keyword">type</span> <span class="syntax-type">Status</span> = <span class="syntax-string">'pending'</span> | <span class="syntax-string">'paid'</span> | <span class="syntax-string">'shipped'</span>;
+
+<span class="syntax-keyword">let</span> <span class="syntax-variable">orderStatus</span>: <span class="syntax-type">Status</span> = <span class="syntax-string">'pending'</span>;</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第6页：类型检查示例 -->
+        <section class="slide" data-slide="6">
+            <div class="text-center mb-8">
+                <span class="inline-block px-4 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium mb-4">核心价值</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">类型检查如何帮助你</h2>
+            </div>
+
+            <div class="card p-6 sm:p-8 mb-6">
+                <div class="code-block rounded-lg p-4 overflow-x-auto mb-6">
+                    <div class="flex items-center gap-2 mb-3 text-gray-500 text-sm">
+                        <span class="w-3 h-3 bg-red-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-yellow-400 rounded-full"></span>
+                        <span class="w-3 h-3 bg-green-400 rounded-full"></span>
+                        <span class="ml-2">greet.ts</span>
+                    </div>
+                    <pre class="text-sm"><code><span class="syntax-keyword">function</span> <span class="syntax-function">greet</span>(<span class="syntax-variable">name</span>: <span class="syntax-type">string</span>): <span class="syntax-type">string</span> {
+    <span class="syntax-keyword">return</span> <span class="syntax-string">"hello "</span> + name;
+}</code></pre>
+                </div>
+
+                <!-- 对比展示 -->
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- 正确方式 -->
+                    <div class="relative p-5 bg-green-50 rounded-xl border-2 border-green-200">
+                        <div class="absolute -top-3 left-4 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">✅ 正确</div>
+                        <div class="code-block rounded-lg p-3 mt-2">
+                            <pre class="text-sm"><code><span class="syntax-function">greet</span>(<span class="syntax-string">"Tom"</span>);</code></pre>
+                        </div>
+                        <p class="text-sm text-green-700 mt-3">传入字符串，类型匹配 ✓</p>
+                    </div>
+                    <!-- 错误方式 -->
+                    <div class="relative p-5 bg-red-50 rounded-xl border-2 border-red-200">
+                        <div class="absolute -top-3 left-4 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">❌ 错误</div>
+                        <div class="code-block rounded-lg p-3 mt-2">
+                            <pre class="text-sm"><code><span class="syntax-function">greet</span>(<span class="syntax-number">123</span>);</code></pre>
+                        </div>
+                        <p class="text-sm text-red-700 mt-3">编译时报错：类型 'number' 不能赋给 'string'</p>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-6">
+                    <p class="text-blue-700 font-semibold mb-2">💡 关键点</p>
+                    <p class="text-sm text-gray-600">错误在<strong>编写代码时</strong>就被发现，而不是运行时才崩溃！</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第7页：编译前后对比 -->
+        <section class="slide" data-slide="7">
+            <div class="text-center mb-8">
+                <span class="inline-block px-4 py-1 bg-cyan-100 text-cyan-700 rounded-full text-sm font-medium mb-4">编译原理</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">编译前后对比</h2>
+            </div>
+
+            <div class="card p-6 sm:p-8 mb-6">
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- TypeScript -->
+                    <div>
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                                <span class="text-white font-bold text-sm">TS</span>
+                            </div>
+                            <span class="font-semibold text-gray-800">TypeScript（编译前）</span>
+                        </div>
+                        <div class="code-block rounded-lg p-4 overflow-x-auto">
+                            <pre class="text-sm"><code><span class="syntax-keyword">function</span> <span class="syntax-function">greet</span>(<span class="syntax-variable">name</span>: <span class="syntax-type">string</span>): <span class="syntax-type">string</span> {
+    <span class="syntax-keyword">return</span> <span class="syntax-string">"hello "</span> + name;
+}</code></pre>
+                        </div>
+                    </div>
+                    
+                    <!-- JavaScript -->
+                    <div>
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center">
+                                <span class="text-white font-bold text-sm">JS</span>
+                            </div>
+                            <span class="font-semibold text-gray-800">JavaScript（编译后）</span>
+                        </div>
+                        <div class="code-block rounded-lg p-4 overflow-x-auto">
+                            <pre class="text-sm"><code><span class="syntax-keyword">function</span> <span class="syntax-function">greet</span>(<span class="syntax-variable">name</span>) {
+    <span class="syntax-keyword">return</span> <span class="syntax-string">"hello "</span> + name;
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 图形化展示 -->
+                <div class="mt-8 bg-gray-50 rounded-xl p-6 border border-gray-200">
+                    <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <div class="text-center">
+                            <div class="inline-block px-4 py-2 bg-blue-100 rounded-lg border-2 border-blue-300">
+                                <code class="text-blue-700">: string</code>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">类型注解</p>
+                        </div>
+                        
+                        <svg class="w-8 h-8 text-red-400 rotate-90 sm:rotate-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                        </svg>
+                        
+                        <div class="text-center">
+                            <div class="inline-block px-4 py-2 bg-red-100 rounded-lg border-2 border-red-300">
+                                <span class="text-red-500 line-through">消失</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">编译后移除</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mt-6">
+                    <p class="text-amber-700 font-semibold">⚡ 重要结论</p>
+                    <p class="text-sm text-gray-700 mt-1">类型注解<strong>全部消失</strong>，最终运行的是普通 JavaScript！</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 第8页：测验 + 总结 -->
+        <section class="slide" data-slide="8">
+            <div class="text-center mb-8">
+                <span class="inline-block px-4 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium mb-4">知识检验</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">快速测验</h2>
+            </div>
+
+            <div class="card p-6 sm:p-8 mb-6">
+                <p class="text-lg text-gray-700 mb-6">TypeScript 的类型检查发生在什么时候？</p>
+                
+                <div id="quiz1" class="space-y-4">
+                    <div class="quiz-option p-4 bg-white rounded-xl border border-gray-200 flex items-center gap-4" 
+                         data-correct="false" onclick="checkAnswer(this, 1)">
+                        <span class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-sm font-medium">A</span>
+                        <span>运行时（浏览器/Node.js 中）</span>
+                    </div>
+                    <div class="quiz-option p-4 bg-white rounded-xl border border-gray-200 flex items-center gap-4" 
+                         data-correct="true" onclick="checkAnswer(this, 1)">
+                        <span class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-sm font-medium">B</span>
+                        <span>开发/编译阶段</span>
+                    </div>
+                    <div class="quiz-option p-4 bg-white rounded-xl border border-gray-200 flex items-center gap-4" 
+                         data-correct="false" onclick="checkAnswer(this, 1)">
+                        <span class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full text-sm font-medium">C</span>
+                        <span>打包部署时</span>
+                    </div>
+                </div>
+
+                <div id="quiz1-explanation" class="mt-6 hidden">
+                    <div class="p-4 bg-green-50 border border-green-200 rounded-xl">
+                        <p class="text-green-700 font-semibold">✓ 正确！</p>
+                        <p class="text-gray-700 mt-2">TypeScript 的类型检查只在开发/编译阶段进行。编译成 JavaScript 后，类型信息完全消失，运行时没有任何类型检查。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 核心要点总结 -->
+            <div class="card-green p-6 sm:p-8">
+                <h3 class="text-xl font-bold text-green-800 mb-4">🎯 核心要点</h3>
+                <div class="space-y-3">
+                    <div class="flex items-start gap-3">
+                        <span class="text-green-600 font-bold">1.</span>
+                        <p class="text-gray-700">类型是<strong>开发辅助</strong>，不是运行时必须</p>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="text-green-600 font-bold">2.</span>
+                        <p class="text-gray-700">帮助发现错误、提供智能提示、代码即文档</p>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="text-green-600 font-bold">3.</span>
+                        <p class="text-gray-700">最终产物是<strong>普通 JavaScript</strong></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 完成按钮 -->
+            <div class="text-center mt-8">
+                <button onclick="restartTutorial()" class="btn-secondary px-6 py-3 rounded-xl text-base font-semibold">
+                    🔄 重新学习
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 底部导航 -->
+    <footer class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 py-3 sm:py-4 px-4 z-40">
+        <div class="container mx-auto max-w-4xl flex justify-between items-center bottom-nav-buttons">
+            <button id="prevBtn" onclick="prevSlide()" class="btn-secondary px-4 sm:px-6 py-2 sm:py-3 rounded-xl text-sm sm:text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
+                <span>←</span> 上一页
+            </button>
+            <button id="nextBtn" onclick="nextSlide()" class="btn-primary px-4 sm:px-6 py-2 sm:py-3 rounded-xl text-sm sm:text-base font-semibold">
+                下一页 <span>→</span>
+            </button>
+        </div>
+    </footer>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 8;
+
+        function updateSlide() {
+            document.querySelectorAll('.slide').forEach(slide => slide.classList.remove('active'));
+            document.querySelector(`[data-slide="${currentSlide}"]`).classList.add('active');
+          
+            const progress = (currentSlide / totalSlides) * 100;
+            document.getElementById('progress').style.width = `${progress}%`;
+            document.getElementById('slideCounter').textContent = `${currentSlide} / ${totalSlides}`;
+            document.getElementById('prevBtn').disabled = currentSlide === 1;
+            document.getElementById('nextBtn').innerHTML = currentSlide === totalSlides ? '完成 ✓' : '下一页 <span>→</span>';
+            document.getElementById('touchNavLeft').classList.toggle('disabled', currentSlide === 1);
+            document.getElementById('touchNavRight').classList.toggle('disabled', currentSlide === totalSlides);
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) { 
+                currentSlide++; 
+                updateSlide(); 
+                window.scrollTo({ top: 0, behavior: 'smooth' }); 
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) { 
+                currentSlide--; 
+                updateSlide(); 
+                window.scrollTo({ top: 0, behavior: 'smooth' }); 
+            }
+        }
+
+        function restartTutorial() {
+            currentSlide = 1;
+            document.querySelectorAll('.quiz-option').forEach(opt => opt.classList.remove('correct', 'wrong'));
+            document.querySelectorAll('[id$="-explanation"]').forEach(exp => exp.classList.add('hidden'));
+            updateSlide();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function checkAnswer(element, quizNum) {
+            const parent = element.parentElement;
+            if (parent.querySelector('.correct') || parent.querySelector('.wrong')) return;
+            parent.querySelectorAll('.quiz-option').forEach(opt => {
+                if (opt.dataset.correct === 'true') opt.classList.add('correct');
+                else if (opt === element) opt.classList.add('wrong');
+            });
+            const explanation = document.getElementById(`quiz${quizNum}-explanation`);
+            if (explanation) explanation.classList.remove('hidden');
+        }
+
+        function showCodeTab(tab) {
+            document.querySelectorAll('.code-tab').forEach(t => { 
+                t.classList.remove('tab-active'); 
+                t.classList.add('tab-inactive'); 
+            });
+            event.target.classList.remove('tab-inactive'); 
+            event.target.classList.add('tab-active');
+            document.querySelectorAll('.code-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById(`code-${tab}`).classList.remove('hidden');
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+            else if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
+        });
+
+        updateSlide();
+    </script>
+</body>
+</html>
